@@ -1,0 +1,164 @@
+#ifndef CORECONTROLLER_H
+#define CORECONTROLLER_H
+
+#include <QObject>
+#include <QQmlContext>
+#include <QThread>
+
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+    #include "ui/systemtray_notificationhandler.h"
+#endif
+
+#include "ui/controllers/api/apiConfigsController.h"
+#include "ui/controllers/api/apiSettingsController.h"
+#include "ui/controllers/api/apiNewsController.h"
+#include "ui/controllers/appSplitTunnelingController.h"
+#include "ui/controllers/allowedDnsController.h"
+#include "ui/controllers/connectionController.h"
+#include "ui/controllers/diagnosticsController.h"
+#include "ui/controllers/exportController.h"
+#include "ui/controllers/focusController.h"
+#include "ui/controllers/importController.h"
+#include "ui/controllers/installController.h"
+#include "ui/controllers/pageController.h"
+#include "ui/controllers/settingsController.h"
+#include "ui/controllers/sitesController.h"
+#include "ui/controllers/serverMonitorController.h"
+#include "ui/controllers/serverTerminalController.h"
+#include "ui/controllers/speedTestController.h"
+#include "ui/controllers/systemController.h"
+
+#include "ui/models/allowed_dns_model.h"
+#include "ui/models/containers_model.h"
+#include "ui/models/languageModel.h"
+#include "ui/models/protocols/cloakConfigModel.h"
+#include "ui/models/api/apiAccountInfoModel.h"
+#include "ui/models/api/apiBenefitsModel.h"
+#include "ui/models/api/apiCountryModel.h"
+#include "ui/models/api/apiDevicesModel.h"
+#include "ui/models/api/apiServicesModel.h"
+#include "ui/models/api/apiSubscriptionPlansModel.h"
+#include "ui/models/appSplitTunnelingModel.h"
+#include "ui/models/protocols/anyTlsConfigModel.h"
+#include "ui/models/clientManagementModel.h"
+#include "ui/models/protocols/awgConfigModel.h"
+#include "ui/models/protocols/hysteria2ConfigModel.h"
+#include "ui/models/protocols/openvpnConfigModel.h"
+#include "ui/models/protocols/shadowsocksConfigModel.h"
+#include "ui/models/protocols/wireguardConfigModel.h"
+#include "ui/models/protocols/xrayConfigModel.h"
+#include "ui/models/protocols_model.h"
+#include "ui/models/servers_model.h"
+#include "ui/models/services/sftpConfigModel.h"
+#include "ui/models/services/socks5ProxyConfigModel.h"
+#include "ui/models/sites_model.h"
+#include "ui/models/newsModel.h"
+
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+    #include "ui/notificationhandler.h"
+#endif
+
+class CoreController : public QObject
+{
+    Q_OBJECT
+
+public:
+    explicit CoreController(const QSharedPointer<VpnConnection> &vpnConnection, const std::shared_ptr<Settings> &settings,
+                            QQmlApplicationEngine *engine, QObject *parent = nullptr);
+
+    QSharedPointer<PageController> pageController() const;
+    void setQmlRoot();
+
+    void openConnectionByIndex(int serverIndex);
+    void importConfigFromData(const QString &data);
+    void launchTargetBypassingVpn(const QString &targetPath);
+
+signals:
+    void translationsUpdated();
+    void websiteUrlChanged(const QString &newUrl);
+
+private:
+    void initModels();
+    void initControllers();
+    void initAndroidController();
+    void initAppleController();
+    void initSignalHandlers();
+
+    void initNotificationHandler();
+
+    void updateTranslator(const QLocale &locale);
+
+    void initErrorMessagesHandler();
+
+    void initApiCountryModelUpdateHandler();
+    void initContainerModelUpdateHandler();
+    void initAdminConfigRevokedHandler();
+    void initPassphraseRequestHandler();
+    void initTranslationsUpdatedHandler();
+    void initAutoConnectHandler();
+    void initAmneziaDnsToggledHandler();
+    void initPrepareConfigHandler();
+    void initStrictKillSwitchHandler();
+
+    QQmlApplicationEngine *m_engine {}; // TODO use parent child system here?
+    std::shared_ptr<Settings> m_settings;
+    QSharedPointer<VpnConnection> m_vpnConnection;
+    QSharedPointer<QTranslator> m_translator;
+
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+    QScopedPointer<NotificationHandler> m_notificationHandler;
+#endif
+
+    QMetaObject::Connection m_reloadConfigErrorOccurredConnection;
+
+    QScopedPointer<ConnectionController> m_connectionController;
+    QScopedPointer<DiagnosticsController> m_diagnosticsController;
+    QScopedPointer<FocusController> m_focusController;
+    QSharedPointer<PageController> m_pageController; // TODO
+    QScopedPointer<InstallController> m_installController;
+    QScopedPointer<ImportController> m_importController;
+    QScopedPointer<ExportController> m_exportController;
+    QScopedPointer<SettingsController> m_settingsController;
+    QScopedPointer<SitesController> m_sitesController;
+    QScopedPointer<SystemController> m_systemController;
+    QScopedPointer<AppSplitTunnelingController> m_appSplitTunnelingController;
+    QScopedPointer<AllowedDnsController> m_allowedDnsController;
+    QScopedPointer<ServerMonitorController> m_serverMonitorController;
+    QScopedPointer<ServerTerminalController> m_serverTerminalController;
+    QScopedPointer<SpeedTestController> m_speedTestController;
+
+    QScopedPointer<ApiSettingsController> m_apiSettingsController;
+    QScopedPointer<ApiConfigsController> m_apiConfigsController;
+    QScopedPointer<ApiNewsController> m_apiNewsController;
+
+    QSharedPointer<ContainersModel> m_containersModel;
+    QSharedPointer<ContainersModel> m_defaultServerContainersModel;
+    QSharedPointer<ServersModel> m_serversModel;
+    QSharedPointer<LanguageModel> m_languageModel;
+    QSharedPointer<ProtocolsModel> m_protocolsModel;
+    QSharedPointer<SitesModel> m_sitesModel;
+    QSharedPointer<NewsModel> m_newsModel;
+    QSharedPointer<AllowedDnsModel> m_allowedDnsModel;
+    QSharedPointer<AppSplitTunnelingModel> m_appSplitTunnelingModel;
+    QSharedPointer<ClientManagementModel> m_clientManagementModel;
+
+    QSharedPointer<ApiServicesModel> m_apiServicesModel;
+    QSharedPointer<ApiSubscriptionPlansModel> m_apiSubscriptionPlansModel;
+    QSharedPointer<ApiBenefitsModel> m_apiBenefitsModel;
+    QSharedPointer<ApiCountryModel> m_apiCountryModel;
+    QSharedPointer<ApiAccountInfoModel> m_apiAccountInfoModel;
+    QSharedPointer<ApiDevicesModel> m_apiDevicesModel;
+
+    QScopedPointer<OpenVpnConfigModel> m_openVpnConfigModel;
+    QScopedPointer<ShadowSocksConfigModel> m_shadowSocksConfigModel;
+    QScopedPointer<CloakConfigModel> m_cloakConfigModel;
+    QScopedPointer<XrayConfigModel> m_xrayConfigModel;
+    QScopedPointer<Hysteria2ConfigModel> m_hysteria2ConfigModel;
+    QScopedPointer<AnyTlsConfigModel> m_anyTlsConfigModel;
+    QScopedPointer<WireGuardConfigModel> m_wireGuardConfigModel;
+    QScopedPointer<AwgConfigModel> m_awgConfigModel;
+    QScopedPointer<SftpConfigModel> m_sftpConfigModel;
+    QScopedPointer<Socks5ProxyConfigModel> m_socks5ConfigModel;
+};
+
+#endif // CORECONTROLLER_H

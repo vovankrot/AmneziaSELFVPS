@@ -1,0 +1,227 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
+import SortFilterProxyModel 0.2
+
+import PageEnum 1.0
+import ProtocolEnum 1.0
+import ContainerProps 1.0
+import ProtocolProps 1.0
+import Style 1.0
+
+import "./"
+import "../Controls2"
+import "../Controls2/TextTypes"
+import "../Config"
+import "../Components"
+
+PageType {
+    id: root
+
+    readonly property int pageSettingsServerProtocols: 0
+    readonly property int pageSettingsServerServices: 1
+    readonly property int pageSettingsServerData: 2
+    readonly property int pageSettingsServerMonitor: 3
+    readonly property int pageSettingsServerTerminal: 4
+
+    property var processedServer: ({})
+
+    function safeString(value) {
+        return value === undefined || value === null ? "" : String(value)
+    }
+
+    function safeBool(value) {
+        return value === true
+    }
+
+    Connections {
+        target: PageController
+
+        function onGoToPageSettingsServerServices() {
+            tabBar.setCurrentIndex(root.pageSettingsServerServices)
+        }
+    }
+
+    Connections {
+        target: ServersModel
+
+        function onProcessedServerChanged() {
+            root.processedServer = proxyServersModel.count > 0 ? proxyServersModel.get(0) : ({})
+        }
+    }
+
+    SortFilterProxyModel {
+        id: proxyServersModel
+        objectName: "proxyServersModel"
+
+        sourceModel: ServersModel
+        filters: [
+            ValueFilter {
+                roleName: "isCurrentlyProcessed"
+                value: true
+            }
+        ]
+
+        Component.onCompleted: {
+            root.processedServer = proxyServersModel.count > 0 ? proxyServersModel.get(0) : ({})
+        }
+    }
+
+    ColumnLayout {
+        objectName: "mainLayout"
+
+        anchors.fill: parent
+        anchors.topMargin: 20 + SettingsController.safeAreaTopMargin
+
+        spacing: 4
+
+        BackButtonType {
+            id: backButton
+            objectName: "backButton"
+        }
+
+        HeaderTypeWithButton {
+            id: headerContent
+            objectName: "headerContent"
+
+            Layout.fillWidth: true
+            Layout.leftMargin: 16
+            Layout.rightMargin: 16
+            Layout.bottomMargin: 10
+
+            actionButtonImage: "qrc:/images/controls/edit-3.svg"
+
+            headerText: root.safeString(root.processedServer.name)
+            descriptionText: {
+                if (root.safeBool(root.processedServer.isServerFromTelegramApi)) {
+                    return root.safeString(root.processedServer.serverDescription)
+                }
+
+                if (root.safeBool(root.processedServer.hasWriteAccess)) {
+                    const login = root.safeString(root.processedServer.credentialsLogin)
+                    const host = root.safeString(root.processedServer.hostName)
+                    return login && host ? login + " · " + host : login || host
+                }
+
+                return root.safeString(root.processedServer.hostName)
+            }
+
+            actionButtonFunction: function() {
+                serverNameEditDrawer.openTriggered()
+            }
+        }
+
+        RenameServerDrawer {
+            id: serverNameEditDrawer
+
+            parent: root
+
+            anchors.fill: parent
+            expandedHeight: root.height * 0.35
+
+            serverNameText: root.safeString(root.processedServer.name)
+        }
+
+        TabBar {
+            id: tabBar
+
+            Layout.fillWidth: true
+
+            currentIndex: (ServersModel.getProcessedServerData("isServerFromTelegramApi")
+                           && !ServersModel.getProcessedServerData("hasInstalledContainers")) ?
+                              root.pageSettingsServerData : root.pageSettingsServerProtocols
+
+            background: Rectangle {
+                color: AmneziaStyle.color.transparent
+            }
+
+
+            TabButtonType {
+                id: protocolsTab
+                visible: protocolsPage.installedProtocolsCount
+                width: protocolsPage.installedProtocolsCount ? undefined : 0
+                isSelected: TabBar.tabBar.currentIndex === root.pageSettingsServerProtocols
+                text: qsTr("Protocols")
+
+                Keys.onReturnPressed: TabBar.tabBar.setCurrentIndex(root.pageSettingsServerProtocols)
+                Keys.onEnterPressed: TabBar.tabBar.setCurrentIndex(root.pageSettingsServerProtocols)
+            }
+
+            TabButtonType {
+                id: servicesTab
+                visible: servicesPage.installedServicesCount
+                width: servicesPage.installedServicesCount ? undefined : 0
+                isSelected: TabBar.tabBar.currentIndex === root.pageSettingsServerServices
+                text: qsTr("Services")
+
+                Keys.onReturnPressed: TabBar.tabBar.setCurrentIndex(root.pageSettingsServerServices)
+                Keys.onEnterPressed: TabBar.tabBar.setCurrentIndex(root.pageSettingsServerServices)
+            }
+
+            TabButtonType {
+                id: dataTab
+                isSelected: tabBar.currentIndex === root.pageSettingsServerData
+                text: qsTr("Management")
+
+                Keys.onReturnPressed: TabBar.tabBar.setCurrentIndex(root.pageSettingsServerData)
+                Keys.onEnterPressed: TabBar.tabBar.setCurrentIndex(root.pageSettingsServerData)
+            }
+
+            TabButtonType {
+                id: monitorTab
+                visible: root.safeBool(root.processedServer.hasWriteAccess)
+                width: visible ? undefined : 0
+                isSelected: tabBar.currentIndex === root.pageSettingsServerMonitor
+                text: qsTr("Monitor")
+
+                Keys.onReturnPressed: TabBar.tabBar.setCurrentIndex(root.pageSettingsServerMonitor)
+                Keys.onEnterPressed: TabBar.tabBar.setCurrentIndex(root.pageSettingsServerMonitor)
+            }
+
+            TabButtonType {
+                id: terminalTab
+                visible: root.safeBool(root.processedServer.hasWriteAccess)
+                width: visible ? undefined : 0
+                isSelected: tabBar.currentIndex === root.pageSettingsServerTerminal
+                text: qsTr("Terminal")
+
+                Keys.onReturnPressed: TabBar.tabBar.setCurrentIndex(root.pageSettingsServerTerminal)
+                Keys.onEnterPressed: TabBar.tabBar.setCurrentIndex(root.pageSettingsServerTerminal)
+            }
+        }
+
+        StackLayout {
+            id: nestedStackView
+
+            Layout.fillWidth: true
+
+            currentIndex: tabBar.currentIndex
+
+            PageSettingsServerProtocols {
+                id: protocolsPage
+                stackView: root.stackView
+            }
+
+            PageSettingsServerServices {
+                id: servicesPage
+                stackView: root.stackView
+            }
+
+            PageSettingsServerData {
+                id: dataPage
+                stackView: root.stackView
+            }
+
+            PageSettingsServerMonitor {
+                id: monitorPage
+                stackView: root.stackView
+            }
+
+            PageSettingsServerTerminal {
+                id: terminalPage
+                stackView: root.stackView
+            }
+        }
+    }
+}

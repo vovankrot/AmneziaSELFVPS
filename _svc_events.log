@@ -1,0 +1,39 @@
+﻿
+[2026-04-25 08:08:19.109Z] [DEBUG] Amnezia  : Xray::stopXray()
+[2026-04-25 08:08:19.125Z] [DEBUG] Amnezia  : Kill process C:/Program Files/Amn
+eziaVPN/xray/tun2socks.exe
+[2026-04-25 08:08:19.199Z] [DEBUG] Amnezia  : IpcServerProcess started,  "C:/Pr
+ogram Files/AmneziaVPN/xray/tun2socks.exe" QList("-device", "tun://tun2", "-pro
+xy", "socks5://127.0.0.1:10808")
+[2026-04-25 08:08:30.804Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:52739 
+accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:08:49.151Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:60804 
+accepted tcp:149.154.167.91:443 [proxy]\r\n"
+[2026-04-25 08:08:52.804Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58290 
+accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:08:52.804Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:62853 
+accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:08:53.945Z] [DEBUG] Amnezia  : Xray::stopXray()
+[2026-04-25 08:08:54.004Z] [DEBUG] Amnezia  : IpcServerProcess errorOccurred  Q
+Process::Crashed
+[2026-04-25 08:08:54.057Z] [DEBUG] Amnezia  : Xray::stopXray()
+[2026-04-25 08:09:00.222Z] [DEBUG] Amnezia  : Xray::stopXray()
+[2026-04-25 08:09:00.264Z] [DEBUG] Amnezia  : Kill process C:/Program Files/Amn
+eziaVPN/xray/tun2socks.exe
+[2026-04-25 08:09:00.288Z] [DEBUG] Amnezia  : IpcServerProcess started,  "C:/Pr
+ogram Files/AmneziaVPN/xray/tun2socks.exe" QList("-device", "tun://tun2", "-pro
+xy", "socks5://127.0.0.1:10808")
+[2026-04-25 08:09:05.137Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:50804 
+accepted tcp:149.154.175.56:80 [proxy]\r\n"
+[2026-04-25 08:09:11.130Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58045 
+accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:15.153Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58045 
+accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58045 
+accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:24.355Z] [DEBUG] Amnezia  : Xray::stopXray()
+[2026-04-25 08:09:24.417Z] [DEBUG] Amnezia  : IpcServerProcess errorOccurred  Q
+Process::Crashed
+[2026-04-25 08:09:24.468Z] [DEBUG] Amnezia  : Xray::stopXray()
+
+

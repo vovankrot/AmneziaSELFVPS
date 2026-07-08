@@ -1,0 +1,460 @@
+cmake_minimum_required(VERSION 3.25.0 FATAL_ERROR)
+
+set(PROJECT AmneziaVPN-service)
+project(${PROJECT} VERSION ${AMNEZIAVPN_VERSION})
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Qt6 REQUIRED COMPONENTS DBus Core Network Widgets RemoteObjects Core5Compat Concurrent)
+qt_standard_project_setup()
+
+
+configure_file(${CMAKE_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h)
+
+set(AMNEZIA_XRAY_ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}/../../client/3rd-prebuilt/3rd-prebuilt/amnezia_xray")
+if(WIN32)
+    if("${CMAKE_SIZEOF_VOID_P}" STREQUAL "8")
+        set(AMNEZIA_XRAY_LIB_PATH "${AMNEZIA_XRAY_ROOT_DIR}/windows/x86_64/amnezia_xray.lib")
+        set(AMNEZIA_XRAY_INCLUDE_DIR "${AMNEZIA_XRAY_ROOT_DIR}/windows/x86_64")
+    else()
+        set(AMNEZIA_XRAY_LIB_PATH "${AMNEZIA_XRAY_ROOT_DIR}/windows/x86/amnezia_xray.lib")
+        set(AMNEZIA_XRAY_INCLUDE_DIR "${AMNEZIA_XRAY_ROOT_DIR}/windows/x86")
+    endif()
+elseif(APPLE)
+    set(AMNEZIA_XRAY_LIB_PATH "${AMNEZIA_XRAY_ROOT_DIR}/macos/x86_64/amnezia_xray.a")
+    set(AMNEZIA_XRAY_INCLUDE_DIR "${AMNEZIA_XRAY_ROOT_DIR}/macos/x86_64")
+elseif(LINUX)
+    set(AMNEZIA_XRAY_LIB_PATH "${AMNEZIA_XRAY_ROOT_DIR}/linux/x86_64/amnezia_xray.a")
+    set(AMNEZIA_XRAY_INCLUDE_DIR "${AMNEZIA_XRAY_ROOT_DIR}/linux/x86_64")
+endif()
+
+set(QSIMPLECRYPTO_DIR ${CMAKE_CURRENT_LIST_DIR}/../../client/3rd/QSimpleCrypto/src)
+
+
+set(OPENSSL_ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}/../../client/3rd-prebuilt/3rd-prebuilt/openssl/")
+set(OPENSSL_LIBRARIES_DIR "${OPENSSL_ROOT_DIR}/lib")
+
+set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/windows/include")
+if("${CMAKE_SIZEOF_VOID_P}" STREQUAL "8")
+    set(OPENSSL_LIB_SSL_PATH "${OPENSSL_ROOT_DIR}/windows/win64/libssl.lib")
+    set(OPENSSL_LIB_CRYPTO_PATH "${OPENSSL_ROOT_DIR}/windows/win64/libcrypto.lib")
+else()
+    set(OPENSSL_LIB_SSL_PATH "${OPENSSL_ROOT_DIR}/windows/win32/libssl.lib")
+    set(OPENSSL_LIB_CRYPTO_PATH "${OPENSSL_ROOT_DIR}/windows/win32/libcrypto.lib")
+endif()
+
+
+if(WIN32)
+    set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/windows/include")
+    if("${CMAKE_SIZEOF_VOID_P}" STREQUAL "8")
+        set(OPENSSL_LIB_CRYPTO_PATH "${OPENSSL_ROOT_DIR}/windows/win64/libcrypto.lib")
+    else()
+        set(OPENSSL_LIB_CRYPTO_PATH "${OPENSSL_ROOT_DIR}/windows/win32/libcrypto.lib")
+    endif()
+elseif(APPLE)
+    set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/macos/include")
+    set(OPENSSL_LIB_CRYPTO_PATH "${OPENSSL_ROOT_DIR}/macos/lib/libcrypto.a")
+elseif(LINUX)
+    set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/linux/include")
+    set(OPENSSL_LIB_CRYPTO_PATH "${OPENSSL_ROOT_DIR}/linux/x86_64/libcrypto.a")
+endif()
+
+set(OPENSSL_USE_STATIC_LIBS TRUE)
+
+include_directories(
+    ${AMNEZIA_XRAY_INCLUDE_DIR}
+    ${OPENSSL_INCLUDE_DIR}
+    ${QSIMPLECRYPTO_DIR}
+)
+
+set(HEADERS
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/utilities.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/secure_qsettings.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/core/networkUtilities.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../ipc/ipc.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../ipc/ipcserver.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../ipc/ipcserverprocess.h
+    ${CMAKE_CURRENT_LIST_DIR}/localserver.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../common/logger/logger.h
+    ${CMAKE_CURRENT_LIST_DIR}/router.h
+    ${CMAKE_CURRENT_LIST_DIR}/killswitch.h
+    ${CMAKE_CURRENT_LIST_DIR}/systemservice.h
+    ${CMAKE_CURRENT_LIST_DIR}/xray.h
+    ${CMAKE_CURRENT_BINARY_DIR}/version.h
+    ${QSIMPLECRYPTO_DIR}/include/QAead.h
+    ${QSIMPLECRYPTO_DIR}/include/QBlockCipher.h
+    ${QSIMPLECRYPTO_DIR}/include/QRsa.h
+    ${QSIMPLECRYPTO_DIR}/include/QSimpleCrypto_global.h
+    ${QSIMPLECRYPTO_DIR}/include/QX509.h
+    ${QSIMPLECRYPTO_DIR}/include/QX509Store.h
+)
+
+set(SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/utilities.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/secure_qsettings.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/core/networkUtilities.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../../ipc/ipcserver.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../../ipc/ipcserverprocess.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/localserver.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../../common/logger/logger.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/main.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/router.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/killswitch.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/systemservice.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/xray.cpp
+    ${QSIMPLECRYPTO_DIR}/sources/QAead.cpp
+    ${QSIMPLECRYPTO_DIR}/sources/QBlockCipher.cpp
+    ${QSIMPLECRYPTO_DIR}/sources/QRsa.cpp
+    ${QSIMPLECRYPTO_DIR}/sources/QX509.cpp
+    ${QSIMPLECRYPTO_DIR}/sources/QX509Store.cpp
+)
+
+# Mozilla headres
+set(HEADERS ${HEADERS}
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/daemon/dnsutils.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/daemon/iputils.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/daemon/interfaceconfig.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/daemon/wireguardutils.h
+
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/platforms/dummy/dummynetworkwatcher.h
+
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/shared/ipaddress.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/shared/loglevel.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/shared/leakdetector.h
+
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/models/server.h
+
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/controllerimpl.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/dnspingsender.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/networkwatcher.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/networkwatcherimpl.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/pinghelper.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/pingsender.h
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/pingsenderfactory.h
+)
+
+include_directories(../../client/mozilla)
+include_directories(../../client/mozilla/shared)
+include_directories(../../client/mozilla/models)
+include_directories(../../client/platforms/)
+
+# Mozilla sources
+set(SOURCES ${SOURCES}
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/models/server.cpp
+
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/platforms/dummy/dummynetworkwatcher.cpp
+    
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/daemon/interfaceconfig.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/shared/ipaddress.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/shared/leakdetector.cpp
+
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/dnspingsender.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/networkwatcher.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/pinghelper.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/pingsender.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/pingsenderfactory.cpp
+)
+
+if(UNIX)
+    set(HEADERS ${HEADERS}
+        ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/shared/signalhandler.h
+    )
+    set(SOURCES ${SOURCES}
+        ${CMAKE_CURRENT_LIST_DIR}/../../client/mozilla/shared/signalhandler.cpp
+    )
+endif()
+
+if (WIN32 OR APPLE OR LINUX)
+    set(HEADERS ${HEADERS}
+        ${CMAKE_CURRENT_LIST_DIR}/../../client/daemon/daemon.h
+        ${CMAKE_CURRENT_LIST_DIR}/../../client/daemon/daemonlocalserver.h
+        ${CMAKE_CURRENT_LIST_DIR}/../../client/daemon/daemonlocalserverconnection.h
+    )
+    set(SOURCES ${SOURCES}
+        ${CMAKE_CURRENT_LIST_DIR}/../../client/daemon/daemon.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/../../client/daemon/daemonlocalserver.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/../../client/daemon/daemonlocalserverconnection.cpp
+    )
+endif()
+
+set(RESOURCES)
+
+if(WIN32)
+    configure_file(
+        ${CMAKE_CURRENT_LIST_DIR}/amneziavpn-service.rc.in
+        ${CMAKE_CURRENT_BINARY_DIR}/amneziavpn-service.rc
+    )
+
+    set(HEADERS ${HEADERS}
+        ${CMAKE_CURRENT_LIST_DIR}/tapcontroller_win.h
+        ${CMAKE_CURRENT_LIST_DIR}/router_win.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/windowsdaemon.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/windowsdaemontunnel.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/windowsfirewall.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/windowscommons.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/windowsservicemanager.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/dnsutilswindows.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/windowssplittunnel.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/windowstunnelservice.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/wireguardutilswindows.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/windowstunnellogger.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/windowsroutemonitor.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/windowsutils.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/windowspingsender.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/windowsnetworkwatcher.h
+        ${CMAKE_CURRENT_LIST_DIR}/../../client/daemon/daemonerrors.h
+    )
+
+    set(SOURCES ${SOURCES}
+        ${CMAKE_CURRENT_LIST_DIR}/tapcontroller_win.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/router_win.cpp
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/windowsdaemon.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/windowsdaemontunnel.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/windowsfirewall.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/windowscommons.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/windowsservicemanager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/dnsutilswindows.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/windowssplittunnel.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/windowstunnelservice.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/wireguardutilswindows.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/windowstunnellogger.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/daemon/windowsroutemonitor.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/windowspingsender.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/windowsnetworkwatcher.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/windows/windowsutils.cpp
+    )
+
+    if(MINGW)
+        set(SOURCES ${SOURCES}
+            # MSVC CRT compatibility stubs – needed because libcrypto.lib was
+            # compiled with /GS and references MSVC-internal symbols absent in MinGW.
+            ${CMAKE_CURRENT_LIST_DIR}/msvc_compat.c
+            # Strong fprintf/sscanf definitions to satisfy MSVC COMDAT + merr.o refs.
+            # Must NOT include <stdio.h>; compiled with -fno-builtin to prevent GCC
+            # from treating the definitions as builtin substitutions.
+            ${CMAKE_CURRENT_LIST_DIR}/msvc_stdio_stubs.c
+        )
+        # Compile msvc_stdio_stubs.c without builtin recognition so GCC does not
+        # try to substitute or inline the definitions of fprintf/sscanf.
+        set_source_files_properties(
+            ${CMAKE_CURRENT_LIST_DIR}/msvc_stdio_stubs.c
+            PROPERTIES COMPILE_FLAGS "-fno-builtin"
+        )
+    endif()
+
+    set(RESOURCES ${RESOURCES}
+        ${CMAKE_CURRENT_BINARY_DIR}/amneziavpn-service.rc
+    )
+
+    set(LIBS
+        user32
+        rasapi32
+        shlwapi
+        iphlpapi
+        ws2_32
+        gdi32
+        Advapi32
+        Kernel32
+        # Windows APIs used by our own code (DLL import libs – order independent)
+        dbghelp       # StackWalk64, Sym*, MiniDumpWriteDump  (main.cpp)
+        fwpuclnt      # Fwpm* WFP filtering                   (windowsfirewall.cpp)
+        wlanapi       # Wlan*                                  (windowsnetworkwatcher.cpp)
+        ${AMNEZIA_XRAY_LIB_PATH}
+        # MSVC-compiled OpenSSL: must come BEFORE the libs it depends on so the
+        # linker sees the undefined references before scanning those libraries.
+        ${OPENSSL_LIB_CRYPTO_PATH}
+        # Windows APIs that libcrypto.lib depends on – placed AFTER libcrypto so
+        # the linker has the undefined refs in the table when it scans these libs.
+        crypt32       # CertOpenStore etc.    (libcrypto e_capi engine)
+        bcrypt        # BCryptGenRandom       (libcrypto random)
+        # Repeat ws2_32 after libcrypto so the linker can extract WspiapiLoad
+        # and WspiapiLegacy* objects (needed by libcrypto) on the second pass.
+        ws2_32
+        iphlpapi
+        qt6keychain
+    )
+
+    if(MINGW)
+        list(APPEND LIBS
+            # msvcrt: provides fprintf/sscanf/vfprintf etc. for MSVC-compiled
+            # objects in libcrypto.lib when linking them into a MinGW executable.
+            msvcrt
+        )
+    endif()
+
+    add_compile_definitions(_WINSOCKAPI_)
+endif()
+
+if(APPLE)
+    set(HEADERS ${HEADERS}
+        ${CMAKE_CURRENT_LIST_DIR}/helper_route_mac.h
+        ${CMAKE_CURRENT_LIST_DIR}/router_mac.h
+    )
+
+    set(SOURCES ${SOURCES}
+        ${CMAKE_CURRENT_LIST_DIR}/helper_route_mac.c
+        ${CMAKE_CURRENT_LIST_DIR}/router_mac.cpp
+    )
+
+    #Mozilla
+    set(HEADERS ${HEADERS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/ios/iosnetworkwatcher.h
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/macosnetworkwatcher.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/macospingsender.h
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/daemon/dnsutilsmacos.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/daemon/iputilsmacos.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/daemon/macosdaemon.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/daemon/macosroutemonitor.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/daemon/wireguardutilsmacos.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/daemon/macosfirewall.h
+    )
+
+    set(SOURCES ${SOURCES}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/ios/iosnetworkwatcher.mm
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/macosnetworkwatcher.mm
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/macospingsender.cpp
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/daemon/dnsutilsmacos.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/daemon/iputilsmacos.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/daemon/macosdaemon.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/daemon/macosroutemonitor.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/daemon/wireguardutilsmacos.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/macos/daemon/macosfirewall.cpp
+    )
+
+    set(LIBS
+        resolv
+        ${AMNEZIA_XRAY_LIB_PATH}
+        ${OPENSSL_LIB_CRYPTO_PATH}
+        qt6keychain
+    )
+
+endif()
+
+if(LINUX)
+
+    set(HEADERS ${HEADERS}
+        ${CMAKE_CURRENT_LIST_DIR}/router_linux.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/linuxnetworkwatcher.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/linuxnetworkwatcherworker.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/linuxdependencies.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/linuxpingsender.h 
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/daemon/iputilslinux.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/daemon/dbustypeslinux.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/daemon/linuxdaemon.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/daemon/dnsutilslinux.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/daemon/wireguardutilslinux.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/daemon/linuxroutemonitor.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/daemon/linuxfirewall.h        
+    )
+
+    set(SOURCES ${SOURCES}
+        ${CMAKE_CURRENT_LIST_DIR}/router_linux.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/linuxnetworkwatcher.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/linuxnetworkwatcherworker.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/linuxdependencies.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/linuxpingsender.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/daemon/dnsutilslinux.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/daemon/iputilslinux.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/daemon/linuxdaemon.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/daemon/wireguardutilslinux.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/daemon/linuxroutemonitor.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../client/platforms/linux/daemon/linuxfirewall.cpp
+    )
+
+    set(LIBS
+        ${AMNEZIA_XRAY_LIB_PATH}    
+        ${OPENSSL_LIB_CRYPTO_PATH}
+        qt6keychain
+        -static-libstdc++
+        -static-libgcc
+        -ldl
+    )
+
+endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/../src/qtservice.cmake)
+
+include_directories(
+    ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/../../client
+    ${CMAKE_CURRENT_LIST_DIR}/../../ipc
+    ${CMAKE_CURRENT_LIST_DIR}/../../common/logger
+    ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+
+add_executable(${PROJECT} ${SOURCES} ${HEADERS} ${RESOURCES})
+target_link_libraries(${PROJECT} PRIVATE Qt6::Core Qt6::Widgets Qt6::Network Qt6::RemoteObjects Qt6::Core5Compat Qt6::DBus Qt6::Concurrent ${LIBS})
+target_compile_definitions(${PROJECT} PRIVATE "MZ_$<UPPER_CASE:${MZ_PLATFORM_NAME}>" QSIMPLECRYPTO_STATIC)
+
+if(WIN32 AND MSVC)
+    target_link_options(${PROJECT} PRIVATE /DEBUG /MAP)
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_definitions(${PROJECT} PRIVATE "MZ_DEBUG")
+endif()
+
+if(APPLE)
+    if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set_target_properties(${PROJECT} PROPERTIES
+            INSTALL_RPATH "@executable_path/../Frameworks"
+            BUILD_WITH_INSTALL_RPATH TRUE
+        )
+    endif()
+
+    find_library(FW_COREFOUNDATION CoreFoundation)
+    find_library(FW_SYSTEMCONFIG SystemConfiguration)
+    find_library(FW_SERVICEMGMT ServiceManagement)
+    find_library(FW_SECURITY Security)
+    find_library(FW_COREWLAN CoreWLAN)
+    find_library(FW_NETWORK Network)
+    find_library(FW_USER_NOTIFICATIONS UserNotifications)
+
+    target_link_libraries(${PROJECT} PRIVATE ${FW_COREFOUNDATION})
+    target_link_libraries(${PROJECT} PRIVATE ${FW_SYSTEMCONFIG})
+    target_link_libraries(${PROJECT} PRIVATE ${FW_SERVICEMGMT})
+    target_link_libraries(${PROJECT} PRIVATE ${FW_SECURITY})
+    target_link_libraries(${PROJECT} PRIVATE ${FW_COREWLAN})
+    target_link_libraries(${PROJECT} PRIVATE ${FW_NETWORK})
+    target_link_libraries(${PROJECT} PRIVATE ${FW_USER_NOTIFICATIONS})
+
+
+endif()
+
+qt_add_repc_sources(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/../../ipc/ipc_interface.rep)
+qt_add_repc_sources(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/../../ipc/ipc_process_interface.rep)
+
+# copy deploy artifacts required to run the application to the debug build folder
+if(WIN32)
+    if("${CMAKE_SIZEOF_VOID_P}" STREQUAL "8")
+        set(DEPLOY_PLATFORM_PATH "windows/x64")
+    else()
+        set(DEPLOY_PLATFORM_PATH "windows/x32")
+    endif()
+elseif(LINUX)
+    set(DEPLOY_PLATFORM_PATH "linux/client")
+elseif(APPLE)
+    set(DEPLOY_PLATFORM_PATH "macos")
+endif()
+
+add_custom_command(
+    TARGET ${PROJECT} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E $<IF:$<CONFIG:Debug>,copy_directory,true>
+    ${CMAKE_SOURCE_DIR}/deploy/data/${DEPLOY_PLATFORM_PATH}
+    $<TARGET_FILE_DIR:${PROJECT}>
+    COMMAND_EXPAND_LISTS
+)
+add_custom_command(
+    TARGET ${PROJECT} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E $<IF:$<CONFIG:Debug>,copy_directory,true>
+    ${CMAKE_SOURCE_DIR}/client/3rd-prebuilt/deploy-prebuilt/${DEPLOY_PLATFORM_PATH}
+    $<TARGET_FILE_DIR:${PROJECT}>
+    COMMAND_EXPAND_LISTS
+)

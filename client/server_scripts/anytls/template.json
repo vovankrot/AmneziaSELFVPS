@@ -1,0 +1,7 @@
+{
+    "server": "$SERVER_IP_ADDRESS:$ANYTLS_SERVER_PORT",
+    "password": "$ANYTLS_PASSWORD",
+    "socks5_listen": "127.0.0.1:$ANYTLS_LOCAL_PROXY_PORT",
+    "insecure_skip_verify": true,
+    "sni": "$ANYTLS_SNI"
+}

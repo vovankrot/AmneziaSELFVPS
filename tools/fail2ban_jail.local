@@ -1,0 +1,23 @@
+[DEFAULT]
+# Локальные/RFC1918 в whitelist
+ignoreip = 127.0.0.1/8 ::1 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
+# Окно для подсчёта неудач
+findtime = 10m
+# Длительность бана
+bantime  = 1h
+# Эскалация: при повторных банах множить bantime
+bantime.increment = true
+bantime.factor = 2
+bantime.maxtime = 1w
+# Порог неудач
+maxretry = 5
+# Бэкенд логов
+backend = systemd
+
+[sshd]
+enabled  = true
+port     = ssh
+filter   = sshd
+maxretry = 5
+findtime = 10m
+bantime  = 1h

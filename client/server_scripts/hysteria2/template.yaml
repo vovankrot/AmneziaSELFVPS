@@ -1,0 +1,32 @@
+# Hysteria 2 client config template, rendered by HysteriaConfigurator.
+# Placeholders ($VAR) are substituted by ServerController::replaceVars.
+server: $SERVER_IP_ADDRESS:$HYSTERIA_SERVER_PORT
+
+auth: $HYSTERIA_PASSWORD
+
+tls:
+  sni: $HYSTERIA_MASQUERADE_HOST
+  insecure: true
+
+# Salamander obfuscation — must match the server's obfs password. Turns every
+# packet into pseudo-random noise so DPI can't fingerprint Hysteria; this is what
+# lets it pass RKN/TSPU where plain QUIC/UDP to the server IP is dropped.
+obfs:
+  type: salamander
+  salamander:
+    password: $HYSTERIA_OBFS_PASSWORD
+
+# Local SOCKS5 inbound. tun2socks then pipes the system TUN through this.
+socks5:
+  listen: 127.0.0.1:$HYSTERIA_LOCAL_PROXY_PORT
+
+# Congestion control = BBR (adaptive). Brutal (fixed-rate) was tried and is WRONG for this
+# variable, RKN-shaped cross-border link: a fixed rate caps throughput and overshoots
+# whenever the path dips, manufacturing loss and collapsing speed (Brutal-25/80 measured
+# much slower than BBR; Brutal-1gbps too). BBR adapts to the real varying capacity (~86
+# Mbit/s). Brutal also did NOT fix the Discord voice loss — that's path loss (cross-border
+# peering to a flagged IP), not a CC problem. Omitting bandwidth => BBR. by vovankrot
+
+# Quiet by default.
+log:
+  level: warn

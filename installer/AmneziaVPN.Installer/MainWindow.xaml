@@ -1,0 +1,248 @@
+<Window x:Class="AmneziaVPN.Installer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="AmneziaVPN - установка"
+        Height="520" Width="860"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        FontFamily="Segoe UI"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <Border CornerRadius="10"
+            Background="{StaticResource BgPanel}"
+            BorderBrush="{StaticResource Stroke}"
+            BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="28" Opacity="0.62" ShadowDepth="0" Color="Black"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="330"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" CornerRadius="10,0,0,10" ClipToBounds="True">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#142130" Offset="0"/>
+                        <GradientStop Color="#101A27" Offset="0.55"/>
+                        <GradientStop Color="#0A1219" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+
+                <Grid>
+                    <Ellipse Width="390" Height="390" HorizontalAlignment="Left" VerticalAlignment="Top"
+                             Margin="-130,-120,0,0" Opacity="0.45">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Color="#467E8C" Offset="0"/>
+                                <GradientStop Color="#00000000" Offset="1"/>
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                    </Ellipse>
+                    <Ellipse Width="340" Height="340" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                             Margin="0,0,-110,-110" Opacity="0.35">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Color="#D98943" Offset="0"/>
+                                <GradientStop Color="#00000000" Offset="1"/>
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                    </Ellipse>
+                    <Ellipse Width="220" Height="220" HorizontalAlignment="Right" VerticalAlignment="Top"
+                             Margin="0,-70,-70,0" Opacity="0.28">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Color="#6EA4C6" Offset="0"/>
+                                <GradientStop Color="#00000000" Offset="1"/>
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                    </Ellipse>
+
+                    <StackPanel VerticalAlignment="Center" Margin="38,0">
+                        <Border HorizontalAlignment="Left"
+                                Margin="0,0,0,24"
+                                Padding="10"
+                                Background="#0E1821"
+                                BorderBrush="#223243"
+                                BorderThickness="1"
+                                CornerRadius="18">
+                            <Image Width="170"
+                                   Height="120"
+                                   Stretch="Uniform"
+                                   Source="/Assets/amneziaBigLogo.png"/>
+                        </Border>
+
+                        <TextBlock Text="Amnezia"
+                                   Foreground="White" FontSize="36" FontWeight="Light" LineHeight="40"/>
+                        <TextBlock Text="Setup"
+                                   Foreground="White" FontSize="36" FontWeight="SemiBold" LineHeight="40" Margin="0,-4,0,16"/>
+                        <TextBlock Text="Windows-установщик для клиента, сервиса и сетевых компонентов AmneziaVPN."
+                                   Foreground="#C2CDD7" FontSize="13" TextWrapping="Wrap"
+                                   LineHeight="21" Width="246" HorizontalAlignment="Left"/>
+
+                        <Border Margin="0,28,0,0" Padding="10,6"
+                                Background="#162434" CornerRadius="14" HorizontalAlignment="Left">
+                            <TextBlock x:Name="VersionTag" Text="v0.0.0"
+                                       Foreground="#C7D2DD" FontSize="11" FontWeight="SemiBold"/>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Background="Transparent" Height="34"
+                      MouseLeftButtonDown="Caption_MouseLeftButtonDown">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Style="{StaticResource CaptionButton}" Click="Minimize_Click" Content="&#xE921;"/>
+                        <Button Style="{StaticResource CaptionButtonClose}" Click="Close_Click" Content="&#xE8BB;"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="40,8,40,8">
+                    <StackPanel x:Name="ScreenReady" VerticalAlignment="Center">
+                        <TextBlock x:Name="HeaderTitle"
+                                   Text="Готов к установке"
+                                   Foreground="{StaticResource Text}" FontSize="26" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="HeaderSubtitle"
+                                   Text="Будут установлены клиент, Windows-сервис и сетевые компоненты AmneziaVPN. Для выполнения потребуется подтверждение UAC."
+                                   Foreground="{StaticResource TextDim}" FontSize="13"
+                                   TextWrapping="Wrap" LineHeight="20" Margin="0,10,0,28"/>
+
+                        <Border Background="{StaticResource BgPanel2}"
+                                BorderBrush="{StaticResource Stroke}" BorderThickness="1"
+                                CornerRadius="8" Padding="16,14">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Путь установки"
+                                               Foreground="{StaticResource TextDim}" FontSize="12"/>
+                                    <TextBlock Grid.Column="1" x:Name="InstallPathText"
+                                               Foreground="{StaticResource Text}" FontSize="12"
+                                               FontFamily="Consolas" TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Компоненты"
+                                               Foreground="{StaticResource TextDim}" FontSize="12"/>
+                                    <TextBlock Grid.Column="1" x:Name="InfoComponentsText"
+                                               Text="AmneziaVPN.exe, Windows service, split-tunnel driver, протокольные helper-файлы и Qt runtime."
+                                               Foreground="{StaticResource Text}" FontSize="12" TextWrapping="Wrap"/>
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Права"
+                                               Foreground="{StaticResource TextDim}" FontSize="12"/>
+                                    <TextBlock Grid.Column="1" x:Name="InfoRightsText"
+                                               Text="Установка в Program Files, регистрация службы и системных интеграций. Требуются права администратора."
+                                               Foreground="{StaticResource Text}" FontSize="12" TextWrapping="Wrap"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <CheckBox x:Name="ChkStartMenu" Margin="2,18,0,0" Foreground="{StaticResource TextDim}" IsChecked="True">
+                            <TextBlock Text="Создать ярлык в меню Пуск" FontSize="12"/>
+                        </CheckBox>
+                        <CheckBox x:Name="ChkDesktop" Margin="2,8,0,0" Foreground="{StaticResource TextDim}" IsChecked="True">
+                            <TextBlock Text="Создать ярлык на рабочем столе" FontSize="12"/>
+                        </CheckBox>
+                        <CheckBox x:Name="ChkCleanInstall" Margin="2,8,0,0" Foreground="{StaticResource TextDim}" Visibility="Collapsed">
+                            <TextBlock Text="Очистить локальные данные Amnezia перед установкой" FontSize="12"/>
+                        </CheckBox>
+                        <TextBlock x:Name="CleanInstallDescription"
+                                   Margin="24,6,0,0"
+                                   Foreground="#D8A96F"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Visibility="Collapsed"
+                                   Text="Будут удалены локальные настройки, логи и автозапуск текущего пользователя. Файлы установки и сетевой драйвер до копирования не трогаются."/>
+                    </StackPanel>
+
+                    <StackPanel x:Name="ScreenProgress" VerticalAlignment="Center" Visibility="Collapsed">
+                        <TextBlock Text="Выполняем установку..."
+                                   Foreground="{StaticResource Text}" FontSize="26" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="ProgressStatus"
+                                   Text="Подготовка..."
+                                   Foreground="{StaticResource TextDim}" FontSize="13" Margin="0,10,0,28"/>
+                        <ProgressBar x:Name="ProgressBar" Value="0" Maximum="100"/>
+                    </StackPanel>
+
+                    <StackPanel x:Name="ScreenDone" VerticalAlignment="Center" Visibility="Collapsed">
+                        <Grid Width="56" Height="56" HorizontalAlignment="Left" Margin="0,0,0,16">
+                            <Ellipse Fill="{StaticResource Success}" Opacity="0.18"/>
+                            <Path Stretch="Uniform" Width="28" Height="28" Stroke="{StaticResource Success}" StrokeThickness="3"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  Data="M5 12 L10 17 L19 7"/>
+                        </Grid>
+                        <TextBlock x:Name="DoneTitle" Text="Готово"
+                                   Foreground="{StaticResource Text}" FontSize="26" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="DoneSubtitle"
+                                   Text="AmneziaVPN установлен. Сервис и ярлыки зарегистрированы."
+                                   Foreground="{StaticResource TextDim}" FontSize="13"
+                                   TextWrapping="Wrap" LineHeight="20" Margin="0,10,0,0"/>
+                        <CheckBox x:Name="ChkLaunchAfterInstall" Margin="2,18,0,0" Foreground="{StaticResource TextDim}" IsChecked="True">
+                            <TextBlock Text="Запустить AmneziaVPN после закрытия установщика" FontSize="12"/>
+                        </CheckBox>
+                    </StackPanel>
+
+                    <StackPanel x:Name="ScreenError" VerticalAlignment="Center" Visibility="Collapsed">
+                        <Grid Width="56" Height="56" HorizontalAlignment="Left" Margin="0,0,0,16">
+                            <Ellipse Fill="{StaticResource Danger}" Opacity="0.18"/>
+                            <Path Stretch="Uniform" Width="28" Height="28" Stroke="{StaticResource Danger}" StrokeThickness="3"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Data="M6 6 L18 18 M18 6 L6 18"/>
+                        </Grid>
+                        <TextBlock Text="Установка не завершена"
+                                   Foreground="{StaticResource Text}" FontSize="26" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="ErrorMessage" Text=""
+                                   Foreground="{StaticResource TextDim}" FontSize="13"
+                                   TextWrapping="Wrap" LineHeight="20" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Grid>
+
+                <Border Grid.Row="2" Padding="40,18" BorderBrush="{StaticResource Stroke}" BorderThickness="0,1,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button x:Name="BtnSecondary"
+                                Grid.Column="0" HorizontalAlignment="Left"
+                                Style="{StaticResource GhostButton}"
+                                Content="Отмена"
+                                Click="Secondary_Click"/>
+
+                        <Button x:Name="BtnPrimary"
+                                Grid.Column="1" HorizontalAlignment="Right"
+                                Style="{StaticResource PrimaryButton}"
+                                Content="Установить"
+                                MinWidth="170"
+                                Click="Primary_Click"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

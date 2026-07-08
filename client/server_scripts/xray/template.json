@@ -1,0 +1,70 @@
+{
+    "log": {
+        "loglevel": "info"
+    },
+    "inbounds": [
+        {
+            "listen": "127.0.0.1",
+            "port": 10808,
+            "protocol": "socks",
+            "settings": {
+                "udp": true
+            },
+            "sniffing": {
+                "enabled": true,
+                "destOverride": ["http", "tls"],
+                "routeOnly": true
+            }
+        }
+    ],
+    "outbounds": [
+        {
+            "tag": "proxy",
+            "protocol": "vless",
+            "settings": {
+                "vnext": [
+                    {
+                        "address": "$SERVER_IP_ADDRESS",
+                        "port": $XRAY_SERVER_PORT,
+                        "users": [
+                            {
+                                "id": "$XRAY_CLIENT_ID",
+                                "email": "$XRAY_CLIENT_ID",
+                                "flow": "",
+                                "encryption": "none"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "streamSettings": {
+                "network": "kcp",
+                "kcpSettings": {
+                    "mtu": 1350,
+                    "tti": 50,
+                    "uplinkCapacity": 100,
+                    "downlinkCapacity": 100,
+                    "congestion": true,
+                    "readBufferSize": 2,
+                    "writeBufferSize": 2
+                },
+                "finalmask": {
+                    "udp": [
+                        {
+                            "type": "salamander",
+                            "settings": {
+                                "password": "$XRAY_SALAMANDER_PASSWORD",
+                                "packetSize": "512-1200"
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "tag": "direct",
+            "protocol": "freedom",
+            "settings": {}
+        }
+    ]
+}

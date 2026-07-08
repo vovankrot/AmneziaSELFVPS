@@ -1,0 +1,400 @@
+﻿[2026-04-25 08:09:17.591Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54197 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:17.623Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59812 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:17.623Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:53745 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:17.639Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59106 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:17.639Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59354 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:18.007Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51344 accepted tcp:216.58.201.174:443 [proxy]\r\n"
+[2026-04-25 08:09:18.026Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51342 accepted tcp:195.239.29.62:46444 [direct]\r\n"
+[2026-04-25 08:09:18.136Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59351 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:18.136Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59355 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:18.370Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:64493 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:18.570Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:55613 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:18.793Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:55789 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:18.793Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:55790 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.053Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51360 accepted tcp:195.239.29.62:46444 [direct]\r\n"
+[2026-04-25 08:09:19.162Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:63200 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54732 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54731 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:50865 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:63150 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:53965 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58744 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54730 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:52690 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58571 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:53807 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58738 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58045 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58743 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58739 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58734 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58742 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58736 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58740 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58735 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:49243 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58737 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58745 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.163Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58741 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.241Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58746 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.241Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:63834 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.336Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59344 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.598Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54197 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.598Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:64494 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.619Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54686 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.803Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54689 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:19.803Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54690 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:20.081Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51392 accepted tcp:195.239.29.62:46444 [direct]\r\n"
+[2026-04-25 08:09:20.127Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58733 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:20.127Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:50128 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:20.227Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51399 accepted tcp:149.154.167.41:443 [proxy]\r\n"
+[2026-04-25 08:09:20.228Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51401 accepted tcp:149.154.167.50:443 [proxy]\r\n"
+[2026-04-25 08:09:20.228Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51403 accepted tcp:149.154.167.41:80 [proxy]\r\n"
+[2026-04-25 08:09:20.229Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51405 accepted tcp:149.154.167.50:80 [proxy]\r\n"
+[2026-04-25 08:09:20.232Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51412 accepted tcp:149.154.167.41:80 [proxy]\r\n"
+[2026-04-25 08:09:20.232Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51413 accepted tcp:149.154.167.50:80 [proxy]\r\n"
+[2026-04-25 08:09:20.346Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54691 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:20.376Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:64493 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:20.376Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:64497 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:20.577Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:64496 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:20.577Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:55613 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:20.625Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54692 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:20.810Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:55790 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:20.810Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:55789 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:20.888Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59109 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:20.888Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:53460 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:20.903Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59110 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:20.903Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59298 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:21.029Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59111 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:21.029Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:50127 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:21.064Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58598 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:21.107Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51435 accepted tcp:195.239.29.62:46444 [direct]\r\n"
+[2026-04-25 08:09:21.142Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:60994 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:21.143Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51439 accepted tcp:149.154.175.100:443 [proxy]\r\n"
+[2026-04-25 08:09:21.145Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51444 accepted tcp:149.154.175.100:80 [proxy]\r\n"
+[2026-04-25 08:09:21.147Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51447 accepted tcp:149.154.175.100:80 [proxy]\r\n"
+[2026-04-25 08:09:21.152Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51450 accepted tcp:149.154.175.100:443 [proxy]\r\n"
+[2026-04-25 08:09:21.153Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:60748 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:21.153Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59352 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:21.155Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51454 accepted tcp:149.154.175.100:80 [proxy]\r\n"
+[2026-04-25 08:09:21.158Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51457 accepted tcp:149.154.175.100:80 [proxy]\r\n"
+[2026-04-25 08:09:21.164Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51460 accepted tcp:149.154.175.100:443 [proxy]\r\n"
+[2026-04-25 08:09:21.165Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51462 accepted tcp:149.154.175.100:80 [proxy]\r\n"
+[2026-04-25 08:09:21.168Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51466 accepted tcp:149.154.175.100:80 [proxy]\r\n"
+[2026-04-25 08:09:21.175Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51469 accepted tcp:149.154.175.100:443 [proxy]\r\n"
+[2026-04-25 08:09:21.176Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51471 accepted tcp:149.154.175.100:80 [proxy]\r\n"
+[2026-04-25 08:09:21.178Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51475 accepted tcp:149.154.175.100:80 [proxy]\r\n"
+[2026-04-25 08:09:21.355Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59642 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:21.355Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59353 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:21.355Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59344 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:21.634Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54686 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:21.648Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59106 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:21.649Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59354 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:21.948Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51486 accepted tcp:162.159.61.4:443 [proxy]\r\n"
+[2026-04-25 08:09:22.068Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:60995 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:22.128Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51491 accepted tcp:195.239.29.62:46444 [direct]\r\n"
+[2026-04-25 08:09:22.143Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59351 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:22.143Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59355 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:22.144Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:60996 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:22.179Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51499 accepted tcp:149.154.175.100:443 [proxy]\r\n"
+[2026-04-25 08:09:22.181Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51502 accepted tcp:149.154.175.100:80 [proxy]\r\n"
+[2026-04-25 08:09:22.184Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51505 accepted tcp:149.154.175.100:80 [proxy]\r\n"
+[2026-04-25 08:09:22.754Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54614 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:22.814Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:55790 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:22.814Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54690 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:22.814Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:55789 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:22.814Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54689 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:23.079Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:58598 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:23.110Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54636 accepted udp:1.0.0.1:27036 [proxy]\r\n"
+[2026-04-25 08:09:23.141Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51518 accepted tcp:195.239.29.62:46444 [direct]\r\n"
+[2026-04-25 08:09:23.158Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:60994 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:23.318Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51524 accepted tcp:91.105.192.100:443 [proxy]\r\n"
+[2026-04-25 08:09:23.319Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51527 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.321Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51530 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.360Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:59344 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:23.360Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54691 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:23.363Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51534 accepted tcp:91.105.192.100:443 [proxy]\r\n"
+[2026-04-25 08:09:23.364Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51537 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.367Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51540 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.564Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:60629 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:23.586Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51547 accepted tcp:91.105.192.100:443 [proxy]\r\n"
+[2026-04-25 08:09:23.587Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51548 accepted tcp:91.105.192.100:443 [proxy]\r\n"
+[2026-04-25 08:09:23.588Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51550 accepted tcp:91.105.192.100:443 [proxy]\r\n"
+[2026-04-25 08:09:23.589Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51552 accepted tcp:91.105.192.100:443 [proxy]\r\n"
+[2026-04-25 08:09:23.589Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51554 accepted tcp:91.105.192.100:443 [proxy]\r\n"
+[2026-04-25 08:09:23.595Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51561 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.597Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51563 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.598Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51565 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.599Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51567 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.601Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51570 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.607Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:64494 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:23.607Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54197 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:23.610Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51582 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.612Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51586 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.613Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51588 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.614Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51591 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.615Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51593 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.619Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51575 accepted tcp:149.154.167.41:443 [proxy]\r\n"
+[2026-04-25 08:09:23.620Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51578 accepted tcp:149.154.167.50:443 [proxy]\r\n"
+[2026-04-25 08:09:23.622Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51580 accepted tcp:91.105.192.100:443 [proxy]\r\n"
+[2026-04-25 08:09:23.623Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51584 accepted tcp:149.154.167.222:443 [proxy]\r\n"
+[2026-04-25 08:09:23.629Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51604 accepted tcp:149.154.167.41:80 [proxy]\r\n"
+[2026-04-25 08:09:23.629Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51606 accepted tcp:149.154.167.50:80 [proxy]\r\n"
+[2026-04-25 08:09:23.630Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51608 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.631Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51610 accepted tcp:149.154.167.222:80 [proxy]\r\n"
+[2026-04-25 08:09:23.636Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51617 accepted tcp:149.154.167.41:80 [proxy]\r\n"
+[2026-04-25 08:09:23.637Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51618 accepted tcp:149.154.167.50:80 [proxy]\r\n"
+[2026-04-25 08:09:23.638Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54692 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:23.638Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:54686 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:23.638Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51620 accepted tcp:91.105.192.100:80 [proxy]\r\n"
+[2026-04-25 08:09:23.639Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51622 accepted tcp:149.154.167.222:80 [proxy]\r\n"
+[2026-04-25 08:09:23.645Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51630 accepted tcp:149.154.167.222:443 [proxy]\r\n"
+[2026-04-25 08:09:23.648Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51633 accepted tcp:149.154.167.222:80 [proxy]\r\n"
+[2026-04-25 08:09:23.650Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51636 accepted tcp:149.154.167.222:80 [proxy]\r\n"
+[2026-04-25 08:09:23.763Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:50037 accepted udp:1.0.0.1:53 [proxy]\r\n"
+[2026-04-25 08:09:24.104Z] [DEBUG] Amnezia WindowsFirewall : Firewall Disabled!
+[2026-04-25 08:09:24.105Z] [DEBUG] Amnezia  : RouterWin::StartRoutingIpv6
+[2026-04-25 08:09:24.354Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51642 accepted tcp:195.239.29.62:46444 [direct]\r\n"
+[2026-04-25 08:09:24.354Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51646 accepted tcp:149.154.175.100:443 [proxy]\r\n"
+[2026-04-25 08:09:24.354Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51649 accepted tcp:149.154.175.100:80 [proxy]\r\n"
+[2026-04-25 08:09:24.354Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51652 accepted tcp:149.154.175.100:80 [proxy]\r\n"
+[2026-04-25 08:09:24.354Z] [DEBUG] Amnezia  : [xray] "from udp:127.0.0.1:60357 accepted udp:1.1.1.1:53 [proxy]\r\n"
+[2026-04-25 08:09:24.354Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51658 accepted tcp:82.202.184.162:443 [proxy]\r\n"
+[2026-04-25 08:09:24.354Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51661 accepted tcp:185.201.1.120:443 [proxy]\r\n"
+[2026-04-25 08:09:24.354Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51664 accepted tcp:185.201.1.96:443 [proxy]\r\n"
+[2026-04-25 08:09:24.354Z] [DEBUG] Amnezia  : [xray] "from tcp:127.0.0.1:51667 accepted tcp:185.201.1.106:443 [proxy]\r\n"
+[2026-04-25 08:09:24.355Z] [DEBUG] Amnezia  : Xray::stopXray()
+[2026-04-25 08:09:24.417Z] [DEBUG] Amnezia  : IpcServerProcess errorOccurred  QProcess::Crashed
+[2026-04-25 08:09:24.459Z] [DEBUG] Amnezia  : RouterWin::clearSavedRoutes forward rows size: 13
+[2026-04-25 08:09:24.460Z] [DEBUG] Amnezia  : Router::clearSavedRoutes : Could not delete old row "0.0.0.0"
+[2026-04-25 08:09:24.460Z] [DEBUG] Amnezia  : Router::clearSavedRoutes : Could not delete old row "1.0.0.0"
+[2026-04-25 08:09:24.460Z] [DEBUG] Amnezia  : Router::clearSavedRoutes : Could not delete old row "1.0.0.1"
+[2026-04-25 08:09:24.460Z] [DEBUG] Amnezia  : Router::clearSavedRoutes : Could not delete old row "1.1.1.1"
+[2026-04-25 08:09:24.460Z] [DEBUG] Amnezia  : Router::clearSavedRoutes : Could not delete old row "128.0.0.0"
+[2026-04-25 08:09:24.460Z] [DEBUG] Amnezia  : Router::clearSavedRoutes : Could not delete old row "128.0.0.0"
+[2026-04-25 08:09:24.460Z] [DEBUG] Amnezia  : Router::clearSavedRoutes : Could not delete old row "16.0.0.0"
+[2026-04-25 08:09:24.460Z] [DEBUG] Amnezia  : Router::clearSavedRoutes : Could not delete old row "185.121.232.104"
+[2026-04-25 08:09:24.460Z] [DEBUG] Amnezia  : Router::clearSavedRoutes : Could not delete old row "2.0.0.0"
+[2026-04-25 08:09:24.460Z] [DEBUG] Amnezia  : Router::clearSavedRoutes : Could not delete old row "32.0.0.0"
+[2026-04-25 08:09:24.460Z] [DEBUG] Amnezia  : Router::clearSavedRoutes : Could not delete old row "4.0.0.0"
+[2026-04-25 08:09:24.460Z] [DEBUG] Amnezia  : Router::clearSavedRoutes : Could not delete old row "64.0.0.0"
+[2026-04-25 08:09:24.460Z] [DEBUG] Amnezia  : Router::clearSavedRoutes : Could not delete old row "8.0.0.0"
+[2026-04-25 08:09:24.460Z] [DEBUG] Amnezia  : Router::clearSavedRoutes : removed routes: 0 of 13
+[2026-04-25 08:09:24.461Z] [DEBUG] Amnezia WindowsFirewall : Firewall Disabled!
+[2026-04-25 08:09:24.461Z] [DEBUG] Amnezia  : RouterWin::StartRoutingIpv6
+[2026-04-25 08:09:24.468Z] [DEBUG] Amnezia  : Xray::stopXray()
+[2026-04-25 08:09:24.468Z] [DEBUG] Amnezia  : [xray] failed to stop:  core: failed to close all features > core: app/proxyman/inbound: failed to close all handlers > app/proxyman/inbound: app/proxyman/inbound: failed to close all resources > multierr: app/proxyman/inbound: failed to close all resources > app/proxyman/inbound: close tcp 127.0.0.1:10808: use of closed network connection |
+[2026-04-25 08:09:29.327Z] [DEBUG] Amnezia DaemonLocalServer : New connection received
+[2026-04-25 08:09:29.327Z] [DEBUG] Amnezia DaemonLocalServerConnection : Connection created
+[2026-04-25 08:09:29.327Z] [DEBUG] Amnezia DaemonLocalServerConnection : Read Data
+[2026-04-25 08:09:29.327Z] [DEBUG] Amnezia DaemonLocalServerConnection : Command received: status
+[2026-04-25 08:09:29.327Z] [DEBUG] Amnezia Daemon : Status request
+[2026-04-25 08:09:29.327Z] [DEBUG] Amnezia DaemonLocalServerConnection : Command received: activate
+[2026-04-25 08:09:29.327Z] [DEBUG] Amnezia Daemon : Activating interface
+[2026-04-25 08:09:29.327Z] [DEBUG] Amnezia  : Getting Current Internet Adapter that routes to "185.121.232.104"
+[2026-04-25 08:09:29.332Z] [DEBUG] Amnezia  : Internet Adapter: "ethernet_32774"
+[2026-04-25 08:09:29.333Z] [DEBUG] Amnezia WindowsTunnelService : Starting the tunnel service
+[2026-04-25 08:09:29.334Z] [DEBUG] Amnezia WindowsTunnelService : Service: C:/Program Files/AmneziaVPN/AmneziaVPN-service.exe
+[2026-04-25 08:09:29.460Z] [WARNING] Amnezia WindowsTunnelService : The service is not in the right status yet.
+[2026-04-25 08:09:29.583Z] [DEBUG] Amnezia tunnel.dll : Opening tunnel log file C:/Program Files/AmneziaWG/Data/log.bin
+[2026-04-25 08:09:29.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Starting WireGuard/0.3.15 (Windows 10.0.26200; amd64)
+[2026-04-25 08:09:29.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Watching network interfaces
+[2026-04-25 08:09:29.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Resolving DNS names
+[2026-04-25 08:09:29.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Creating Wintun interface
+[2026-04-25 08:09:29.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Using existing driver 0.14
+[2026-04-25 08:09:29.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Creating adapter
+[2026-04-25 08:09:29.826Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Using Wintun/0.14
+[2026-04-25 08:09:29.826Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Enabling firewall rules
+[2026-04-25 08:09:29.826Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Dropping privileges
+[2026-04-25 08:09:29.826Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Creating interface instance
+[2026-04-25 08:09:29.826Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Setting interface configuration
+[2026-04-25 08:09:29.826Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 8 - started
+[2026-04-25 08:09:29.826Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 1 - started
+[2026-04-25 08:09:29.826Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 1 - started
+[2026-04-25 08:09:29.826Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 1 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 2 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 2 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 2 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 3 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 3 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 3 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 4 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 4 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 4 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 5 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 5 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 5 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 6 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 6 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 6 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 7 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 7 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 7 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 8 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 12 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 8 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 9 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 9 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 9 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 10 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 10 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 10 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 11 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 11 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 11 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 12 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 12 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 15 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 13 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 13 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 13 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 14 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 14 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 14 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: encryption worker 16 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 15 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 15 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: handshake worker 16 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: decryption worker 16 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: TUN reader - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] UAPI: Updating private key
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] UAPI: Updating junk count
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] UAPI: Updating junk min
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] UAPI: Updating junk max
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] UAPI: Updating s1 padding
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] UAPI: Updating s2 padding
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] UAPI: Updating s3 padding
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] UAPI: Updating s4 padding
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Bringing peers up
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: event worker - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] UDP bind has been updated
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Interface state was Down, requested Up, now Up
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Setting device v6 addresses
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Setting device v4 addresses
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Listening for UAPI requests
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Startup complete
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: receive incoming v4 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] MTU updated: 1376
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Routine: receive incoming v6 - started
+[2026-04-25 08:09:29.827Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] Removed orphaned adapter "tun2"
+[2026-04-25 08:09:30.476Z] [DEBUG] Amnezia WindowsTunnelService : The tunnel service is up and running
+[2026-04-25 08:09:30.476Z] [DEBUG] Amnezia WindowsRouteMonitor : WindowsRouteMonitor created.
+[2026-04-25 08:09:30.476Z] [DEBUG] Amnezia WindowsFirewall : Firewall Disabled!
+[2026-04-25 08:09:30.476Z] [INFO] Amnezia WindowsFirewall : Enabling Killswitch Using Adapter: 52
+[2026-04-25 08:09:30.476Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow usage of VPN Adapter : Allow out traffic on Adapter 52
+[2026-04-25 08:09:30.476Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow usage of VPN Adapter : Allow in traffic on Adapter 52
+[2026-04-25 08:09:30.476Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow usage of VPN Adapter : Allow out traffic on Adapter 52
+[2026-04-25 08:09:30.477Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow usage of VPN Adapter : Allow in traffic on Adapter 52
+[2026-04-25 08:09:30.477Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow DHCP Traffic : Allow Outbound DHCP
+[2026-04-25 08:09:30.477Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow DHCP Traffic : Allow inbound DHCP
+[2026-04-25 08:09:30.477Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow DHCP Traffic : Allow outbound DHCPv6
+[2026-04-25 08:09:30.477Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow DHCP Traffic : Allow inbound DHCPv6
+[2026-04-25 08:09:30.478Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow Hyper-V Traffic : Permit Hyper-V => Hyper-V outbound
+[2026-04-25 08:09:30.478Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow Hyper-V Traffic : Permit Hyper-V => Hyper-V inbound
+[2026-04-25 08:09:30.479Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow all for AmneziaVPN.exe : Permit (out) IPv4 Traffic of: AmneziaVPN-service
+[2026-04-25 08:09:30.479Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow all for AmneziaVPN.exe : Permit (in) IPv4 Traffic of: AmneziaVPN-service
+[2026-04-25 08:09:30.479Z] [INFO] Amnezia WindowsFirewall : Filter added:  Block all DNS : Block outgoing v6 on Port 53
+[2026-04-25 08:09:30.479Z] [INFO] Amnezia WindowsFirewall : Filter added:  Block all DNS : Block outgoing v4 on Port 53
+[2026-04-25 08:09:30.479Z] [INFO] Amnezia WindowsFirewall : Filter added:  Block all DNS : Block incoming v4 on Port 53
+[2026-04-25 08:09:30.480Z] [INFO] Amnezia WindowsFirewall : Filter added:  Block all DNS : Block incoming v6 on Port 53
+[2026-04-25 08:09:30.487Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow Loopback traffic on device loopback_0 : Allow out traffic on Adapter 1
+[2026-04-25 08:09:30.487Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow Loopback traffic on device loopback_0 : Allow in traffic on Adapter 1
+[2026-04-25 08:09:30.487Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow Loopback traffic on device loopback_0 : Allow out traffic on Adapter 1
+[2026-04-25 08:09:30.487Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow Loopback traffic on device loopback_0 : Allow in traffic on Adapter 1
+[2026-04-25 08:09:30.487Z] [DEBUG] Amnezia WindowsFirewall : Killswitch on! Rules: 20
+[2026-04-25 08:09:30.487Z] [DEBUG] Amnezia WireguardUtilsWindows : Registration completed
+[2026-04-25 08:09:30.487Z] [DEBUG] Amnezia WindowsRouteMonitor : Adding exclusion route for 185.121.232.104/32
+[2026-04-25 08:09:30.488Z] [DEBUG] Amnezia WindowsRouteMonitor : Interface 1 is valid for IPv4 routing
+[2026-04-25 08:09:30.488Z] [DEBUG] Amnezia WindowsRouteMonitor : Interface 2 is valid for IPv4 routing
+[2026-04-25 08:09:30.488Z] [INFO] Amnezia WindowsFirewall : Enabling traffic for peer O9NkdnS6FIifF1lsOr90mSMQpBUpPBrUid2EDq5PBFI=
+[2026-04-25 08:09:30.488Z] [INFO] Amnezia WindowsFirewall : Filter added:  Block Internet : Block traffic to 0.0.0.0/0
+[2026-04-25 08:09:30.488Z] [INFO] Amnezia WindowsFirewall : Filter added:  Block Internet : Block traffic from 0.0.0.0/0
+[2026-04-25 08:09:30.488Z] [INFO] Amnezia WindowsFirewall : Filter added:  Block Internet : Block traffic to ::/0
+[2026-04-25 08:09:30.488Z] [INFO] Amnezia WindowsFirewall : Filter added:  Block Internet : Block traffic from ::/0
+[2026-04-25 08:09:30.488Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow DNS-Server : Permit traffic to 1.1.1.1 on port 53
+[2026-04-25 08:09:30.488Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow DNS-Server : Permit traffic from 1.1.1.1 on port 53
+[2026-04-25 08:09:30.488Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow DNS-Server : Permit traffic to 1.0.0.1 on port 53
+[2026-04-25 08:09:30.488Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow DNS-Server : Permit traffic from 1.0.0.1 on port 53
+[2026-04-25 08:09:30.488Z] [DEBUG] Amnezia WindowsFirewall : excludedAddresses range:  185.121.232.104
+[2026-04-25 08:09:30.488Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow Ecxlude route : Permit traffic to 185.121.232.104/32
+[2026-04-25 08:09:30.490Z] [INFO] Amnezia WindowsFirewall : Filter added:  Allow Ecxlude route : Permit traffic from 185.121.232.104/32
+[2026-04-25 08:09:30.490Z] [DEBUG] Amnezia WireguardUtilsWindows : Configuring peer 3bd3647674ba14889f17596c3abf74992310a415293c1ad489dd840eae4f0452 via 185.121.232.104
+[2026-04-25 08:09:30.490Z] [DEBUG] Amnezia WindowsRouteMonitor : Adding exclusion route for 185.121.232.104/32
+[2026-04-25 08:09:30.490Z] [WARNING] Amnezia WindowsRouteMonitor : Exclusion route already exists
+[2026-04-25 08:09:30.492Z] [DEBUG] Amnezia WireguardUtilsWindows : DATA: errno=0
+[2026-04-25 08:09:30.493Z] [DEBUG] Amnezia DnsUtilsWindows : Configuring DNS for AmneziaVPN
+[2026-04-25 08:09:30.494Z] [DEBUG] Amnezia WindowsSplitTunnel : Starting SplitTunnel
+[2026-04-25 08:09:30.495Z] [DEBUG] Amnezia WindowsSplitTunnel : Driver is  ready || new State: STATE_RUNNING
+[2026-04-25 08:09:30.531Z] [DEBUG] Amnezia WindowsSplitTunnel : Getting adapter info for: AmneziaVPN
+[2026-04-25 08:09:30.537Z] [DEBUG] Amnezia WindowsSplitTunnel : Getting adapter info for: Ethernet 2
+[2026-04-25 08:09:30.538Z] [DEBUG] Amnezia WindowsSplitTunnel : Ipv6 Conversation error 0
+[2026-04-25 08:09:30.539Z] [DEBUG] Amnezia WindowsSplitTunnel : New Network Config Applied || new State: STATE_RUNNING
+[2026-04-25 08:09:30.539Z] [DEBUG] Amnezia WindowsSplitTunnel : Pushing new Ruleset for Split-Tunnel  4
+[2026-04-25 08:09:30.539Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume8\Users\vova\AppData\Local\MicroSIP\MicroSIP.exe
+[2026-04-25 08:09:30.540Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume8\Program Files (x86)\Devolutions\Remote Desktop Manager\RemoteDesktopManager64.exe
+[2026-04-25 08:09:30.540Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume8\Program Files (x86)\Devolutions\Remote Desktop Manager\RemoteDesktopManager.exe
+[2026-04-25 08:09:30.540Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume8\Program Files (x86)\Devolutions\Remote Desktop Manager\RDMAgent.exe
+[2026-04-25 08:09:30.541Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume8\Program Files (x86)\Devolutions\Remote Desktop Manager\Embedded32.exe
+[2026-04-25 08:09:30.541Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume8\Program Files (x86)\Devolutions\Remote Desktop Manager\Applications\ffmpeg.exe
+[2026-04-25 08:09:30.541Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume8\Program Files (x86)\Devolutions\Remote Desktop Manager\Applications\SendCtrlC.exe
+[2026-04-25 08:09:30.541Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume8\Program Files (x86)\Devolutions\Remote Desktop Manager\Applications\XulRunner\plugin-container.exe
+[2026-04-25 08:09:30.543Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume8\Users\vova\Downloads\LoadingBay_MarvelRivals_setup.exe
+[2026-04-25 08:09:30.543Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume8\Program Files\TsdBridge\TsdBridge.exe
+[2026-04-25 08:09:30.543Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume5\SteamLibrary\steamapps\common\Phasmophobia\Phasmophobia.exe
+[2026-04-25 08:09:30.543Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume5\SteamLibrary\steamapps\common\Phasmophobia\UnityCrashHandler64.exe
+[2026-04-25 08:09:30.543Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\1.5.24.4\aria2c.exe
+[2026-04-25 08:09:30.543Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\1.5.24.4\diagnosis\dx\DXSETUP.exe
+[2026-04-25 08:09:30.543Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\1.5.24.4\diagnosis\dx11\DXSETUP.exe
+[2026-04-25 08:09:30.544Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\1.5.24.4\diagnosis\VC_redist.x64.exe
+[2026-04-25 08:09:30.544Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\1.5.24.4\downloadIPC.exe
+[2026-04-25 08:09:30.544Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\1.5.24.4\LoadingBayDiagnosis.exe
+[2026-04-25 08:09:30.544Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\1.5.24.4\LoadingBayInstaller.exe
+[2026-04-25 08:09:30.544Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\1.5.24.4\LoadingBayService.exe
+[2026-04-25 08:09:30.544Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\1.5.24.4\LoadingBayUpdate.exe
+[2026-04-25 08:09:30.544Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\1.5.24.4\LoadingBayWeb.exe
+[2026-04-25 08:09:30.544Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\1.5.24.4\sqlite3.exe
+[2026-04-25 08:09:30.544Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\1.5.24.4\UniCrashReporter.exe
+[2026-04-25 08:09:30.544Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\LoadingBayLauncher.exe
+[2026-04-25 08:09:30.544Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\LoadingBayRepair.exe
+[2026-04-25 08:09:30.544Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\UniCrashReporter.exe
+[2026-04-25 08:09:30.544Z] [DEBUG] Amnezia WindowsSplitTunnel : \Device\HarddiskVolume2\SteamLibrary\steamapps\common\MarvelRivals\LoadingBay\unins000.exe
+[2026-04-25 08:09:30.545Z] [DEBUG] Amnezia WindowsSplitTunnel : New Configuration applied:  STATE_RUNNING
+[2026-04-25 08:09:30.546Z] [DEBUG] Amnezia Daemon : Connection status: 1
+[2026-04-25 08:09:30.546Z] [DEBUG] Amnezia WindowsRouteMonitor : Routes changed
+[2026-04-25 08:09:30.547Z] [DEBUG] Amnezia WindowsRouteMonitor : Interface 1 is valid for IPv4 routing
+[2026-04-25 08:09:30.547Z] [DEBUG] Amnezia WindowsRouteMonitor : Interface 2 is valid for IPv4 routing
+[2026-04-25 08:09:30.547Z] [DEBUG] Amnezia WindowsRouteMonitor : Interface 1 is valid for IPv6 routing
+[2026-04-25 08:09:30.547Z] [DEBUG] Amnezia WindowsRouteMonitor : Interface 15 is valid for IPv6 routing
+[2026-04-25 08:09:30.547Z] [DEBUG] Amnezia WindowsRouteMonitor : Interface 2 is valid for IPv6 routing
+[2026-04-25 08:09:30.547Z] [DEBUG] Amnezia WindowsRouteMonitor : Capturing route to 10.196.131.0/24
+[2026-04-25 08:09:30.547Z] [DEBUG] Amnezia WindowsRouteMonitor : Capturing route to 10.196.131.168/32
+[2026-04-25 08:09:30.547Z] [DEBUG] Amnezia WindowsRouteMonitor : Capturing route to 10.196.131.255/32
+[2026-04-25 08:09:30.547Z] [ERROR] Amnezia WindowsRouteMonitor : Failed to update route: 5010
+[2026-04-25 08:09:30.547Z] [DEBUG] Amnezia WindowsRouteMonitor : Capturing route to 192.168.0.0/24
+[2026-04-25 08:09:30.547Z] [DEBUG] Amnezia WindowsRouteMonitor : Capturing route to 192.168.0.2/32
+[2026-04-25 08:09:30.547Z] [DEBUG] Amnezia WindowsRouteMonitor : Capturing route to 192.168.0.255/32
+[2026-04-25 08:09:30.547Z] [ERROR] Amnezia WindowsRouteMonitor : Failed to update route: 5010
+[2026-04-25 08:09:30.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - UAPI: Created
+[2026-04-25 08:09:30.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - UAPI: Updating preshared key
+[2026-04-25 08:09:30.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - UAPI: Updating endpoint
+[2026-04-25 08:09:30.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - UAPI: Removing all allowedips
+[2026-04-25 08:09:30.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - UAPI: Updating persistent keepalive interval
+[2026-04-25 08:09:30.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - UAPI: Adding allowedip
+[2026-04-25 08:09:30.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - UAPI: Adding allowedip
+[2026-04-25 08:09:30.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - Starting
+[2026-04-25 08:09:30.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - Sending keepalive packet
+[2026-04-25 08:09:30.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - Sending handshake initiation
+[2026-04-25 08:09:30.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - Routine: sequential sender - started
+[2026-04-25 08:09:30.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - Routine: sequential receiver - started
+[2026-04-25 08:09:30.584Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - Received handshake response
+[2026-04-25 08:09:30.802Z] [DEBUG] Amnezia Daemon : Checking for handshake...
+[2026-04-25 08:09:30.803Z] [DEBUG] Amnezia Daemon : awaiting O9NkdnS6FIifF1lsOr90mSMQpBUpPBrUid2EDq5PBFI=
+[2026-04-25 08:09:30.803Z] [DEBUG] Amnezia DaemonLocalServerConnection : Read Data
+[2026-04-25 08:09:30.803Z] [DEBUG] Amnezia DaemonLocalServerConnection : Command received: status
+[2026-04-25 08:09:30.803Z] [DEBUG] Amnezia Daemon : Status request
+[2026-04-25 08:11:30.880Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - Sending handshake initiation
+[2026-04-25 08:11:30.880Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - Received handshake response
+[2026-04-25 08:11:30.880Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - Sending keepalive packet
+[2026-04-25 08:13:31.237Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - Sending handshake initiation
+[2026-04-25 08:13:31.237Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - Received handshake response
+[2026-04-25 08:13:31.237Z] [INFO] Amnezia tunnel.dll : [TUN] [AmneziaVPN] peer(O9NkвЂ¦PBFI) - Sending keepalive packet

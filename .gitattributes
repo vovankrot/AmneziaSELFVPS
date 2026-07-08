@@ -1,0 +1,14 @@
+deploy/data/windows/x64/tap/windows_7/OemVista.inf eol=crlf
+deploy/data/windows/x64/tap/windows_10/OemVista.inf eol=crlf
+deploy/data/windows/x32/tap/windows_7/OemVista.inf eol=crlf
+deploy/data/windows/x32/tap/windows_10/OemVista.inf eol=crlf
+client/3rd/* linguist-vendored
+client/android/gradlew.bat eol=crlf
+client/server_scripts/*.sh text eol=lf
+client/server_scripts/*/*.sh text eol=lf
+client/server_scripts/*/Dockerfile text eol=lf
+client/server_scripts/*/*.json text eol=lf
+client/server_scripts/*/*.conf text eol=lf
+client/server_scripts/*/*.ovpn text eol=lf
+client/server_scripts/*/*.plist text eol=lf
+client/server_scripts/*/*.profile text eol=lf
