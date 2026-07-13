@@ -75,6 +75,9 @@ private:
     DockerContainer m_container = DockerContainer::None;
     QJsonObject m_routeMode;
     QString m_remoteAddress;
+    // Protocol we already warned about ("site split works only with XRay") —
+    // the toast fires once per protocol, not on every connect/reconnect.
+    QString m_lastSiteSplitWarnedProtocol;
 
     // Only for iOS for now, check counters
     QTimer m_checkTimer;

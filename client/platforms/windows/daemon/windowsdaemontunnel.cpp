@@ -7,6 +7,7 @@
 #include <Windows.h>
 
 #include <QCoreApplication>
+#include <QScopedPointer>
 
 //#include "commandlineparser.h"
 #include "constants.h"
@@ -32,9 +33,16 @@ int WindowsDaemonTunnel::run(QStringList& tokens) {
 
   logger.debug() << "Tunnel daemon service is starting";
 
-  static int argc = 0;
-  static char* argv[] = {nullptr};
-  QCoreApplication app(argc, argv);
+  // The caller (runApplication / SystemService) may already own a
+  // QCoreApplication. Creating a second one is undefined behaviour and used to
+  // leave the global qApp pointer dangling after this scope. Only create our
+  // own instance when none exists yet.
+  QScopedPointer<QCoreApplication> app;
+  if (QCoreApplication::instance() == nullptr) {
+    static int argc = 0;
+    static char* argv[] = {nullptr};
+    app.reset(new QCoreApplication(argc, argv));
+  }
 
   QCoreApplication::setApplicationName("Amnezia VPN Tunnel");
   QCoreApplication::setApplicationVersion(Constants::versionString());

@@ -613,9 +613,20 @@ PageType {
                         spacing: 2
                         Text { text: qsTr("Obfuscation"); color: AmneziaStyle.color.mutedGray; font.family: "Inter"; font.pixelSize: 11 }
                         Text {
-                            text: ConnectionController.isConnected ? qsTr("Enabled") : qsTr("Off")
-                            color: ConnectionController.isConnected ? AmneziaStyle.color.vibrantGreen : AmneziaStyle.color.mutedGray
+                            // Honest label: the real masking of the active protocol
+                            // (Salamander / Reality / AmneziaWG-junk), or "None" when
+                            // the protocol does not obfuscate at all. Re-evaluates when
+                            // the default container changes.
+                            property string obfName: (ServersModel.defaultServerDefaultContainerName,
+                                                      ServersModel.defaultServerObfuscationName)
+                            text: obfName !== "" ? obfName : qsTr("None")
+                            color: obfName === ""
+                                   ? AmneziaStyle.color.vibrantRed
+                                   : (ConnectionController.isConnected
+                                      ? AmneziaStyle.color.vibrantGreen
+                                      : AmneziaStyle.color.mutedGray)
                             font.family: "Inter"; font.pixelSize: 14; font.weight: 600
+                            elide: Text.ElideRight; Layout.fillWidth: true
                         }
                     }
                 }

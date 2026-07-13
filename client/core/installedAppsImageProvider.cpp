@@ -2,11 +2,11 @@
 
 #include "platforms/android/android_controller.h"
 
-InstalledAppsImageProvider::InstalledAppsImageProvider() : QQuickImageProvider(QQuickImageProvider::Pixmap)
+InstalledAppsImageProvider::InstalledAppsImageProvider() : QQuickImageProvider(QQuickImageProvider::Image)
 {
 }
 
-QPixmap InstalledAppsImageProvider::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize)
+QImage InstalledAppsImageProvider::requestImage(const QString &id, QSize *size, const QSize &requestedSize)
 {
     return AndroidController::instance()->getAppIcon(id, size, requestedSize);
 }

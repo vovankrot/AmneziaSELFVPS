@@ -29,6 +29,7 @@ public slots:
     void addAppsFromFolder(const QString &folderPath);
     void launchTargetBypassingVpn(const QString &targetPath);
     void removeApp(const int index);
+    void removeGroup(const QString &groupFolder);
 
 signals:
     void errorOccurred(const QString &errorMessage);

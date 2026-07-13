@@ -2,6 +2,7 @@
 #define ANDROID_CONTROLLER_H
 
 #include <QJniObject>
+#include <QImage>
 #include <QPixmap>
 
 #include "protocols/vpnprotocol.h"
@@ -50,7 +51,10 @@ public:
     void setNavigationBarColor(unsigned int color);
     void minimizeApp();
     QJsonArray getAppList();
-    QPixmap getAppIcon(const QString &package, QSize *size, const QSize &requestedSize);
+    // Returns a QImage (not QPixmap) so the icon can be decoded on the QML image
+    // reader thread — QPixmap may only be created on the GUI thread, which would force
+    // synchronous UI-thread loading and freeze the app-split picker.
+    QImage getAppIcon(const QString &package, QSize *size, const QSize &requestedSize);
     bool isNotificationPermissionGranted();
     void requestNotificationPermission();
     bool requestAuthentication();

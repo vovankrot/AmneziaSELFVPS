@@ -23,6 +23,7 @@ namespace amnezia
         QString appName;
         QString packageName;
         QString appPath;
+        QString groupFolder; // source folder when added via "Add folder"; empty for individually-added apps
 
         bool operator==(const InstalledAppInfo& other) const {
             if (!packageName.isEmpty()) {

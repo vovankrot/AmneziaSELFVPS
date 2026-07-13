@@ -74,8 +74,14 @@ SystemService::SystemService(int argc, char **argv)
         }
 
         if (!tokens.empty() && tokens[0] == "tunneldaemon") {
-            WindowsDaemonTunnel *daemon = new WindowsDaemonTunnel();
-            daemon->run(tokens);
+            // Same guard as in main.cpp: a tunneldaemon process must terminate
+            // right after the tunnel stops. Falling through here would let it
+            // continue as a regular service instance (second daemon) — see the
+            // comment in main.cpp runApplication().
+            WindowsDaemonTunnel daemon;
+            const int exitCode = daemon.run(tokens);
+            Logger::flush();
+            ::ExitProcess(static_cast<UINT>(exitCode));
         }
 
     }

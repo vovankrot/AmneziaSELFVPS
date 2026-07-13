@@ -1,8 +1,8 @@
 #include "appSplitTunnelingModel.h"
 
 #include <QDir>
-#include <QProcessEnvironment>
 #include <QFileInfo>
+#include <QSet>
 
 #include <algorithm>
 
@@ -91,77 +91,6 @@ QVector<amnezia::InstalledAppInfo> sanitizeStoredSplitTunnelApps(const QVector<a
     return sanitizedApps;
 }
 
-#ifdef Q_OS_WIN
-QStringList windowsAppInstallRoots()
-{
-    QStringList roots;
-    const QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
-
-    const auto appendRoot = [&roots, &environment](const QString &variableName) {
-        const QString rawPath = environment.value(variableName).trimmed();
-        if (rawPath.isEmpty()) {
-            return;
-        }
-
-        roots.append(normalizeStoredAppPath(rawPath));
-    };
-
-    appendRoot(QStringLiteral("LOCALAPPDATA"));
-    appendRoot(QStringLiteral("APPDATA"));
-    appendRoot(QStringLiteral("ProgramFiles"));
-    appendRoot(QStringLiteral("ProgramFiles(x86)"));
-
-    roots.removeAll(QString());
-    roots.removeDuplicates();
-    return roots;
-}
-
-QString windowsAppFamilyScope(const QString &appPath)
-{
-    const QString normalizedPath = normalizeStoredAppPath(appPath);
-    if (normalizedPath.isEmpty()) {
-        return QString();
-    }
-
-    for (const auto &rootPath : windowsAppInstallRoots()) {
-        const QString scopedPrefix = rootPath + QStringLiteral("/");
-        if (!normalizedPath.startsWith(scopedPrefix, Qt::CaseInsensitive)) {
-            continue;
-        }
-
-        const QString relativePath = normalizedPath.mid(scopedPrefix.size());
-        const QString familyName = relativePath.section('/', 0, 0).trimmed();
-        if (familyName.isEmpty()) {
-            return QString();
-        }
-
-        return scopedPrefix + familyName;
-    }
-
-    return QString();
-}
-
-bool belongsToSameWindowsAppFamily(const QString &candidatePath, const QString &referencePath)
-{
-    const QString normalizedCandidatePath = normalizeStoredAppPath(candidatePath);
-    const QString normalizedReferencePath = normalizeStoredAppPath(referencePath);
-
-    if (normalizedCandidatePath.isEmpty() || normalizedReferencePath.isEmpty()) {
-        return false;
-    }
-
-    if (normalizedCandidatePath.compare(normalizedReferencePath, Qt::CaseInsensitive) == 0) {
-        return true;
-    }
-
-    const QString familyScope = windowsAppFamilyScope(normalizedReferencePath);
-    if (familyScope.isEmpty()) {
-        return false;
-    }
-
-    return normalizedCandidatePath.startsWith(familyScope + QStringLiteral("/"), Qt::CaseInsensitive);
-}
-#endif
 }
 
 AppSplitTunnelingModel::AppSplitTunnelingModel(std::shared_ptr<Settings> settings, QObject *parent)
@@ -180,6 +109,7 @@ AppSplitTunnelingModel::AppSplitTunnelingModel(std::shared_ptr<Settings> setting
 void AppSplitTunnelingModel::loadAllApps()
 {
     m_apps.clear();
+    invalidateGroupCache();
 
     // Load "except" apps (bypass VPN) — useVpn = false
     bool didSanitizeExcept = false;
@@ -295,6 +225,8 @@ QVariant AppSplitTunnelingModel::data(const QModelIndex &index, int role) const
             return appDisplayName(entry.info);
         case UseVpnRole:
             return entry.useVpn;
+        case GroupFolderRole:
+            return effectiveGroupForRow(index.row());
         default:
             return QVariant();
     }
@@ -320,7 +252,25 @@ bool AppSplitTunnelingModel::addApp(const amnezia::InstalledAppInfo &appInfo)
         return false;
     }
 
-    if (containsApp(appInfo)) {
+    // If the app is already present and the caller provides a (different) source folder
+    // — e.g. a folder-add that re-encounters an exe previously added individually or from
+    // another folder — adopt it into the new group. Otherwise "Remove folder" would leave
+    // an app that physically lives in that folder behind, breaking the "…and all its apps"
+    // promise. An individual add (empty groupFolder) never strips an existing group.
+    for (int row = 0; row < m_apps.size(); ++row) {
+        if (!(m_apps.at(row).info == appInfo)) {
+            continue;
+        }
+
+        if (!appInfo.groupFolder.isEmpty() && m_apps.at(row).info.groupFolder != appInfo.groupFolder) {
+            m_apps[row].info.groupFolder = appInfo.groupFolder;
+            invalidateGroupCache();
+            persistApps();
+            if (!m_apps.isEmpty()) {
+                emit dataChanged(index(0, 0), index(m_apps.size() - 1, 0), { GroupFolderRole });
+            }
+        }
+
         return false;
     }
 
@@ -330,8 +280,15 @@ bool AppSplitTunnelingModel::addApp(const amnezia::InstalledAppInfo &appInfo)
 
     beginInsertRows(QModelIndex(), rowCount(), rowCount());
     m_apps.append(entry);
+    invalidateGroupCache();
     persistApps();
     endInsertRows();
+
+    // A new entry can change the effective group of existing rows (a parent folder
+    // appearing collapses former subfolder groups into it) — refresh them all.
+    if (m_apps.size() > 1) {
+        emit dataChanged(index(0, 0), index(m_apps.size() - 2, 0), { GroupFolderRole });
+    }
 
     return true;
 }
@@ -342,20 +299,21 @@ void AppSplitTunnelingModel::removeApp(QModelIndex index)
         return;
     }
 
-    const QString appPath = m_apps.at(index.row()).info.appPath;
-    if (removeAppsByPath(appPath) > 0) {
-        return;
-    }
-
     beginRemoveRows(QModelIndex(), index.row(), index.row());
     m_apps.removeAt(index.row());
+    invalidateGroupCache();
     persistApps();
     endRemoveRows();
+
+    if (!m_apps.isEmpty()) {
+        emit dataChanged(this->index(0, 0), this->index(m_apps.size() - 1, 0), { GroupFolderRole });
+    }
 }
 
 void AppSplitTunnelingModel::clearAppsList() {
     beginResetModel();
     m_apps.clear();
+    invalidateGroupCache();
     persistApps();
     endResetModel();
 }
@@ -387,64 +345,44 @@ bool AppSplitTunnelingModel::supportsPerAppVpnToggle() const
     return !isExcludeOnlyAppSplitTunnelMode();
 }
 
-int AppSplitTunnelingModel::removeAppsByPath(const QString &appPath)
+int AppSplitTunnelingModel::removeGroup(const QString &groupFolder)
 {
-    const QString normalizedAppPath = normalizeStoredAppPath(appPath);
-    if (normalizedAppPath.isEmpty()) {
+    // Guard the raw input first: an empty/whitespace folder must never match
+    // anything (that would sweep the whole list).
+    if (groupFolder.trimmed().isEmpty()) {
         return 0;
     }
 
-    QVector<int> rowsToRemove;
-    rowsToRemove.reserve(m_apps.size());
-
-    for (int row = 0; row < m_apps.size(); ++row) {
-        const QString candidatePath = m_apps.at(row).info.appPath;
-
-#ifdef Q_OS_WIN
-        if (belongsToSameWindowsAppFamily(candidatePath, normalizedAppPath)) {
-            rowsToRemove.append(row);
-        }
-#else
-        if (normalizeStoredAppPath(candidatePath) == normalizedAppPath) {
-            rowsToRemove.append(row);
-        }
-#endif
-    }
-
-    if (rowsToRemove.isEmpty()) {
+    const QString normalizedGroup = normalizeStoredAppPath(groupFolder);
+    if (normalizedGroup.isEmpty()) {
         return 0;
     }
 
-    if (rowsToRemove.size() == 1) {
-        const int row = rowsToRemove.constFirst();
-        beginRemoveRows(QModelIndex(), row, row);
-        m_apps.removeAt(row);
-        persistApps();
-        endRemoveRows();
-        return 1;
-    }
+    QVector<AppEntry> remainingApps;
+    remainingApps.reserve(m_apps.size());
 
-    std::sort(rowsToRemove.begin(), rowsToRemove.end());
-
-    QVector<AppEntry> updatedApps;
-    updatedApps.reserve(m_apps.size() - rowsToRemove.size());
-
-    int nextRowToRemoveIndex = 0;
+    int removedCount = 0;
     for (int row = 0; row < m_apps.size(); ++row) {
-        if (nextRowToRemoveIndex < rowsToRemove.size() && row == rowsToRemove.at(nextRowToRemoveIndex)) {
-            ++nextRowToRemoveIndex;
+        // Match on the same effective group the UI displays, so removing a header
+        // removes exactly the rows shown under it (including merged subfolders).
+        if (effectiveGroupForRow(row).compare(normalizedGroup, Qt::CaseInsensitive) == 0) {
+            ++removedCount;
             continue;
         }
+        remainingApps.append(m_apps.at(row));
+    }
 
-        updatedApps.append(m_apps.at(row));
+    if (removedCount == 0) {
+        return 0;
     }
 
     beginResetModel();
-    m_apps = updatedApps;
+    m_apps = remainingApps;
+    invalidateGroupCache();
     persistApps();
     endResetModel();
 
-    return rowsToRemove.size();
+    return removedCount;
 }
 
 void AppSplitTunnelingModel::toggleSplitTunneling(bool enabled)
@@ -460,7 +398,99 @@ QHash<int, QByteArray> AppSplitTunnelingModel::roleNames() const
     roles[AppPathRole] = "appPath";
     roles[PackageAppNameRole] = "appName";
     roles[UseVpnRole] = "useVpn";
+    roles[GroupFolderRole] = "groupFolder";
     return roles;
+}
+
+QString AppSplitTunnelingModel::effectiveGroupForRow(int row) const
+{
+    if (m_groupCacheDirty) {
+        rebuildGroupCache();
+    }
+
+    if (row < 0 || row >= m_effectiveGroupByRow.size()) {
+        return QString();
+    }
+
+    return m_effectiveGroupByRow.at(row);
+}
+
+void AppSplitTunnelingModel::rebuildGroupCache() const
+{
+    m_effectiveGroupByRow.clear();
+    m_effectiveGroupByRow.reserve(m_apps.size());
+
+    // Base folder per row: the stored source folder (set by "Add folder"), or the
+    // executable's own directory for individually-added and legacy entries — so the
+    // whole list collapses into folder groups.
+    QVector<QString> bases;
+    bases.reserve(m_apps.size());
+
+    QStringList roots;
+    QSet<QString> seenRoots;
+
+    for (const auto &entry : m_apps) {
+        QString base = entry.info.groupFolder;
+        if (base.isEmpty() && !entry.info.appPath.isEmpty()) {
+            base = QFileInfo(entry.info.appPath).absolutePath();
+        }
+        base = normalizeStoredAppPath(base);
+        bases.append(base);
+
+        const QString rootKey = base.toLower();
+        if (!base.isEmpty() && !seenRoots.contains(rootKey)) {
+            seenRoots.insert(rootKey);
+            roots.append(base);
+        }
+    }
+
+    // Shortest-first, so the first ancestor hit is the shallowest existing group —
+    // a subfolder scan (e.g. ".../App/Applications") merges under its parent group
+    // (".../App") instead of showing up as a stray sibling section.
+    std::sort(roots.begin(), roots.end(),
+              [](const QString &a, const QString &b) { return a.size() < b.size(); });
+
+    for (const QString &base : bases) {
+        QString group = base;
+
+        for (const QString &root : roots) {
+            if (root.size() > base.size()) {
+                break;
+            }
+
+            const QString rootPrefix = root.endsWith('/') ? root : root + QStringLiteral("/");
+            if (base.compare(root, Qt::CaseInsensitive) == 0
+                || base.startsWith(rootPrefix, Qt::CaseInsensitive)) {
+                group = root;
+                break;
+            }
+        }
+
+        m_effectiveGroupByRow.append(group);
+    }
+
+    m_groupCacheDirty = false;
+}
+
+void AppSplitTunnelingModel::invalidateGroupCache()
+{
+    m_groupCacheDirty = true;
+}
+
+int AppSplitTunnelingModel::groupCount(const QString &groupFolder) const
+{
+    const QString normalizedGroup = normalizeStoredAppPath(groupFolder);
+    if (normalizedGroup.isEmpty()) {
+        return 0;
+    }
+
+    int count = 0;
+    for (int row = 0; row < m_apps.size(); ++row) {
+        if (effectiveGroupForRow(row).compare(normalizedGroup, Qt::CaseInsensitive) == 0) {
+            ++count;
+        }
+    }
+    return count;
 }
 
 QString AppSplitTunnelingModel::appDisplayName(const amnezia::InstalledAppInfo &appInfo) const

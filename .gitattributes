@@ -12,3 +12,6 @@ client/server_scripts/*/*.conf text eol=lf
 client/server_scripts/*/*.ovpn text eol=lf
 client/server_scripts/*/*.plist text eol=lf
 client/server_scripts/*/*.profile text eol=lf
+
+# Shell scripts must stay LF so bash does not choke on CRLF (build_env.sh, wrappers, deploy/*.sh)
+*.sh text eol=lf

@@ -28,6 +28,9 @@ public slots:
 
     void updateModel();
 
+signals:
+    void modelUpdated();
+
 protected:
     QHash<int, QByteArray> roleNames() const override;
 

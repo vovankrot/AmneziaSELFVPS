@@ -264,7 +264,7 @@ QJsonArray AndroidController::getAppList()
     return jsonAppList;
 }
 
-QPixmap AndroidController::getAppIcon(const QString &package, QSize *size, const QSize &requestedSize)
+QImage AndroidController::getAppIcon(const QString &package, QSize *size, const QSize &requestedSize)
 {
     QJniObject bitmap = callActivityMethod<jobject>("getAppIcon", "(Ljava/lang/String;II)Landroid/graphics/Bitmap;",
                                                     QJniObject::fromString(package).object<jstring>(),
@@ -294,7 +294,7 @@ QPixmap AndroidController::getAppIcon(const QString &package, QSize *size, const
 
     if (AndroidBitmap_unlockPixels(env.jniEnv(), bitmap.object()) != ANDROID_BITMAP_RESULT_SUCCESS) return {};
 
-    return QPixmap::fromImage(image);
+    return image;
 }
 
 bool AndroidController::isNotificationPermissionGranted()

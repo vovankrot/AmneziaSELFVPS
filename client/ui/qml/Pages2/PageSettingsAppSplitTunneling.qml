@@ -35,6 +35,19 @@ PageType {
         updatePendingChanges()
     }
 
+    // Last path component for a folder header, tolerant of a trailing slash and of
+    // drive/volume roots like "C:/" (whose last component is empty) — falls back to the
+    // full path so the header title and the confirm dialog never show an empty name.
+    function folderLeafName(path) {
+        if (path === "")
+            return ""
+        var trimmed = path
+        while (trimmed.length > 1 && trimmed.charAt(trimmed.length - 1) === '/')
+            trimmed = trimmed.substring(0, trimmed.length - 1)
+        var leaf = trimmed.substring(trimmed.lastIndexOf('/') + 1)
+        return leaf === "" ? path : leaf
+    }
+
     function updatePendingChanges() {
         if (!ConnectionController.isConnected) {
             root.hasPendingChanges = false
@@ -290,8 +303,131 @@ PageType {
                 caseSensitivity: Qt.CaseInsensitive
             }
             sorters: [
+                RoleSorter { roleName: "groupFolder"; sortOrder: Qt.AscendingOrder },
                 RoleSorter { roleName: "appName"; sortOrder: Qt.AscendingOrder }
             ]
+        }
+
+        section.property: "groupFolder"
+        section.criteria: ViewSection.FullString
+        section.delegate: ColumnLayout {
+            width: listView.width
+
+            // The "groupFolder" role is the effective folder: the stored source folder for
+            // folder-adds (or the exe's own directory for legacy/single adds), with
+            // subfolders collapsed into their parent group. Every folder gets a removable
+            // header; only entries with no path at all (empty section) skip it.
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+                Layout.topMargin: 12
+
+                visible: section !== ""
+                Layout.preferredHeight: sectionRow.implicitHeight + 20
+
+                color: AmneziaStyle.color.onyxBlack
+                radius: 8
+
+                // Accent stripe so the header reads as a group, not another app row
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: 3
+                    radius: 1.5
+                    color: AmneziaStyle.color.goldenApricot
+                }
+
+                RowLayout {
+                    id: sectionRow
+                    anchors.fill: parent
+                    anchors.leftMargin: 14
+                    anchors.rightMargin: 6
+                    spacing: 10
+
+                    TintedIconType {
+                        Layout.alignment: Qt.AlignVCenter
+                        source: "qrc:/images/controls/folder-open.svg"
+                        tintColor: AmneziaStyle.color.goldenApricot
+                        iconWidth: 20
+                        iconHeight: 20
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+
+                            ParagraphTextType {
+                                Layout.fillWidth: false
+                                Layout.maximumWidth: sectionRow.width - 140
+                                text: root.folderLeafName(section)
+                                font.bold: true
+                                color: AmneziaStyle.color.paleGray
+                                maximumLineCount: 1
+                                elide: Qt.ElideMiddle
+                            }
+
+                            Rectangle {
+                                Layout.alignment: Qt.AlignVCenter
+                                implicitWidth: countText.implicitWidth + 12
+                                implicitHeight: countText.implicitHeight + 4
+                                radius: height / 2
+                                color: AmneziaStyle.color.charcoalGray
+
+                                CaptionTextType {
+                                    id: countText
+                                    anchors.centerIn: parent
+                                    // proxy count referenced so the badge re-evaluates on add/remove
+                                    text: (proxyAppSplitTunnelingModel.count,
+                                           AppSplitTunnelingModel.groupCount(section))
+                                    color: AmneziaStyle.color.paleGray
+                                }
+                            }
+
+                            Item { Layout.fillWidth: true }
+                        }
+
+                        CaptionTextType {
+                            Layout.fillWidth: true
+                            text: section
+                            color: AmneziaStyle.color.mutedGray
+                            maximumLineCount: 1
+                            elide: Qt.ElideMiddle
+                        }
+                    }
+
+                    ImageButtonType {
+                        implicitWidth: 40
+                        implicitHeight: 40
+
+                        image: "qrc:/images/controls/trash.svg"
+                        imageColor: AmneziaStyle.color.paleGray
+                        hoveredColor: AmneziaStyle.color.barelyTranslucentWhite
+                        pressedColor: AmneziaStyle.color.barelyTranslucentWhite
+
+                        onClicked: {
+                            var folder = section
+                            var folderName = root.folderLeafName(folder)
+                            var headerText = qsTr("Remove folder \"%1\" and all its apps?").arg(folderName)
+                            var yesButtonText = qsTr("Continue")
+                            var noButtonText = qsTr("Cancel")
+
+                            var yesButtonFunction = function() {
+                                AppSplitTunnelingController.removeGroup(folder)
+                            }
+                            var noButtonFunction = function() {
+                            }
+
+                            showQuestionDrawer(headerText, "", yesButtonText, noButtonText, yesButtonFunction, noButtonFunction)
+                        }
+                    }
+                }
+            }
         }
 
         delegate: ColumnLayout {
@@ -299,7 +435,7 @@ PageType {
 
             RowLayout {
                 Layout.fillWidth: true
-                Layout.leftMargin: 16
+                Layout.leftMargin: groupFolder !== "" ? 36 : 16
                 Layout.rightMargin: 16
                 Layout.topMargin: 8
                 Layout.bottomMargin: 8
@@ -320,11 +456,20 @@ PageType {
 
                     CaptionTextType {
                         Layout.fillWidth: true
-                        text: appPath
+                        // Inside a group the full path just repeats the header —
+                        // show the path relative to the group folder instead.
+                        text: {
+                            if (appPath === "")
+                                return ""
+                            if (groupFolder !== ""
+                                    && appPath.toLowerCase().indexOf(groupFolder.toLowerCase() + "/") === 0)
+                                return appPath.substring(groupFolder.length + 1)
+                            return appPath
+                        }
                         color: AmneziaStyle.color.mutedGray
                         maximumLineCount: 1
                         elide: Qt.ElideMiddle
-                        visible: appPath !== ""
+                        visible: text !== ""
                     }
                 }
 

@@ -1,6 +1,6 @@
 #include "installedAppsModel.h"
 
-#include <QEventLoop>
+#include <QFutureWatcher>
 #include <QtConcurrent>
 
 #ifdef Q_OS_ANDROID
@@ -73,19 +73,29 @@ QVector<QPair<QString, QString>> InstalledAppsModel::getSelectedAppsInfo()
 
 void InstalledAppsModel::updateModel()
 {
-    // NOTE: Do NOT use QEventLoop + QFutureWatcher::finished here!
-    // QFutureWatcher::finished uses queued connection which may not work
-    // reliably in all thread contexts.
-    QFuture<void> future = QtConcurrent::run([this]() {
+    // Enumerate installed apps on a worker thread (the JNI getAppList walks every
+    // installed package and is slow). This call returns IMMEDIATELY — it must not block
+    // the UI thread (the old waitForFinished() froze the drawer on open). When the
+    // worker finishes, the model reset is marshalled back to THIS object's thread (the
+    // GUI thread) via a queued invocation, because begin/endResetModel must never be
+    // emitted from a worker thread. modelUpdated() lets the UI drop the busy indicator.
+    auto *watcher = new QFutureWatcher<QJsonArray>(this); // child of the model → safe lifetime
+    connect(watcher, &QFutureWatcher<QJsonArray>::finished, this, [this, watcher]() {
         beginResetModel();
-#ifdef Q_OS_ANDROID
-        m_installedApps = AndroidController::instance()->getAppList();
-#endif
+        m_installedApps = watcher->result();
         endResetModel();
+        emit modelUpdated();
+        watcher->deleteLater();
     });
-    future.waitForFinished();
-
-    return;
+    // The worker returns the app list by value — it never touches the model, so there is
+    // no cross-thread model access. finished() fires on the model's (GUI) thread.
+    watcher->setFuture(QtConcurrent::run([]() -> QJsonArray {
+        QJsonArray apps;
+#ifdef Q_OS_ANDROID
+        apps = AndroidController::instance()->getAppList();
+#endif
+        return apps;
+    }));
 }
 
 QHash<int, QByteArray> InstalledAppsModel::roleNames() const

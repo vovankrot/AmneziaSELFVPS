@@ -231,6 +231,16 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            // StopProcessesAndServices() disables the service to block SCM
+            // auto-restarts during the install. If we failed before
+            // CreateOrUpdateService() re-enabled it, restore autostart so the
+            // machine is not left with a permanently disabled VPN service.
+            await Task.Run(() =>
+            {
+                TryRun("sc.exe", $"config {ServiceName} start= auto");
+                TryRun("sc.exe", $"start {ServiceName}");
+            });
+
             ShowError(FormatExceptionMessage(ex));
         }
     }
@@ -408,11 +418,21 @@ public partial class MainWindow : Window
 
         Thread.Sleep(600);
 
+        // Prevent the Service Control Manager from auto-restarting the service
+        // mid-install: the failure actions are "restart/2000", and a disabled
+        // service cannot be restarted by them. Re-enabled in CreateOrUpdateService
+        // (start= auto) or in the failure path of RunInstallAsync.
+        TryRun("sc.exe", $"config {ServiceName} start= disabled");
         TryRun("sc.exe", $"failure {ServiceName} reset= 0 actions= ////");
         TryRun("net.exe", $"stop {WireGuardServiceName}");
         TryRun("sc.exe", $"delete {WireGuardServiceName}");
         TryRun("net.exe", $"stop {ServiceName}");
         Thread.Sleep(1500);
+        TryRun("taskkill.exe", $"/F /IM {ServiceExeName}");
+
+        // The tunnel-daemon child (same exe) may briefly outlive the service stop;
+        // give it a moment and kill again so the exe is really unlocked.
+        Thread.Sleep(400);
         TryRun("taskkill.exe", $"/F /IM {ServiceExeName}");
 
         WaitForFilesUnlocked();

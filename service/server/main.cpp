@@ -260,8 +260,15 @@ int runApplication(int argc, char** argv)
         }
 
         if (!tokens.empty() && tokens[0] == "tunneldaemon") {
-            WindowsDaemonTunnel *daemon = new WindowsDaemonTunnel();
-            daemon->run(tokens);
+            // CRITICAL: this process was launched only to host the WG tunnel.
+            // It must EXIT when the tunnel stops. Without this return the process
+            // used to fall through into `LocalServer localServer;` below, becoming
+            // a short-lived second daemon that deleted the freshly created tunnel
+            // service of the real daemon, reset the split-tunnel driver and fought
+            // for the IPC pipe — the source of the connect/disconnect flapping,
+            // Event 7034/7031 crashes and files kept locked during reinstall.
+            WindowsDaemonTunnel daemon;
+            return daemon.run(tokens);
         }
     }
 #endif

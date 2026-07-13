@@ -2,7 +2,9 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$CrashFile,
 
-    [string]$MapFile = "E:/AmneziaSELFVPS/build/service/server/Release/AmneziaVPN-service.map"
+    # Default derived from this script's location (tools/ under the repo root), so it
+    # works on any checkout. Override with -MapFile for a non-standard build dir.
+    [string]$MapFile = (Join-Path $PSScriptRoot "..\build-installer\service\server\Release\AmneziaVPN-service.map")
 )
 
 $ErrorActionPreference = "Stop"

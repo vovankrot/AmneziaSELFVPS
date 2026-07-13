@@ -16,14 +16,19 @@ DrawerType2 {
     anchors.fill: parent
     expandedHeight: parent.height * 0.9
 
+    // Loading is async now: show an in-drawer spinner (the global showBusyIndicator
+    // popup renders UNDER the drawer, so it isn't visible here). Cleared on modelUpdated.
+    property bool appsLoading: false
+
     onAboutToShow: {
-        PageController.showBusyIndicator(true)
+        root.appsLoading = true
         installedAppsModel.updateModel()
-        PageController.showBusyIndicator(false)
     }
 
     InstalledAppsModel {
         id: installedAppsModel
+
+        onModelUpdated: root.appsLoading = false
     }
 
     expandedStateContent: Item {
@@ -97,6 +102,12 @@ DrawerType2 {
                         Image {
                             source: "image://installedAppImage/" + appIcon
 
+                            // Decode the icon on QML's image-reader thread, off the UI
+                            // thread — with the Image-type provider this is what stops
+                            // the picker from freezing while icons load.
+                            asynchronous: true
+                            cache: true
+
                             sourceSize.width: 24
                             sourceSize.height: 24
 
@@ -106,6 +117,24 @@ DrawerType2 {
 
                     DividerType {}
                 }
+            }
+        }
+
+        // In-drawer loading spinner over the list while the apps populate asynchronously
+        ColumnLayout {
+            anchors.centerIn: parent
+            spacing: 12
+            visible: root.appsLoading
+
+            BusyIndicator {
+                Layout.alignment: Qt.AlignHCenter
+                running: root.appsLoading
+            }
+
+            CaptionTextType {
+                Layout.alignment: Qt.AlignHCenter
+                text: qsTr("Loading applications…")
+                color: AmneziaStyle.color.mutedGray
             }
         }
 

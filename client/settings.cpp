@@ -704,6 +704,7 @@ QVector<InstalledAppInfo> Settings::getVpnApps(AppsRouteMode mode) const
         appInfo.appName = app.toObject().value("appName").toString();
         appInfo.packageName = app.toObject().value("packageName").toString();
         appInfo.appPath = app.toObject().value("appPath").toString();
+        appInfo.groupFolder = app.toObject().value("groupFolder").toString();
 
         if (!appInfo.packageName.isEmpty()) {
             const QString dedupeKey = QString("pkg:%1").arg(appInfo.packageName);
@@ -745,6 +746,7 @@ void Settings::setVpnApps(AppsRouteMode mode, const QVector<InstalledAppInfo> &a
         appInfo.insert("appName", app.appName);
         appInfo.insert("packageName", app.packageName);
         appInfo.insert("appPath", app.appPath);
+        appInfo.insert("groupFolder", app.groupFolder);
         appsArray.push_back(appInfo);
     }
     m_settings.setValue("Conf/" + appsRouteModeString(mode), appsArray);

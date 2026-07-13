@@ -225,6 +225,7 @@ void AppSplitTunnelingController::addAppsFromFolder(const QString &folderPath)
         InstalledAppInfo appInfo { "", "", normalizedAppPath };
         QFileInfo fileInfo(normalizedAppPath);
         appInfo.appName = fileInfo.fileName();
+        appInfo.groupFolder = normalizedFolderPath; // tag so the UI can group and remove the whole folder at once
 
         if (m_appSplitTunnelingModel->addApp(appInfo)) {
             ++addedCount;
@@ -337,6 +338,19 @@ void AppSplitTunnelingController::removeApp(const int index)
     m_appSplitTunnelingModel->removeApp(modelIndex);
 
     emit finished(buildRemovedAppNotificationMessage(m_settings, appName));
+}
+
+void AppSplitTunnelingController::removeGroup(const QString &groupFolder)
+{
+    const int removedCount = m_appSplitTunnelingModel->removeGroup(groupFolder);
+    if (removedCount <= 0) {
+        return;
+    }
+
+    const QString folderName = QFileInfo(groupFolder).fileName();
+    const QString folderLabel = folderName.isEmpty() ? groupFolder : folderName;
+
+    emit finished(tr("Folder removed: %1 (%n application(s))", "", removedCount).arg(folderLabel));
 }
 
 void AppSplitTunnelingController::clearPendingBypassLaunch()

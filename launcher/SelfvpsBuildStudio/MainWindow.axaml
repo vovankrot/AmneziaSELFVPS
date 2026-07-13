@@ -1,0 +1,193 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Selfvps.BuildStudio.MainWindow"
+        Title="SELFVPS Build Studio"
+        Width="980" Height="680"
+        CanResize="False"
+        SystemDecorations="None"
+        Background="#121A23"
+        FontFamily="{StaticResource ContentControlThemeFontFamily}">
+
+    <Window.Styles>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="{StaticResource Accent}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="22,11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.ghost">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource Text}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Stroke}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.caption">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDim}"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid ColumnDefinitions="300,*">
+
+        <!-- ===== brand panel ===== -->
+        <Border Grid.Column="0">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                    <GradientStop Color="#142130" Offset="0"/>
+                    <GradientStop Color="#101A27" Offset="0.55"/>
+                    <GradientStop Color="#0A1219" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <Grid>
+                <Ellipse Width="360" Height="360" HorizontalAlignment="Left" VerticalAlignment="Top"
+                         Margin="-130,-120,0,0" Opacity="0.42">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush>
+                            <GradientStop Color="#3B82F6" Offset="0"/>
+                            <GradientStop Color="#003B82F6" Offset="1"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                </Ellipse>
+                <StackPanel VerticalAlignment="Center" Margin="34,0">
+                    <Border HorizontalAlignment="Left" Margin="0,0,0,22" Padding="10"
+                            Background="#0E1821" BorderBrush="#223243" BorderThickness="1" CornerRadius="18">
+                        <Image Width="150" Height="104" Stretch="Uniform" Source="/Assets/logo.png"/>
+                    </Border>
+                    <TextBlock Text="SELFVPS" Foreground="White" FontSize="34" FontWeight="Light"/>
+                    <TextBlock Text="Build Studio" Foreground="White" FontSize="34" FontWeight="SemiBold" Margin="0,-4,0,16"/>
+                    <TextBlock Text="Выбери платформу — Studio проверит тулчейн, доустановит недостающее и соберёт артефакт."
+                               Foreground="#C2CDD7" FontSize="13" TextWrapping="Wrap" Width="230"/>
+                    <Border Margin="0,26,0,0" Padding="10,6" Background="#162434" CornerRadius="14" HorizontalAlignment="Left">
+                        <TextBlock x:Name="VersionTag" Text="v1.0.0 · cross-platform" Foreground="#C7D2DD" FontSize="11" FontWeight="SemiBold"/>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ===== working area ===== -->
+        <Grid Grid.Column="1" RowDefinitions="34,*,Auto">
+
+            <!-- title bar -->
+            <Grid Grid.Row="0" Background="Transparent" PointerPressed="TitleBar_Pressed">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Classes="caption" Click="Minimize_Click" Content="—" FontSize="14"/>
+                    <Button Classes="caption" Click="Close_Click" Content="✕" FontSize="13"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- content -->
+            <Grid Grid.Row="1" Margin="30,4,30,8" RowDefinitions="Auto,Auto,*">
+
+                <!-- platform -->
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="1 — ПЛАТФОРМА" Foreground="{StaticResource TextMute}" FontSize="11" FontWeight="SemiBold" Margin="2,0,0,8"/>
+                    <UniformGrid Rows="1" Columns="4">
+                        <Border x:Name="CardWindows" Tag="windows" Margin="0,0,3,0" Padding="12,11" CornerRadius="9"
+                                Background="{StaticResource BgPanel2}" BorderBrush="{StaticResource Stroke}"
+                                BorderThickness="1" Cursor="Hand" PointerPressed="Card_Pressed">
+                            <StackPanel>
+                                <Border Height="4" Width="30" CornerRadius="2" HorizontalAlignment="Left" Background="{StaticResource Accent}"/>
+                                <TextBlock Text="Windows" Foreground="{StaticResource Text}" FontSize="14" FontWeight="SemiBold" Margin="0,10,0,2"/>
+                                <TextBlock Text="клиент + служба, .exe" Foreground="{StaticResource TextMute}" FontSize="11" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <Border x:Name="CardMac" Tag="macos" Margin="3,0,3,0" Padding="12,11" CornerRadius="9"
+                                Background="{StaticResource BgPanel2}" BorderBrush="{StaticResource Stroke}"
+                                BorderThickness="1" Cursor="Hand" PointerPressed="Card_Pressed">
+                            <StackPanel>
+                                <Border Height="4" Width="30" CornerRadius="2" HorizontalAlignment="Left" Background="{StaticResource Accent}"/>
+                                <TextBlock Text="macOS" Foreground="{StaticResource Text}" FontSize="14" FontWeight="SemiBold" Margin="0,10,0,2"/>
+                                <TextBlock Text=".pkg (только на Mac)" Foreground="{StaticResource TextMute}" FontSize="11" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <Border x:Name="CardAndroid" Tag="android" Margin="3,0,3,0" Padding="12,11" CornerRadius="9"
+                                Background="{StaticResource BgPanel2}" BorderBrush="{StaticResource Stroke}"
+                                BorderThickness="1" Cursor="Hand" PointerPressed="Card_Pressed">
+                            <StackPanel>
+                                <Border Height="4" Width="30" CornerRadius="2" HorizontalAlignment="Left" Background="{StaticResource Accent}"/>
+                                <TextBlock Text="Android" Foreground="{StaticResource Text}" FontSize="14" FontWeight="SemiBold" Margin="0,10,0,2"/>
+                                <TextBlock Text="APK (arm64-v8a)" Foreground="{StaticResource TextMute}" FontSize="11" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <Border x:Name="CardLinux" Tag="linux" Margin="3,0,0,0" Padding="12,11" CornerRadius="9"
+                                Background="{StaticResource BgPanel2}" BorderBrush="{StaticResource Stroke}"
+                                BorderThickness="1" Cursor="Hand" PointerPressed="Card_Pressed">
+                            <StackPanel>
+                                <Border Height="4" Width="30" CornerRadius="2" HorizontalAlignment="Left" Background="{StaticResource Accent}"/>
+                                <TextBlock Text="Linux" Foreground="{StaticResource Text}" FontSize="14" FontWeight="SemiBold" Margin="0,10,0,2"/>
+                                <TextBlock x:Name="LinuxSub" Text=".bin инсталлятор" Foreground="{StaticResource TextMute}" FontSize="11" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+                </StackPanel>
+
+                <!-- dependencies -->
+                <StackPanel Grid.Row="1" Margin="0,16,0,0">
+                    <Grid>
+                        <TextBlock Text="2 — ЗАВИСИМОСТИ" Foreground="{StaticResource TextMute}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Left" Margin="2,0,0,8"/>
+                        <TextBlock x:Name="SummaryText" Text="" Foreground="{StaticResource TextDim}" FontSize="11" HorizontalAlignment="Right"/>
+                    </Grid>
+                    <Border Background="{StaticResource BgPanel3}" BorderBrush="{StaticResource Stroke}" BorderThickness="1" CornerRadius="9" Padding="6" MinHeight="120">
+                        <ScrollViewer MaxHeight="170" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="DepsList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="8,6" ColumnDefinitions="24,*">
+                                            <TextBlock Grid.Column="0" Text="{Binding Glyph}" FontSize="15" FontWeight="Bold"
+                                                       Foreground="{Binding StatusBrush}" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{Binding Name}" Foreground="{StaticResource Text}" FontSize="13" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding Detail}" Foreground="{StaticResource TextMute}" FontSize="11"
+                                                           TextTrimming="CharacterEllipsis" IsVisible="{Binding DetailVisible}"/>
+                                                <TextBlock Text="{Binding HintLine}" Foreground="{StaticResource Warn}" FontSize="11"
+                                                           TextWrapping="Wrap" IsVisible="{Binding HintVisible}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                </StackPanel>
+
+                <!-- log -->
+                <Grid Grid.Row="2" Margin="0,16,0,0" RowDefinitions="Auto,*">
+                    <TextBlock Grid.Row="0" Text="ЖУРНАЛ" Foreground="{StaticResource TextMute}" FontSize="11" FontWeight="SemiBold" Margin="2,0,0,8"/>
+                    <Border Grid.Row="1" Background="{StaticResource BgLog}" BorderBrush="{StaticResource Stroke}" BorderThickness="1" CornerRadius="9">
+                        <TextBox x:Name="LogBox" Background="Transparent" Foreground="#B8C4D0" BorderThickness="0"
+                                 IsReadOnly="True" AcceptsReturn="True" FontFamily="Cascadia Code,Consolas,monospace"
+                                 FontSize="12" Padding="10,8" TextWrapping="NoWrap"/>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- bottom bar -->
+            <Border Grid.Row="2" Padding="30,16" BorderBrush="{StaticResource Stroke}" BorderThickness="0,1,0,0">
+                <Grid ColumnDefinitions="*,Auto">
+                    <!-- column 0 is a Grid (not StackPanel) so StatusText is width-constrained
+                         and trims instead of overflowing onto the buttons -->
+                    <Grid Grid.Column="0" ColumnDefinitions="Auto,*" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <ProgressBar Grid.Column="0" x:Name="Busy" Width="110" IsIndeterminate="True" IsVisible="False" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Grid.Column="1" x:Name="StatusText" Text="Выбери платформу выше" Foreground="{StaticResource TextDim}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    </Grid>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button x:Name="BtnDetect" Classes="ghost" Content="Обновить" Margin="0,0,8,0" IsEnabled="False" Click="Detect_Click"/>
+                        <Button x:Name="BtnInstall" Classes="ghost" Content="Доустановить" Margin="0,0,8,0" IsEnabled="False" Click="Install_Click"/>
+                        <Button x:Name="BtnBuild" Classes="primary" Content="Собрать" MinWidth="150" IsEnabled="False" Click="Build_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

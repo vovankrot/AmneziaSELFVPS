@@ -556,14 +556,20 @@ void VpnConnection::appendSplitTunnelingConfig()
     const bool siteSplitTunnelingEnabled = requestedSiteSplitTunneling
             && siteSplitTunnelingSupportedForProtocolName(protocolName);
     if (requestedSiteSplitTunneling && !siteSplitTunnelingEnabled) {
-        // Surface the silent downgrade to the user, but only if they actually have rules.
+        // Surface the silent downgrade to the user, but only if they actually have
+        // rules AND we have not warned for this protocol yet — reconnects and
+        // repeated connects to the same protocol must not spam the toast.
         const QVector<Settings::SiteSplitRule> siteRules = m_settings->getVpnSiteRules();
-        if (!siteRules.isEmpty()) {
+        if (!siteRules.isEmpty() && m_lastSiteSplitWarnedProtocol != protocolName) {
+            m_lastSiteSplitWarnedProtocol = protocolName;
             emit siteSplitTunnelingWarning(
                 tr("Site split tunneling works only with XRay; full VPN is used for this protocol"));
         }
         qWarning() << "Site split tunneling is disabled for unsupported protocol" << protocolName
                    << "(supported: XRay/SSXray). Falling back to full VPN routing.";
+    } else if (siteSplitTunnelingEnabled) {
+        // Back on a supported protocol — re-arm the warning for the next downgrade.
+        m_lastSiteSplitWarnedProtocol.clear();
     }
     if (protocolName == ProtocolProps::protoToString(Proto::Awg) || protocolName == ProtocolProps::protoToString(Proto::WireGuard)) {
         allowSiteBasedSplitTunneling = false;
@@ -745,21 +751,6 @@ void VpnConnection::appendXrayRoutingConfig()
     const Settings::RouteMode routeMode = m_settings->routeMode();
     const QVector<Settings::SiteSplitRule> siteRules = m_settings->getVpnSiteRules();
     const QVector<XraySplitTunnelRuleSpec> orderedUserRules = buildOrderedXraySplitTunnelRules(siteRules);
-
-    // by vovankrot: DIAG — pinpoint why user domain masks don't route through VPN.
-    // Prints how many rules getVpnSiteRules() actually loaded and each rule's useVpn,
-    // plus the resulting outbound tag, so the runtime log answers stored-false vs read-bug.
-    qWarning().nospace() << "XRay routing DIAG: getVpnSiteRules loaded " << siteRules.size()
-                         << " rule(s); orderedUserRules " << orderedUserRules.size();
-    for (const auto &dr : siteRules) {
-        qWarning().nospace() << "  DIAG siteRule host='" << dr.hostname << "' ip='" << dr.ip
-                             << "' useVpn=" << dr.useVpn;
-    }
-    for (const auto &ors : orderedUserRules) {
-        qWarning().nospace() << "  DIAG orderedRule tag=" << ors.outboundTag
-                             << " domains=" << ors.domainPatterns.size()
-                             << " ips=" << ors.ipPatterns.size();
-    }
 
     const auto appendRuleSpec = [&rules, &hasIpBasedRule](const XraySplitTunnelRuleSpec &ruleSpec) {
         if (!ruleSpec.domainPatterns.isEmpty()) {

@@ -74,6 +74,9 @@ public:
     Q_PROPERTY(int defaultIndex READ getDefaultServerIndex WRITE setDefaultServerIndex NOTIFY defaultServerIndexChanged)
     Q_PROPERTY(QString defaultServerName READ getDefaultServerName NOTIFY defaultServerNameChanged)
     Q_PROPERTY(QString defaultServerDefaultContainerName READ getDefaultServerDefaultContainerName NOTIFY defaultServerDefaultContainerChanged)
+    // Honest obfuscation label for the default container, introspected from the
+    // rendered client config (Salamander / Reality / AmneziaWG-junk / empty=none).
+    Q_PROPERTY(QString defaultServerObfuscationName READ getDefaultServerObfuscationName NOTIFY defaultServerDefaultContainerChanged)
     Q_PROPERTY(QString defaultServerDescriptionCollapsed READ getDefaultServerDescriptionCollapsed NOTIFY defaultServerDefaultContainerChanged)
     Q_PROPERTY(QString defaultServerImagePathCollapsed READ getDefaultServerImagePathCollapsed NOTIFY defaultServerDefaultContainerChanged)
     Q_PROPERTY(QString defaultServerDescriptionExpanded READ getDefaultServerDescriptionExpanded NOTIFY defaultServerDefaultContainerChanged)
@@ -100,6 +103,7 @@ public slots:
     const QString getDefaultServerImagePathCollapsed();
     const QString getDefaultServerDescriptionExpanded();
     const QString getDefaultServerDefaultContainerName();
+    const QString getDefaultServerObfuscationName();
     bool isDefaultServerCurrentlyProcessed();
     bool isDefaultServerFromApi();
 

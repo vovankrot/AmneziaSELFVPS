@@ -32,7 +32,7 @@ Use `memory` tool with `str_replace` or `insert` to update existing notes — av
 | SSH install scripts | `client/server_scripts/*.sh` |
 | Qt resources | `client/images/`, `client/resources.qrc` |
 | 3rd-party libs | `client/3rd/`, `client/3rd-prebuilt/` |
-| Build/installer | `CMakeLists.txt`, `build_installer.ps1`, `installer.iss` |
+| Build/installer | `CMakeLists.txt`, `build_installer.ps1`, `build_android.ps1`, `installer/AmneziaVPN.Installer/` (WPF), `build_env.ps1`/`.sh`, `launcher/` (Build Studio) |
 | Logger | `common/logger/` |
 
 ## Known Gotchas (refresh from memory)

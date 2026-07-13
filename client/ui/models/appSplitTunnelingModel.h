@@ -15,7 +15,8 @@ public:
         AppPathRole = Qt::UserRole + 1,
         PackageAppNameRole,
         PackageAppIconRole,
-        UseVpnRole
+        UseVpnRole,
+        GroupFolderRole
     };
 
     struct AppEntry {
@@ -38,6 +39,8 @@ public:
 public slots:
     bool addApp(const amnezia::InstalledAppInfo &appInfo);
     void removeApp(QModelIndex index);
+    int removeGroup(const QString &groupFolder);
+    int groupCount(const QString &groupFolder) const;
     void clearAppsList();
 
     void toggleAppVpn(int row);
@@ -55,7 +58,9 @@ protected:
 private:
     void loadAllApps();
     void persistApps();
-    int removeAppsByPath(const QString &appPath);
+    QString effectiveGroupForRow(int row) const;
+    void rebuildGroupCache() const;
+    void invalidateGroupCache();
     QString appDisplayName(const amnezia::InstalledAppInfo &appInfo) const;
     bool containsApp(const amnezia::InstalledAppInfo &appInfo) const;
 
@@ -64,6 +69,12 @@ private:
     bool m_isSplitTunnelingEnabled;
 
     QVector<AppEntry> m_apps;
+
+    // Effective display group per row: the stored source folder (or the exe's own
+    // directory for legacy/single adds), collapsed into the shallowest ancestor
+    // folder that is itself a group — so subfolder scans merge under their parent.
+    mutable QVector<QString> m_effectiveGroupByRow;
+    mutable bool m_groupCacheDirty = true;
 };
 
 #endif // APPSPLITTUNNELINGMODEL_H

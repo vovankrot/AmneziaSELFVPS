@@ -1,0 +1,26 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Selfvps.BuildStudio.App"
+             RequestedThemeVariant="Dark">
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- SELFVPS palette: GitHub-dark panels + blue accent -->
+            <SolidColorBrush x:Key="BgPanel"  Color="#121A23"/>
+            <SolidColorBrush x:Key="BgPanel2" Color="#182330"/>
+            <SolidColorBrush x:Key="BgPanel3" Color="#0E1720"/>
+            <SolidColorBrush x:Key="BgLog"    Color="#0A0F14"/>
+            <SolidColorBrush x:Key="Stroke"   Color="#273548"/>
+            <SolidColorBrush x:Key="Accent"   Color="#3B82F6"/>
+            <SolidColorBrush x:Key="AccentHi" Color="#5B96F7"/>
+            <SolidColorBrush x:Key="Text"     Color="#F3F6F8"/>
+            <SolidColorBrush x:Key="TextDim"  Color="#B5C1CE"/>
+            <SolidColorBrush x:Key="TextMute" Color="#6E7681"/>
+            <SolidColorBrush x:Key="Success"  Color="#3FB950"/>
+            <SolidColorBrush x:Key="Warn"     Color="#D8A96F"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

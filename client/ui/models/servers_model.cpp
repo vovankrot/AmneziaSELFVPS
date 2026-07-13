@@ -596,6 +596,103 @@ const QString ServersModel::getDefaultServerDefaultContainerName()
     return containerName + protocolVersion;
 }
 
+const QString ServersModel::getDefaultServerObfuscationName()
+{
+    if (m_defaultServerIndex < 0 || m_defaultServerIndex >= m_servers.size()) {
+        return QString();
+    }
+
+    auto server = m_servers.at(m_defaultServerIndex).toObject();
+    auto defaultContainer = ContainerProps::containerFromString(server.value(config_key::defaultContainer).toString());
+    if (defaultContainer == DockerContainer::None) {
+        return QString();
+    }
+
+    // Pull the container's config so we can report what the traffic is ACTUALLY
+    // masked with, not a hard-coded per-protocol guess. We search the WHOLE protocol
+    // object, not only last_config: editing protocol settings drops the rendered
+    // last_config (re-rendered on next connect), but the server-side masking fields
+    // (AmneziaWG's Jc/H1, an imported config's reality/salamander) persist there.
+    QString haystack;
+    bool hasLastConfig = false;
+    const auto containers = server.value(config_key::containers).toArray();
+    for (const auto &c : containers) {
+        const auto container = c.toObject();
+        if (container.value(config_key::container).toString() != ContainerProps::containerToString(defaultContainer)) {
+            continue;
+        }
+        const auto protoObj = container.value(ContainerProps::containerTypeToProtocolString(defaultContainer)).toObject();
+        hasLastConfig = !protoObj.value(config_key::last_config).toString().isEmpty();
+        haystack = QString::fromUtf8(QJsonDocument(protoObj).toJson(QJsonDocument::Compact));
+        break;
+    }
+
+    const QString cfg = haystack.toLower();
+
+    // XRay: our fork masks mKCP with FinalMask salamander; reality stays in the code
+    // for a clean IP. Detect whichever is really present.
+    if (defaultContainer == DockerContainer::Xray) {
+        if (cfg.contains("salamander")) {
+            return QStringLiteral("Salamander (mKCP)");
+        }
+        if (cfg.contains("reality")) {
+            return QStringLiteral("Reality (TLS)");
+        }
+        if (cfg.contains("finalmask")) {
+            return QStringLiteral("FinalMask (mKCP)");
+        }
+        if (cfg.contains("kcp")) {
+            return QStringLiteral("mKCP");
+        }
+        // No marker AND last_config is missing => a protocol-settings save transiently
+        // dropped it; fall back to this fork's template default (mKCP+salamander).
+        // No marker but last_config PRESENT => a genuinely unobfuscated (e.g. imported
+        // VLESS/TCP) config => be honest and report none.
+        return hasLastConfig ? QString() : QStringLiteral("Salamander (mKCP)");
+    }
+
+    // Shadowsocks-over-XRay is NOT the salamander mKCP stack — it is a plain
+    // Shadowsocks cipher (random-looking by design, but no packet masking). Name it
+    // honestly instead of overclaiming the XRay obfuscation engine.
+    if (defaultContainer == DockerContainer::SSXray) {
+        return QStringLiteral("Shadowsocks");
+    }
+
+    if (defaultContainer == DockerContainer::Hysteria2) {
+        if (cfg.contains("salamander")) {
+            return QStringLiteral("Salamander");
+        }
+        if (cfg.contains("obfs")) {
+            return QStringLiteral("obfs");
+        }
+        // Same transient-drop guard: our hysteria template always carries salamander.
+        return hasLastConfig ? QString() : QStringLiteral("Salamander");
+    }
+
+    if (defaultContainer == DockerContainer::Cloak) {
+        return QStringLiteral("Cloak");
+    }
+
+    // AmneziaWG masks WireGuard with junk packets (Jc/Jmin/Jmax) + fake magic
+    // headers (H1..H4). These live in the persisted protocol object (searched above),
+    // so the "(junk)" label survives a settings save that dropped last_config.
+    if (ContainerProps::isAwgContainer(defaultContainer)) {
+        // Loose match: the junk fields live either as top-level keys (persisted server
+        // config) or embedded inside last_config's escaped JSON. Either form contains
+        // the "Jc"/"Jmin" tokens. False positives are impossible here — this branch is
+        // AmneziaWG-only and AmneziaWG always carries junk (plain WireGuard is a
+        // separate container that returns "None").
+        if (cfg.contains("jc") || cfg.contains("jmin") || cfg.contains("junkpacket")) {
+            return QStringLiteral("AmneziaWG (junk)");
+        }
+        return QStringLiteral("AmneziaWG");
+    }
+
+    // Plain WireGuard, OpenVPN, IKEv2, bare Shadowsocks — no packet obfuscation.
+    // Empty string => the UI shows "None" and flags the user as exposed.
+    return QString();
+}
+
 ErrorCode ServersModel::removeAllContainers(const QSharedPointer<ServerController> &serverController)
 {
 
@@ -663,6 +760,10 @@ void ServersModel::clearCachedProfile(const DockerContainer container)
     m_servers.replace(m_processedServerIndex, m_settings->server(m_processedServerIndex));
     if (m_processedServerIndex == m_defaultServerIndex) {
         updateDefaultServerContainersModel();
+        // The default container's cached config changed — refresh anything bound to it
+        // (protocol name, obfuscation label) so the Home cards don't go stale.
+        auto defaultContainer = qvariant_cast<DockerContainer>(getDefaultServerData("defaultContainer"));
+        emit defaultServerDefaultContainerChanged(defaultContainer);
     }
     updateContainersModel();
 }
