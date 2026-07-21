@@ -96,7 +96,7 @@ if (-not $AndroidBuildRoot) {
     $AndroidBuildRoot = Join-Path $ProjectDir $AndroidBuildRoot
 }
 
-# ── Helper functions ──────────────────────
+# -- Helper functions ----------------------
 
 function Get-FirstExistingPath {
     param([string[]]$Candidates)
@@ -186,14 +186,14 @@ function Resolve-AndroidJavaHome {
     throw "JDK 17+ not found. Install JDK 17 or newer, or pass -AndroidJavaHome <path-to-jdk>."
 }
 
-# ── Validate parameters ──────────────────
+# -- Validate parameters ------------------
 
 if ($AndroidApkAbi -notmatch '^(all|((x86|x86_64|armeabi-v7a|arm64-v8a);)*(x86|x86_64|armeabi-v7a|arm64-v8a))$') {
     Write-Error "AndroidApkAbi must be 'all' or a semicolon-delimited list of x86, x86_64, armeabi-v7a, arm64-v8a."
     exit 1
 }
 
-# ── Read version ─────────────────────────
+# -- Read version -------------------------
 
 $cmakeContent = Get-Content (Join-Path $ProjectDir "CMakeLists.txt") -Raw
 if ($cmakeContent -match 'set\(AMNEZIAVPN_VERSION\s+([0-9.]+)\)') {
@@ -203,7 +203,7 @@ if ($cmakeContent -match 'set\(AMNEZIAVPN_VERSION\s+([0-9.]+)\)') {
 }
 $AppVersionShort = ($AppVersion -split '\.')[0..2] -join '.'
 
-# ── Resolve tools ────────────────────────
+# -- Resolve tools ------------------------
 
 $androidQtBinDir = Resolve-AndroidQtBinDir -QtRoot $AndroidQtRoot -AbiSpec $AndroidApkAbi
 $androidHostPath = Join-Path $AndroidQtRoot "mingw_64"
@@ -246,7 +246,7 @@ Write-Host "  Build root: $AndroidBuildRoot" -ForegroundColor Gray
 Write-Host "  Build type: $AndroidBuildType" -ForegroundColor Gray
 Write-Host ""
 
-# ── Build ────────────────────────────────
+# -- Build --------------------------------
 
 $androidBuildDir = $AndroidBuildRoot
 $androidGradleHome = Join-Path ([System.IO.Path]::GetPathRoot($androidBuildDir)) ".gradle-avpn"
@@ -283,7 +283,7 @@ try {
     $env:GRADLE_USER_HOME = $androidGradleHome
     $env:PATH = "$ResolvedJavaHome\bin;$($androidHostPath)\bin;$($androidToolsRoot)\CMake_64\bin;$($androidToolsRoot)\Ninja;$env:PATH"
 
-    # ── Step 1: CMake configure ──
+    # -- Step 1: CMake configure --
     Write-Host "[1/4] Configuring with qt-cmake..." -ForegroundColor Yellow
 
     $qtCmakeArgs = @(
@@ -302,13 +302,13 @@ try {
     & $qtCmake @qtCmakeArgs | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Android qt-cmake configure failed with exit code $LASTEXITCODE" }
 
-    # ── Step 2: CMake build ──
+    # -- Step 2: CMake build --
     Write-Host "[2/4] Building with CMake + Ninja..." -ForegroundColor Yellow
 
     & $cmakeExe --build $androidBuildDir --config Release | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Android CMake build failed with exit code $LASTEXITCODE" }
 
-    # ── Step 3: androiddeployqt ──
+    # -- Step 3: androiddeployqt --
     Write-Host "[3/4] Running androiddeployqt..." -ForegroundColor Yellow
 
     $deploymentSettings = Join-Path $androidBuildDir "client\android-AmneziaVPN-deployment-settings.json"
@@ -368,7 +368,7 @@ try {
         "org.gradle.java.installations.paths=$javaHomeForGradle"
     )
 
-    # ── Step 4: Gradle assemble ──
+    # -- Step 4: Gradle assemble --
     Write-Host "[4/4] Running Gradle $AndroidBuildType assemble..." -ForegroundColor Yellow
 
     $gradlew = Join-Path $androidBuildOutputDir "gradlew.bat"
@@ -383,7 +383,7 @@ try {
         $gradleTask | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Gradle $gradleTask failed with exit code $LASTEXITCODE" }
 
-    # ── Collect APK artifacts ──
+    # -- Collect APK artifacts --
     $apkTypeSuffix = $AndroidBuildType.ToLower()
     $apkOutputDir = Join-Path $androidBuildOutputDir "build\outputs\apk\$apkTypeSuffix"
     $apkMetadataPath = Join-Path $apkOutputDir 'output-metadata.json'
@@ -445,7 +445,7 @@ finally {
     }
 }
 
-# ── Report ───────────────────────────────
+# -- Report -------------------------------
 
 if ($Artifacts.Count -eq 0) {
     Write-Error "Android APK build completed but no artifacts were copied to project root."

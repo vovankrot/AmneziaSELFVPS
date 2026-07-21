@@ -400,12 +400,12 @@ if (Test-Path $qt5CompatSrc) {
 
 # Pass 3: iteratively copy Qt6 DLLs required by staged DLLs (transitive closure)
 # Each iteration scans ALL staged DLLs (not just QML plugins) and copies missing Qt6 deps.
-# Repeats until no new DLLs are added — handles chains like Plugin→Qt6A.dll→Qt6B.dll.
+# Repeats until no new DLLs are added -- handles chains like Plugin->Qt6A.dll->Qt6B.dll.
 $msvcToolsDir = Get-ChildItem (Join-Path $script:VsInstallPath "VC\Tools\MSVC") -Directory -ErrorAction SilentlyContinue |
     Sort-Object Name -Descending | Select-Object -First 1
 $dumpbin = if ($msvcToolsDir) { Join-Path $msvcToolsDir.FullName "bin\Hostx64\x64\dumpbin.exe" } else { $null }
 if (-not $dumpbin -or -not (Test-Path $dumpbin)) {
-    Write-Warning "dumpbin.exe not found under $script:VsInstallPath — the transitive Qt6 DLL closure step will be SKIPPED, which can produce an installer missing runtime DLLs. Ensure the VC++ toolset is installed."
+    Write-Warning "dumpbin.exe not found under $script:VsInstallPath -- the transitive Qt6 DLL closure step will be SKIPPED, which can produce an installer missing runtime DLLs. Ensure the VC++ toolset is installed."
     $dumpbin = $null
 }
 $totalCopied = 0
@@ -518,7 +518,7 @@ if ($vcRedistSrc -and (Test-Path $vcRedistSrc)) {
     Copy-Item $vcRedistSrc $StageDir -Force
     Write-Host "  VC++ Redistributable copied" -ForegroundColor Gray
 } else {
-    Write-Warning "vc_redist.x64.exe NOT found under $script:VsInstallPath\VC\Redist\MSVC.`n           The installer will NOT bundle the VC++ runtime — end users without it may fail to start the app.`n           Install the 'C++ Redistributable' individual component in the VS Installer."
+    Write-Warning "vc_redist.x64.exe NOT found under $script:VsInstallPath\VC\Redist\MSVC.`n           The installer will NOT bundle the VC++ runtime -- end users without it may fail to start the app.`n           Install the 'C++ Redistributable' individual component in the VS Installer."
 }
 
 $stageFileCount = (Get-ChildItem $StageDir -Recurse -File).Count
