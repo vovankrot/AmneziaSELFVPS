@@ -326,6 +326,43 @@ public:
         m_settings.setValue("GeoIp/lastUpdate", dt);
     }
 
+    // ---- GeoIP list source / schedule: user-configurable, not hardcoded ----
+    // The old default (herrbischoff/country-ip-blocks) now 404s, so every update silently
+    // failed and the bundled snapshot was used forever. This one is regenerated daily from
+    // RIR delegation data; verified 8629 RU subnets. by vovankrot
+    static constexpr const char *defaultGeoIpSourceUrl =
+        "https://raw.githubusercontent.com/ipverse/rir-ip/master/country/ru/ipv4-aggregated.txt";
+
+    QString geoIpSourceUrl() const
+    {
+        const QString url = m_settings.value("GeoIp/sourceUrl").toString().trimmed();
+        return url.isEmpty() ? QString::fromLatin1(defaultGeoIpSourceUrl) : url;
+    }
+    void setGeoIpSourceUrl(const QString &url)
+    {
+        m_settings.setValue("GeoIp/sourceUrl", url.trimmed());
+    }
+
+    // How often the list is refreshed. Minimum 1 hour.
+    int geoIpUpdateIntervalHours() const
+    {
+        return qMax(1, m_settings.value("GeoIp/updateIntervalHours", 24).toInt());
+    }
+    void setGeoIpUpdateIntervalHours(int hours)
+    {
+        m_settings.setValue("GeoIp/updateIntervalHours", qMax(1, hours));
+    }
+
+    // Number of CIDRs in the last successfully downloaded list (0 = never downloaded).
+    int geoIpLastCount() const
+    {
+        return m_settings.value("GeoIp/lastCount", 0).toInt();
+    }
+    void setGeoIpLastCount(int count)
+    {
+        m_settings.setValue("GeoIp/lastCount", count);
+    }
+
     bool isAutoBypassRknEnabled() const
     {
         return m_settings.value("Conf/autoBypassRkn", false).toBool();

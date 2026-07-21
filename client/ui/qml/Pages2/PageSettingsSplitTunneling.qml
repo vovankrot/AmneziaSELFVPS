@@ -223,6 +223,36 @@ PageType {
         }
     }
 
+    // --- GeoIP refresh interval choices -------------------------------------
+    property list<QtObject> geoIpIntervalsModel: [
+        geoIpEvery1h, geoIpEvery6h, geoIpEvery12h, geoIpEvery24h, geoIpEvery72h, geoIpEvery168h
+    ]
+
+    QtObject { id: geoIpEvery1h;   property string name: qsTr("Every hour");   property int hours: 1 }
+    QtObject { id: geoIpEvery6h;   property string name: qsTr("Every 6 hours"); property int hours: 6 }
+    QtObject { id: geoIpEvery12h;  property string name: qsTr("Every 12 hours"); property int hours: 12 }
+    QtObject { id: geoIpEvery24h;  property string name: qsTr("Once a day");   property int hours: 24 }
+    QtObject { id: geoIpEvery72h;  property string name: qsTr("Every 3 days"); property int hours: 72 }
+    QtObject { id: geoIpEvery168h; property string name: qsTr("Once a week");  property int hours: 168 }
+
+    function geoIpIntervalIndex(hours) {
+        for (var i = 0; i < root.geoIpIntervalsModel.length; ++i) {
+            if (root.geoIpIntervalsModel[i].hours === hours) {
+                return i
+            }
+        }
+        return 3 // once a day
+    }
+
+    function geoIpIntervalName(hours) {
+        for (var i = 0; i < root.geoIpIntervalsModel.length; ++i) {
+            if (root.geoIpIntervalsModel[i].hours === hours) {
+                return root.geoIpIntervalsModel[i].name
+            }
+        }
+        return qsTr("Every %1 h").arg(hours)
+    }
+
     QtObject {
         id: routeMode
         property int allSites: 0
@@ -360,6 +390,178 @@ PageType {
                     if (checked !== SitesModel.bypassRuGeoIp) {
                         SitesModel.bypassRuGeoIp = checked
                         SitesModel.bypassRuGeoSites = checked
+                    }
+                }
+            }
+
+            // GeoIP list status + settings. The switch above only works if a usable
+            // RU CIDR list is present, so show which list is loaded, where it came from
+            // and let the user point it elsewhere / change how often it refreshes.
+            // by vovankrot
+            ColumnLayout {
+                id: geoIpCard
+
+                Layout.fillWidth: true
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+                Layout.topMargin: 8
+                spacing: 8
+
+                visible: SitesModel.isTunnelingEnabled && SitesModel.bypassRuGeoIp
+
+                readonly property bool bundled: GeoipController.usingBundledList
+
+                Rectangle {
+                    Layout.fillWidth: true
+
+                    radius: 16
+                    color: AmneziaStyle.color.onyxBlack
+                    border.width: 1
+                    border.color: geoIpCard.bundled ? AmneziaStyle.color.goldenApricot
+                                                    : AmneziaStyle.color.slateGray
+
+                    implicitHeight: geoIpContent.implicitHeight + 32
+
+                    ColumnLayout {
+                        id: geoIpContent
+
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+
+                        spacing: 8
+
+                        LabelTextType {
+                            Layout.fillWidth: true
+                            text: qsTr("Russian IP list (GeoIP)")
+                            color: AmneziaStyle.color.mutedGray
+                        }
+
+                        ParagraphTextType {
+                            Layout.fillWidth: true
+                            text: GeoipController.updating
+                                  ? qsTr("Updating…")
+                                  : (geoIpCard.bundled
+                                     ? qsTr("Built-in list is in use — has not been downloaded yet")
+                                     : qsTr("%n subnet(s) loaded", "", GeoipController.cidrCount))
+                            color: geoIpCard.bundled ? AmneziaStyle.color.goldenApricot
+                                                     : AmneziaStyle.color.paleGray
+                            wrapMode: Text.WordWrap
+                        }
+
+                        CaptionTextType {
+                            Layout.fillWidth: true
+                            text: qsTr("Updated: %1").arg(GeoipController.lastUpdateText)
+                            color: AmneziaStyle.color.mutedGray
+                        }
+
+                        CaptionTextType {
+                            Layout.fillWidth: true
+                            text: qsTr("File: %1").arg(GeoipController.listPath)
+                            color: AmneziaStyle.color.mutedGray
+                            wrapMode: Text.WrapAnywhere
+                            maximumLineCount: 2
+                            elide: Qt.ElideMiddle
+                        }
+
+                        CaptionTextType {
+                            Layout.fillWidth: true
+                            text: qsTr("Error: %1").arg(GeoipController.lastError)
+                            color: AmneziaStyle.color.vibrantRed
+                            wrapMode: Text.WordWrap
+                            visible: GeoipController.lastError !== ""
+                        }
+
+                        TextFieldWithHeaderType {
+                            id: geoIpUrlField
+
+                            Layout.fillWidth: true
+                            Layout.topMargin: 8
+
+                            headerText: qsTr("Update source (URL of a CIDR list)")
+                            textField.text: GeoipController.sourceUrl
+
+                            // Commit only on focus loss / Enter so we don't rewrite
+                            // settings on every keystroke.
+                            textField.onEditingFinished: {
+                                if (textField.text !== GeoipController.sourceUrl) {
+                                    GeoipController.sourceUrl = textField.text
+                                }
+                            }
+
+                            Connections {
+                                target: GeoipController
+                                function onStatusChanged() {
+                                    if (!geoIpUrlField.textField.activeFocus
+                                            && geoIpUrlField.textField.text !== GeoipController.sourceUrl) {
+                                        geoIpUrlField.textField.text = GeoipController.sourceUrl
+                                    }
+                                }
+                            }
+                        }
+
+                        DropDownType {
+                            id: geoIpIntervalSelector
+
+                            Layout.fillWidth: true
+                            Layout.topMargin: 8
+
+                            drawerHeight: 0.4375
+                            drawerParent: root
+
+                            headerText: qsTr("Check for updates")
+                            text: root.geoIpIntervalName(GeoipController.intervalHours)
+
+                            listView: ListViewWithRadioButtonType {
+                                rootWidth: root.width
+
+                                model: root.geoIpIntervalsModel
+
+                                selectedIndex: root.geoIpIntervalIndex(GeoipController.intervalHours)
+
+                                clickedFunction: function() {
+                                    geoIpIntervalSelector.text = selectedText
+                                    geoIpIntervalSelector.closeTriggered()
+                                    GeoipController.intervalHours = root.geoIpIntervalsModel[selectedIndex].hours
+                                }
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 8
+                            spacing: 8
+
+                            BasicButtonType {
+                                Layout.fillWidth: true
+                                implicitHeight: 44
+
+                                enabled: !GeoipController.updating
+                                text: GeoipController.updating ? qsTr("Updating…") : qsTr("Update now")
+
+                                clickedFunc: function() {
+                                    GeoipController.updateNow()
+                                }
+                            }
+
+                            BasicButtonType {
+                                Layout.fillWidth: true
+                                implicitHeight: 44
+
+                                defaultColor: AmneziaStyle.color.transparent
+                                hoveredColor: AmneziaStyle.color.translucentWhite
+                                pressedColor: AmneziaStyle.color.sheerWhite
+                                textColor: AmneziaStyle.color.paleGray
+                                borderWidth: 1
+
+                                text: qsTr("Default source")
+
+                                clickedFunc: function() {
+                                    GeoipController.resetSourceToDefault()
+                                }
+                            }
+                        }
                     }
                 }
             }

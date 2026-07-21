@@ -22,6 +22,14 @@ struct XrayServerState {
     QString kcpSeed;
     QString siteName;
     QString serverPort;
+
+    // What the server ACTUALLY runs. The client must mirror these exactly -- mKCP
+    // is not self-negotiating, so a mismatched mtu/capacity or a mask the other side
+    // does not apply means the tunnel comes up and then carries nothing. by vovankrot
+    bool kcpParsed = false;
+    QJsonObject kcpSettings;
+    QString maskType;
+    QString packetSize;
 };
 
 QString trimFileValue(QString value)
@@ -82,7 +90,18 @@ XrayServerState parseServerState(const QString &serverConfigRaw)
 
     state.usesKcp = (streamSettings.value("network").toString() == QStringLiteral("kcp"));
     if (state.usesKcp) {
-        state.kcpSeed = streamSettings.value("kcpSettings").toObject().value("seed").toString().trimmed();
+        state.kcpSettings = streamSettings.value("kcpSettings").toObject();
+        state.kcpSeed = state.kcpSettings.value("seed").toString().trimmed();
+        state.kcpParsed = !state.kcpSettings.isEmpty();
+
+        // finalmask is absent when the user turned masking off -- an empty maskType
+        // here means "no mask", which the client must reproduce.
+        const QJsonArray udpMasks = streamSettings.value("finalmask").toObject().value("udp").toArray();
+        if (!udpMasks.isEmpty()) {
+            const QJsonObject mask = udpMasks.at(0).toObject();
+            state.maskType = mask.value("type").toString().trimmed();
+            state.packetSize = mask.value("settings").toObject().value("packetSize").toString().trimmed();
+        }
     }
 
     return state;
@@ -289,6 +308,37 @@ QString XrayConfigurator::createConfig(const ServerCredentials &credentials, Doc
     replaceOrAppendVar(vars, QStringLiteral("$XRAY_SERVER_PORT"), resolvedServerPort);
     replaceOrAppendVar(vars, QStringLiteral("$XRAY_SITE_NAME"), resolvedSiteName);
 
+    // Mirror the mKCP/mask parameters the server is ACTUALLY running rather than what the local
+    // config says. The two normally agree (changing any XRay setting reinstalls the container),
+    // but if a reinstall failed halfway the stored config is ahead of the server -- and a client
+    // whose mtu/capacity/mask disagree connects and then moves no traffic, which looks exactly
+    // like censorship and is impossible to diagnose from the UI. by vovankrot
+    if (serverUsesKcp && serverState.kcpParsed) {
+        const QJsonObject &kcp = serverState.kcpSettings;
+        replaceOrAppendVar(vars, QStringLiteral("$XRAY_KCP_MTU"),
+                           QString::number(kcp.value("mtu").toInt(protocols::xray::defaultKcpMtu)));
+        replaceOrAppendVar(vars, QStringLiteral("$XRAY_KCP_TTI"),
+                           QString::number(kcp.value("tti").toInt(protocols::xray::defaultKcpTti)));
+        replaceOrAppendVar(vars, QStringLiteral("$XRAY_KCP_UPLINK"),
+                           QString::number(kcp.value("uplinkCapacity").toInt(protocols::xray::defaultKcpUplinkCapacity)));
+        replaceOrAppendVar(vars, QStringLiteral("$XRAY_KCP_DOWNLINK"),
+                           QString::number(kcp.value("downlinkCapacity").toInt(protocols::xray::defaultKcpDownlinkCapacity)));
+        replaceOrAppendVar(vars, QStringLiteral("$XRAY_KCP_CONGESTION"),
+                           kcp.value("congestion").toBool(protocols::xray::defaultKcpCongestion) ? QStringLiteral("true")
+                                                                                                 : QStringLiteral("false"));
+        replaceOrAppendVar(vars, QStringLiteral("$XRAY_KCP_READ_BUFFER"),
+                           QString::number(kcp.value("readBufferSize").toInt(protocols::xray::defaultKcpReadBufferSize)));
+        replaceOrAppendVar(vars, QStringLiteral("$XRAY_KCP_WRITE_BUFFER"),
+                           QString::number(kcp.value("writeBufferSize").toInt(protocols::xray::defaultKcpWriteBufferSize)));
+        replaceOrAppendVar(vars, QStringLiteral("$XRAY_FINALMASK_BLOCK"),
+                           ServerController::buildXrayFinalMaskBlock(serverState.maskType, serverState.packetSize));
+
+        logger.info() << "XRay mKCP mirrored from server: mtu" << kcp.value("mtu").toInt()
+                      << "tti" << kcp.value("tti").toInt()
+                      << "up/down" << kcp.value("uplinkCapacity").toInt() << kcp.value("downlinkCapacity").toInt()
+                      << "mask" << (serverState.maskType.isEmpty() ? QStringLiteral("none") : serverState.maskType);
+    }
+
     QString config = m_serverController->replaceVars(
         amnezia::scriptData(ProtocolScriptType::xray_template, container),
         vars);
@@ -327,7 +377,12 @@ QString XrayConfigurator::createConfig(const ServerCredentials &credentials, Doc
         xrayShortId.replace("\n", "");
     }
 
-    if (serverUsesKcp) {
+    // Masking can be switched off in the advanced settings, in which case the rendered config
+    // has no finalmask block and no password placeholder -- fetching the key would then be a
+    // pointless round trip whose failure would abort a perfectly valid config. by vovankrot
+    const bool maskEnabled = config.contains("$XRAY_SALAMANDER_PASSWORD");
+
+    if (serverUsesKcp && maskEnabled) {
         xraySalamanderPassword =
             m_serverController->getTextFileFromContainer(container, credentials, amnezia::protocols::xray::salamanderKeyPath, errorCode);
         if (errorCode != ErrorCode::NoError || xraySalamanderPassword.isEmpty()) {
@@ -344,8 +399,9 @@ QString XrayConfigurator::createConfig(const ServerCredentials &credentials, Doc
     const bool missingCommon = !config.contains("$XRAY_CLIENT_ID");
     const bool missingReality = !serverUsesKcp
             && (!config.contains("$XRAY_PUBLIC_KEY") || !config.contains("$XRAY_SHORT_ID"));
-    // mKCP + FinalMask salamander: the client needs the shared salamander password.
-    const bool missingKcp = serverUsesKcp && !config.contains("$XRAY_SALAMANDER_PASSWORD");
+    // mKCP + FinalMask salamander: the client needs the shared salamander password --
+    // but only when masking is actually on.
+    const bool missingKcp = serverUsesKcp && maskEnabled && xraySalamanderPassword.isEmpty();
     if (missingCommon || missingReality || missingKcp) {
         logger.error() << "Config template missing required variables:"
                       << "kcp:" << serverUsesKcp

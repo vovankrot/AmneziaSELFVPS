@@ -65,25 +65,14 @@ cat > "$SERVER_JSON_TMP" <<EOF
             "streamSettings": {
                 "network": "kcp",
                 "kcpSettings": {
-                    "mtu": 1350,
-                    "tti": 50,
-                    "uplinkCapacity": 100,
-                    "downlinkCapacity": 100,
-                    "congestion": true,
-                    "readBufferSize": 2,
-                    "writeBufferSize": 2
-                },
-                "finalmask": {
-                    "udp": [
-                        {
-                            "type": "salamander",
-                            "settings": {
-                                "password": "$XRAY_SALAMANDER_PASSWORD",
-                                "packetSize": "512-1200"
-                            }
-                        }
-                    ]
-                }
+                    "mtu": $XRAY_KCP_MTU,
+                    "tti": $XRAY_KCP_TTI,
+                    "uplinkCapacity": $XRAY_KCP_UPLINK,
+                    "downlinkCapacity": $XRAY_KCP_DOWNLINK,
+                    "congestion": $XRAY_KCP_CONGESTION,
+                    "readBufferSize": $XRAY_KCP_READ_BUFFER,
+                    "writeBufferSize": $XRAY_KCP_WRITE_BUFFER
+                }$XRAY_FINALMASK_BLOCK
             }
         }
     ],

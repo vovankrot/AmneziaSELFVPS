@@ -54,6 +54,17 @@ namespace amnezia
         constexpr char site[] = "site";
         constexpr char block_outside_dns[] = "block_outside_dns";
 
+        // XRay advanced (mKCP + FinalMask) keys. by vovankrot
+        constexpr char maskType[] = "maskType";
+        constexpr char packetSize[] = "packetSize";
+        constexpr char kcpMtu[] = "kcpMtu";
+        constexpr char kcpTti[] = "kcpTti";
+        constexpr char kcpUplinkCapacity[] = "kcpUplinkCapacity";
+        constexpr char kcpDownlinkCapacity[] = "kcpDownlinkCapacity";
+        constexpr char kcpCongestion[] = "kcpCongestion";
+        constexpr char kcpReadBufferSize[] = "kcpReadBufferSize";
+        constexpr char kcpWriteBufferSize[] = "kcpWriteBufferSize";
+
         constexpr char subnet_address[] = "subnet_address";
         constexpr char subnet_mask[] = "subnet_mask";
         constexpr char subnet_cidr[] = "subnet_cidr";
@@ -177,6 +188,21 @@ namespace amnezia
             constexpr char defaultPort[] = "443";
             constexpr char defaultLocalProxyPort[] = "10808";
             constexpr char defaultLocalAddr[] = "10.33.0.2";
+
+            // Advanced (user-tunable) mKCP + FinalMask parameters. These are the STOCK
+            // values this fork ships with -- the "Reset to defaults" button restores them.
+            // uplink/downlinkCapacity is a HARD MB/s ceiling, not a hint: lowering it to 12
+            // capped a 300 Mbit/s link at 90 Mbit/s. Keep at 100 unless you know why.
+            // by vovankrot
+            constexpr char defaultMaskType[] = "salamander";
+            constexpr char defaultPacketSize[] = "512-1200";
+            constexpr int defaultKcpMtu = 1350;
+            constexpr int defaultKcpTti = 50;
+            constexpr int defaultKcpUplinkCapacity = 100;
+            constexpr int defaultKcpDownlinkCapacity = 100;
+            constexpr bool defaultKcpCongestion = true;
+            constexpr int defaultKcpReadBufferSize = 2;
+            constexpr int defaultKcpWriteBufferSize = 2;
         }
 
         namespace ssxray

@@ -182,7 +182,7 @@
     </message>
     <message>
         <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="183"/>
-        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="246"/>
+        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="247"/>
         <source>Application added: %1</source>
         <translation>برنامه اضافه شد: %1</translation>
     </message>
@@ -193,7 +193,7 @@
     </message>
     <message>
         <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="197"/>
-        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="250"/>
+        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="251"/>
         <source>The selected applications have been added</source>
         <translation>برنامه‌های انتخاب شده اضافه شدند</translation>
     </message>
@@ -203,52 +203,52 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="236"/>
+        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="237"/>
         <source>No executable files were found in the selected folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="241"/>
+        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="242"/>
         <source>All applications from the selected folder have already been added</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="256"/>
+        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="257"/>
         <source>Launching applications outside VPN is only supported on Windows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="260"/>
+        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="261"/>
         <source>Another launch outside VPN request is already in progress</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="266"/>
+        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="267"/>
         <source>The selected file path is invalid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="272"/>
+        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="273"/>
         <source>Unable to determine which application should be launched for the selected file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="277"/>
+        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="278"/>
         <source>AmneziaVPN has no active VPN connection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="284"/>
+        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="285"/>
         <source>Default server does not support split tunneling function</source>
         <translation type="unfinished">سرور پیش‌فرض از عملکرد تونل‌سازی تقسیم شده پشتیبانی نمی‌کند</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="298"/>
+        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="299"/>
         <source>The selected file could not be started outside the VPN</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="325"/>
+        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="326"/>
         <source>Failed to apply split tunneling settings. The selected file was not launched outside the VPN</source>
         <translation type="unfinished"></translation>
     </message>
@@ -262,8 +262,15 @@
         <source>Application removed: %1. Site split tunneling is still active, so some traffic from this application may still bypass VPN.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message numerus="yes">
+        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="353"/>
+        <source>Folder removed: %1 (%n application(s))</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
-        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="381"/>
+        <location filename="../ui/controllers/appSplitTunnelingController.cpp" line="395"/>
         <source>Split tunneling settings were updated, but the selected file could not be started</source>
         <translation type="unfinished"></translation>
     </message>
@@ -443,6 +450,44 @@
     <message>
         <source>Access error!</source>
         <translation type="vanished">خطای دسترسی!</translation>
+    </message>
+</context>
+<context>
+    <name>GeoipUpdater</name>
+    <message>
+        <location filename="../core/geoipUpdater.cpp" line="85"/>
+        <source>never</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../core/geoipUpdater.cpp" line="173"/>
+        <source>download failed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../core/geoipUpdater.cpp" line="179"/>
+        <source>received empty response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../core/geoipUpdater.cpp" line="201"/>
+        <source>invalid CIDR line: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../core/geoipUpdater.cpp" line="210"/>
+        <source>suspiciously few CIDRs: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../core/geoipUpdater.cpp" line="220"/>
+        <source>cannot write cache: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../core/geoipUpdater.cpp" line="229"/>
+        <source>cannot replace cache file</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -872,17 +917,22 @@ Already installed containers were found on the server. All installed containers 
 <context>
     <name>InstalledAppsDrawer</name>
     <message>
-        <location filename="../ui/qml/Components/InstalledAppsDrawer.qml" line="57"/>
+        <location filename="../ui/qml/Components/InstalledAppsDrawer.qml" line="62"/>
         <source>Choose application</source>
         <translation>انتخاب برنامه</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Components/InstalledAppsDrawer.qml" line="124"/>
+        <location filename="../ui/qml/Components/InstalledAppsDrawer.qml" line="136"/>
+        <source>Loading applications…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/InstalledAppsDrawer.qml" line="153"/>
         <source>application name</source>
         <translation>نام برنامه</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Components/InstalledAppsDrawer.qml" line="137"/>
+        <location filename="../ui/qml/Components/InstalledAppsDrawer.qml" line="166"/>
         <source>Add selected</source>
         <translation>اضافه کردن انتخاب شده</translation>
     </message>
@@ -985,12 +1035,12 @@ Already installed containers were found on the server. All installed containers 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1090"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1101"/>
         <source>Speed test</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="817"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="828"/>
         <source>Auto-failover</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1063,7 +1113,7 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
     </message>
     <message>
         <location filename="../ui/qml/Pages2/PageHome.qml" line="604"/>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="756"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="767"/>
         <source>Protocol</source>
         <translation type="unfinished">پروتکل</translation>
     </message>
@@ -1073,103 +1123,102 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="616"/>
         <source>Enabled</source>
-        <translation type="unfinished">فعال</translation>
+        <translation type="obsolete">فعال</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="616"/>
-        <source>Off</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="644"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="655"/>
         <source>Traffic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="655"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="666"/>
         <source>IP address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="707"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="718"/>
         <source>Recover Reality DNS</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="714"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="725"/>
         <source>Recovering Reality DNS on server...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="739"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="750"/>
         <source>Use this if the VPN is connected but sites do not open: the XRay container will be restarted and its DNS cache cleared.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="847"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="858"/>
         <source>Beta: Auto-switch to backup server/protocol when connection degrades</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="880"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="891"/>
         <source>Applying fix...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="949"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="960"/>
         <source>Fix</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="969"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="980"/>
         <source>Copy error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="675"/>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="974"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="686"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="985"/>
         <source>Copied</source>
         <translation type="unfinished">کپی شد</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="988"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="622"/>
+        <source>None</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="999"/>
         <source>Skip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1001"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1012"/>
         <source>%1 of %2 issues</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1022"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1033"/>
         <source>VPN server</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1030"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1041"/>
         <source>Moscow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1138"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1149"/>
         <source>Split tunneling enabled</source>
         <translation>فعال شدن تونل تقسیم‌شده</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1138"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1149"/>
         <source>Split tunneling disabled</source>
         <translation>تونل تقسیم‌شده غیرفعال شده</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1407"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1418"/>
         <source>VPN protocol</source>
         <translation>پروتکل وی‎پی‎ان</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1460"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1471"/>
         <source>Servers</source>
         <translation>سرورها</translation>
     </message>
@@ -1964,47 +2013,147 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
 <context>
     <name>PageProtocolXraySettings</name>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="57"/>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="62"/>
         <source>XRay settings</source>
         <translation>تنظیمات XRay</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="70"/>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="75"/>
         <source>Disguised as traffic from</source>
         <translation>به‌عنوان ترافیک از طرف زیر نمایش داده می‌شود</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="100"/>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="105"/>
         <source>Port</source>
         <translation type="unfinished">پورت</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="125"/>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="134"/>
+        <source>Advanced XRay settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="135"/>
+        <source>Masking and mKCP transport parameters. Default values are tuned for this fork — change them only if you understand the effect.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="155"/>
+        <source>Saving applies these settings to the server as well — the XRay container is reinstalled and every device using this server reconnects.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="169"/>
+        <source>Traffic masking (salamander)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="170"/>
+        <source>Turns every packet into pseudo-random noise so DPI has nothing to fingerprint. Turning this off makes the connection faster but easily detectable — on a flagged IP it will most likely be blocked.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="192"/>
+        <source>Packet size range (bytes)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="212"/>
+        <source>Format: min-max, for example 512-1200. Padding packets to a random size within this range hides the real packet-length pattern.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="221"/>
+        <source>Uplink/downlink capacity is a HARD limit in MB/s, not a hint. Lowering it to 12 capped a 300 Mbit/s link at 90 Mbit/s. Leave it at 100 unless you have a reason.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="235"/>
+        <source>Uplink capacity (MB/s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="259"/>
+        <source>Downlink capacity (MB/s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="283"/>
+        <source>MTU</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="304"/>
+        <source>Maximum packet size. Lower it (1200–1300) if the connection stalls on mobile networks that fragment large UDP packets.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="317"/>
+        <source>Send interval, ms (tti)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="338"/>
+        <source>How often packets are sent. Lower values reduce latency (useful for voice chat) at the cost of more overhead.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="351"/>
+        <source>Congestion control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="352"/>
+        <source>Slows down when the link starts losing packets. Keep it on for a lossy cross-border path.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="372"/>
+        <source>Read buffer (MB)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="396"/>
+        <source>Write buffer (MB)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="416"/>
+        <source>There is no TLS fingerprint (uTLS) setting here: this fork runs VLESS over mKCP with packet masking and performs no TLS handshake at all, so a fingerprint would have nothing to disguise. Reality — which does use one — is blocked on a flagged IP on any port, which is exactly why this transport was chosen.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="435"/>
+        <source>Reset to defaults</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="461"/>
         <source>Save</source>
         <translation>ذخیره</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="130"/>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="466"/>
         <source>Save settings?</source>
         <translation type="unfinished">تنظیمات را ذخیره کن?</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="131"/>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="467"/>
         <source>All users with whom you shared a connection with will no longer be able to connect to it.</source>
         <translation type="unfinished">همه کاربرانی که با آن‌ها ارتباطی به اشتراک گذاشته‌اید دیگر قادر به اتصال به آن نخواهند بود.</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="132"/>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="468"/>
         <source>Continue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="133"/>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="469"/>
         <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="137"/>
+        <location filename="../ui/qml/Pages2/PageProtocolXraySettings.qml" line="473"/>
         <source>Unable change settings while there is an active connection</source>
         <translation>نمی‌توان تنظیمات را تغییر داد در حالی که اتصال فعال است.</translation>
     </message>
@@ -2975,8 +3124,8 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation type="vanished">نمی توان تنظیمات تونل تقسیم را در طول اتصال فعال تغییر دادنمی‌توان تنظیمات تقسیم تونلینگ را در حین اتصال فعال تغییر داد.</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="76"/>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="172"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="89"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="185"/>
         <source>Split tunneling settings were applied automatically</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2989,7 +3138,7 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation type="vanished">برنامه‌های موجود در لیست نباید از طریق VPN دسترسی داشته باشند.</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="160"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="173"/>
         <source>App split tunneling</source>
         <translation>تقسیم تونلینگ برنامه‌ها</translation>
     </message>
@@ -2998,22 +3147,22 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation type="vanished">حالت</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="207"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="220"/>
         <source>Tips and details</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="238"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="251"/>
         <source>Apps in this list will bypass VPN — their traffic goes directly without encryption.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="250"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="263"/>
         <source>Changes to the app list are applied immediately. Restart the changed application if it is already running.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="262"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="275"/>
         <source>Tip: site and app split tunneling work best when set to opposite modes.
 
 • If site mode is &quot;Sites not in the list will bypass VPN&quot; (only listed sites through VPN), then the app list is for apps that should bypass VPN.
@@ -3023,32 +3172,39 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="345"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="416"/>
+        <source>Remove folder &quot;%1&quot; and all its apps?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="490"/>
         <source>Remove </source>
         <translation>حذف </translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="346"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="417"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="491"/>
         <source>Continue</source>
         <translation>ادامه دهید</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="347"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="418"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="492"/>
         <source>Cancel</source>
         <translation>کنسل</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="396"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="541"/>
         <source>application name</source>
         <translation>نام برنامه</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="406"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="551"/>
         <source>Open executable file</source>
         <translation>فایل اجرایی را باز کنید</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="407"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="552"/>
         <source>Executable files (*.exe)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3057,12 +3213,12 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <translation type="vanished">فایل‌های اجرایی (*.*)</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="422"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="567"/>
         <source>Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="428"/>
+        <location filename="../ui/qml/Pages2/PageSettingsAppSplitTunneling.qml" line="573"/>
         <source>Open application folder</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4068,7 +4224,7 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <translation type="vanished">دسترسی به آدرس‎های لیست بدون وی‎پی‎ان</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="291"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="321"/>
         <source>Split tunneling</source>
         <translation>جداسازی ترافیک</translation>
     </message>
@@ -4077,19 +4233,19 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <translation type="vanished">حالت</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="556"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="758"/>
         <source>Remove </source>
         <translation>حذف </translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="557"/>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="704"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="759"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="906"/>
         <source>Continue</source>
         <translation>ادامه</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="558"/>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="705"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="760"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="907"/>
         <source>Cancel</source>
         <translation>کنسل</translation>
     </message>
@@ -4102,7 +4258,7 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <translation type="vanished">تنها سایت‌های موجود در اینجا از طریق VPN دسترسی داده خواهند شد</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="605"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="807"/>
         <source>website or IP</source>
         <translation>وب‌سایت یا آدرس IP</translation>
     </message>
@@ -4118,42 +4274,42 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="240"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="270"/>
         <source>Sites not in the list will bypass VPN</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="245"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="275"/>
         <source>Sites not in the list will use VPN</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="353"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="383"/>
         <source>Russian sites without VPN</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="354"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="384"/>
         <source>Sites with Russian IP addresses will be accessed directly without VPN. For sites on foreign hosting, add them manually to the exclusion list.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="419"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="621"/>
         <source>Auto-bypass RKN blocks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="420"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="622"/>
         <source>Sites blocked by Roskomnadzor will be automatically routed through VPN. The blocklist is updated from community sources every few days.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="450"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="652"/>
         <source>Default for sites not in the list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="326"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="356"/>
         <source>Sites in the list below will go through VPN. Everything else bypasses VPN.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4178,80 +4334,173 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="327"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="231"/>
+        <source>Every hour</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="232"/>
+        <source>Every 6 hours</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="233"/>
+        <source>Every 12 hours</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="234"/>
+        <source>Once a day</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="235"/>
+        <source>Every 3 days</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="236"/>
+        <source>Once a week</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="253"/>
+        <source>Every %1 h</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="357"/>
         <source>Sites in the list below will bypass VPN. Everything else goes through VPN.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="339"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="369"/>
         <source>Changes to site split tunneling are applied automatically a moment after editing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="604"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="437"/>
+        <source>Russian IP list (GeoIP)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="444"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="541"/>
+        <source>Updating…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="446"/>
+        <source>Built-in list is in use — has not been downloaded yet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="447"/>
+        <source>%n subnet(s) loaded</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="455"/>
+        <source>Updated: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="461"/>
+        <source>File: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="470"/>
+        <source>Error: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="482"/>
+        <source>Update source (URL of a CIDR list)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="513"/>
+        <source>Check for updates</source>
+        <translation type="unfinished">بررسی بروز‎رسانی</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="541"/>
+        <source>Update now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="558"/>
+        <source>Default source</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="806"/>
         <source>website, IP or mask like *youtube* or *.domain.com</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="651"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="853"/>
         <source>Additional options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="658"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="860"/>
         <source>Import</source>
         <translation>بارگذاری</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="671"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="873"/>
         <source>Save site list</source>
         <translation>ذخیره لیست سایت‎ها</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="678"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="880"/>
         <source>Save sites</source>
         <translation>ذخیره سایت‎ها</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="679"/>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="805"/>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="818"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="881"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="1007"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="1020"/>
         <source>Sites files (*.json)</source>
         <translation>Sites files (*.json)</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="699"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="901"/>
         <source>Clear site list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="702"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="904"/>
         <source>Clear site list?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="703"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="905"/>
         <source>All sites will be removed from list.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="767"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="969"/>
         <source>Import a list of sites</source>
         <translation>بارگذاری لیست سایت‎ها</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="802"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="1004"/>
         <source>Replace site list</source>
         <translation>جایگزین کردن لیست سایت</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="804"/>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="817"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="1006"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="1019"/>
         <source>Open sites file</source>
         <translation>باز کردن فایل سایت‎ها</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="815"/>
+        <location filename="../ui/qml/Pages2/PageSettingsSplitTunneling.qml" line="1017"/>
         <source>Add imported sites to existing ones</source>
         <translation>اضافه کردن سایت‎های بارگذاری شده به سایت‎های موجود</translation>
     </message>
@@ -7049,37 +7298,37 @@ For more detailed information, you can
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1547"/>
+        <location filename="../core/controllers/serverController.cpp" line="1579"/>
         <source>Detecting server environment...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1561"/>
+        <location filename="../core/controllers/serverController.cpp" line="1593"/>
         <source>Server preflight returned no output.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1566"/>
+        <location filename="../core/controllers/serverController.cpp" line="1598"/>
         <source>Server probe: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1576"/>
+        <location filename="../core/controllers/serverController.cpp" line="1608"/>
         <source>Cancel requested, interrupting current SSH operation...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1814"/>
+        <location filename="../core/controllers/serverController.cpp" line="1870"/>
         <source>Package manager probe timed out. The remote command stopped responding.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1828"/>
+        <location filename="../core/controllers/serverController.cpp" line="1884"/>
         <source>Package manager is busy (attempt %1/30), waiting 10s... Output: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1840"/>
+        <location filename="../core/controllers/serverController.cpp" line="1896"/>
         <source>Package manager is still busy after 30 attempts, giving up.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7448,12 +7697,12 @@ For more detailed information, you can
 <context>
     <name>VpnConnection</name>
     <message>
-        <location filename="../vpnconnection.cpp" line="563"/>
+        <location filename="../vpnconnection.cpp" line="566"/>
         <source>Site split tunneling works only with XRay; full VPN is used for this protocol</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../vpnconnection.cpp" line="930"/>
+        <location filename="../vpnconnection.cpp" line="921"/>
         <source>Mbps</source>
         <translation>Mbps</translation>
     </message>

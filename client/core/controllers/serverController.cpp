@@ -1406,6 +1406,38 @@ ServerController::Vars ServerController::genVarsForScript(const ServerCredential
     vars.append({ { "$XRAY_SITE_NAME", xrayConfig.value(config_key::site).toString(protocols::xray::defaultSite) } });
     vars.append({ { "$XRAY_SERVER_PORT", xrayConfig.value(config_key::port).toString(protocols::xray::defaultPort) } });
 
+    // Advanced mKCP + FinalMask vars. Both the server script (configure_container.sh) and the
+    // client template (template.json) are rendered through this same var table, so whatever the
+    // user picks lands on BOTH ends -- otherwise the two would disagree and the tunnel would
+    // silently fail to come up. by vovankrot
+    vars.append({ { "$XRAY_KCP_MTU",
+                    QString::number(xrayConfig.value(config_key::kcpMtu).toInt(protocols::xray::defaultKcpMtu)) } });
+    vars.append({ { "$XRAY_KCP_TTI",
+                    QString::number(xrayConfig.value(config_key::kcpTti).toInt(protocols::xray::defaultKcpTti)) } });
+    vars.append({ { "$XRAY_KCP_UPLINK",
+                    QString::number(xrayConfig.value(config_key::kcpUplinkCapacity)
+                                            .toInt(protocols::xray::defaultKcpUplinkCapacity)) } });
+    vars.append({ { "$XRAY_KCP_DOWNLINK",
+                    QString::number(xrayConfig.value(config_key::kcpDownlinkCapacity)
+                                            .toInt(protocols::xray::defaultKcpDownlinkCapacity)) } });
+    vars.append({ { "$XRAY_KCP_CONGESTION",
+                    xrayConfig.value(config_key::kcpCongestion).toBool(protocols::xray::defaultKcpCongestion)
+                            ? QStringLiteral("true")
+                            : QStringLiteral("false") } });
+    vars.append({ { "$XRAY_KCP_READ_BUFFER",
+                    QString::number(xrayConfig.value(config_key::kcpReadBufferSize)
+                                            .toInt(protocols::xray::defaultKcpReadBufferSize)) } });
+    vars.append({ { "$XRAY_KCP_WRITE_BUFFER",
+                    QString::number(xrayConfig.value(config_key::kcpWriteBufferSize)
+                                            .toInt(protocols::xray::defaultKcpWriteBufferSize)) } });
+
+    // The masking layer is an entire JSON fragment rather than a value, because turning it off
+    // means the "finalmask" key must be ABSENT -- xray rejects an unknown mask type.
+    vars.append({ { "$XRAY_FINALMASK_BLOCK",
+                    buildXrayFinalMaskBlock(
+                            xrayConfig.value(config_key::maskType).toString(protocols::xray::defaultMaskType),
+                            xrayConfig.value(config_key::packetSize).toString(protocols::xray::defaultPacketSize)) } });
+
     // SSXray vars (Shadowsocks via XRay)
     // NOTE: $SSXRAY_PASSWORD is NOT set here — it is populated by SSXrayConfigurator::createConfig()
     // after reading ss_password.key from the server. genVarsForScript() runs before that,
@@ -1633,6 +1665,30 @@ QJsonObject ServerController::readServerVersion(const ServerCredentials &credent
     }
 
     return doc.object();
+}
+
+QString ServerController::buildXrayFinalMaskBlock(const QString &maskType, const QString &packetSize)
+{
+    if (maskType.isEmpty() || maskType == QStringLiteral("none")) {
+        return {};
+    }
+
+    // $XRAY_SALAMANDER_PASSWORD is intentionally left unresolved here: on the server side the
+    // shell expands it inside the heredoc, and on the client side XrayConfigurator substitutes
+    // the password it read back from the server.
+    return QStringLiteral(",\n"
+                          "                \"finalmask\": {\n"
+                          "                    \"udp\": [\n"
+                          "                        {\n"
+                          "                            \"type\": \"%1\",\n"
+                          "                            \"settings\": {\n"
+                          "                                \"password\": \"$XRAY_SALAMANDER_PASSWORD\",\n"
+                          "                                \"packetSize\": \"%2\"\n"
+                          "                            }\n"
+                          "                        }\n"
+                          "                    ]\n"
+                          "                }")
+            .arg(maskType, packetSize);
 }
 
 QString ServerController::replaceVars(const QString &script, const Vars &vars)

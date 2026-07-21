@@ -13,7 +13,17 @@ class XrayConfigModel : public QAbstractListModel
 public:
     enum Roles {
         SiteRole,
-        PortRole
+        PortRole,
+        // Advanced mKCP + FinalMask knobs. by vovankrot
+        MaskTypeRole,
+        PacketSizeRole,
+        KcpMtuRole,
+        KcpTtiRole,
+        KcpUplinkCapacityRole,
+        KcpDownlinkCapacityRole,
+        KcpCongestionRole,
+        KcpReadBufferSizeRole,
+        KcpWriteBufferSizeRole
     };
 
     explicit XrayConfigModel(QObject *parent = nullptr);
@@ -26,6 +36,11 @@ public:
 public slots:
     void updateModel(const QJsonObject &config);
     QJsonObject getConfig();
+
+    // Restores the stock mKCP/FinalMask values (the ones this fork ships with).
+    void resetAdvancedToDefaults();
+    // True when any advanced value differs from stock -- drives the "modified" warning.
+    bool isAdvancedModified() const;
 
 protected:
     QHash<int, QByteArray> roleNames() const override;

@@ -203,6 +203,9 @@ void AmneziaApplication::init()
     m_coreController.reset(new CoreController(m_vpnConnection, m_settings, m_engine));
 
     m_geoipUpdater = new GeoipUpdater(m_nam, m_settings, this);
+    // Exposed to QML so the site split-tunneling page can show which list is loaded
+    // and let the user change the source / interval.
+    m_engine->rootContext()->setContextProperty("GeoipController", m_geoipUpdater);
     m_geoipUpdater->startPeriodicUpdates();
 
     m_blocklistUpdater = new BlocklistUpdater(m_nam, m_settings, this);

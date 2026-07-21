@@ -45,6 +45,12 @@ public:
     Vars genVarsForScript(const ServerCredentials &credentials, DockerContainer container = DockerContainer::None,
                           const QJsonObject &config = QJsonObject());
 
+    // Renders the "finalmask" fragment appended after kcpSettings, or an empty string when
+    // masking is off (the key must then be ABSENT -- xray rejects an unknown mask type).
+    // Shared with XrayConfigurator so the client and the server never build it differently.
+    // by vovankrot
+    static QString buildXrayFinalMaskBlock(const QString &maskType, const QString &packetSize);
+
     ErrorCode runScript(const ServerCredentials &credentials, QString script,
                         const std::function<ErrorCode(const QString &, libssh::Client &)> &cbReadStdOut = nullptr,
                         const std::function<ErrorCode(const QString &, libssh::Client &)> &cbReadStdErr = nullptr,
