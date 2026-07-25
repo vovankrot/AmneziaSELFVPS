@@ -139,6 +139,8 @@
         <file>ui/qml/Components/ConnectionTypeSelectionDrawer.qml</file>
         <file>ui/qml/Components/GamepadLoader.qml</file>
         <file>ui/qml/Components/HomeContainersListView.qml</file>
+        <file>ui/qml/Components/HomeServerListDrawer.qml</file>
+        <file>ui/qml/Components/HomeProtocolListDrawer.qml</file>
         <file>ui/qml/Components/HomeSplitTunnelingDrawer.qml</file>
         <file>ui/qml/Components/InstalledAppsDrawer.qml</file>
         <file>ui/qml/Components/BenefitRow.qml</file>

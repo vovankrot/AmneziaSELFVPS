@@ -251,14 +251,14 @@
 <context>
     <name>ConnectionController</name>
     <message>
-        <location filename="../ui/controllers/connectionController.h" line="85"/>
         <location filename="../ui/controllers/connectionController.h" line="86"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="156"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="157"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="178"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="179"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="194"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="195"/>
+        <location filename="../ui/controllers/connectionController.h" line="87"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="183"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="184"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="205"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="206"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="221"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="222"/>
         <source>Connect</source>
         <translation>جوڑنا</translation>
     </message>
@@ -287,40 +287,50 @@
     </message>
     <message>
         <location filename="../ui/controllers/connectionController.cpp" line="125"/>
+        <source>Server changed, reconnecting...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/connectionController.cpp" line="130"/>
+        <source>Server changed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/connectionController.cpp" line="152"/>
         <source>Connecting...</source>
         <translation>جوڑاجارھاھے....</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="126"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="134"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="151"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="167"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="153"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="161"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="178"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="194"/>
         <source>Disconnect</source>
         <translation type="unfinished">منقطع کریں</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="133"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="160"/>
         <source>Connected</source>
         <translation>جوڑاجارھاھے</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="150"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="177"/>
         <source>Reconnecting...</source>
         <translation>دوبارہ جوڑنےکی کوشش...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="166"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="193"/>
         <source>Disconnecting...</source>
         <translation>منقطع کرنا...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="172"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="173"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="199"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="200"/>
         <source>Preparing...</source>
         <translation>تیاری کیا جا رہا ہے...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="207"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="234"/>
         <source>Settings updated successfully, reconnecting...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -329,22 +339,22 @@
         <translation type="vanished">ترتیب ک ھوگی،دوبارہ جوڑنےکی کوشش...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="210"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="237"/>
         <source>Settings updated successfully</source>
         <translation>دوبارہ ترتیب تاذہ کامیاب</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="278"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="305"/>
         <source>Trying fallback connection...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="326"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="353"/>
         <source>Switching to %1...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="340"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="367"/>
         <source>Switching to server %1...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -458,6 +468,47 @@
     <message>
         <source>Unable change protocol while there is an active connection</source>
         <translation type="vanished">موجودہ کنکشن ہونے کے دوران پروٹوکول کو تبدیل کرنے سے قاصر ہے</translation>
+    </message>
+</context>
+<context>
+    <name>HomeProtocolListDrawer</name>
+    <message>
+        <location filename="../ui/qml/Components/HomeProtocolListDrawer.qml" line="45"/>
+        <source>Protocol</source>
+        <translation type="unfinished">پروٹوکول</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/HomeProtocolListDrawer.qml" line="47"/>
+        <source>Tap a protocol to switch — VPN will reconnect automatically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/HomeProtocolListDrawer.qml" line="48"/>
+        <source>Tap a protocol to make it the default</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HomeServerListDrawer</name>
+    <message>
+        <location filename="../ui/qml/Components/HomeServerListDrawer.qml" line="42"/>
+        <source>Servers</source>
+        <translation type="unfinished">سرور</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/HomeServerListDrawer.qml" line="44"/>
+        <source>Tap a server to switch — VPN will reconnect automatically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/HomeServerListDrawer.qml" line="45"/>
+        <source>Tap a server to make it the default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Components/HomeServerListDrawer.qml" line="172"/>
+        <source>Manage servers</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -970,22 +1021,22 @@ Already installed containers were found on the server. All installed containers 
 <context>
     <name>PageHome</name>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="280"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="272"/>
         <source>Logging enabled</source>
         <translation>لاگنگ فعال ہے</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="308"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="300"/>
         <source>Dev gateway enabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1101"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1172"/>
         <source>Speed test</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="828"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="899"/>
         <source>Auto-failover</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1052,18 +1103,18 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation type="unfinished">بند</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="530"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="578"/>
         <source>ping</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="604"/>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="767"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="652"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="822"/>
         <source>Protocol</source>
         <translation type="unfinished">پروٹوکول</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="614"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="662"/>
         <source>Obfuscation</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1072,98 +1123,98 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation type="obsolete">فعال</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="655"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="703"/>
         <source>Traffic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="666"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="714"/>
         <source>IP address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="718"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="766"/>
         <source>Recover Reality DNS</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="725"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="773"/>
         <source>Recovering Reality DNS on server...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="750"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="798"/>
         <source>Use this if the VPN is connected but sites do not open: the XRay container will be restarted and its DNS cache cleared.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="858"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="929"/>
         <source>Beta: Auto-switch to backup server/protocol when connection degrades</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="891"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="962"/>
         <source>Applying fix...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="960"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1031"/>
         <source>Fix</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="980"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1051"/>
         <source>Copy error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="686"/>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="985"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="734"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1056"/>
         <source>Copied</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="622"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="670"/>
         <source>None</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="999"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1070"/>
         <source>Skip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1012"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1083"/>
         <source>%1 of %2 issues</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1033"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1104"/>
         <source>VPN server</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1041"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1112"/>
         <source>Moscow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1149"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1220"/>
         <source>Split tunneling enabled</source>
         <translation>سپلٹ ٹنلنگ فعال ہے</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1149"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1220"/>
         <source>Split tunneling disabled</source>
         <translation>سپلٹ ٹنلنگ غیر فعال ہے</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1418"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1489"/>
         <source>VPN protocol</source>
         <translation>وی پی این پروٹوکول</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1471"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1542"/>
         <source>Servers</source>
         <translation>سرور</translation>
     </message>

@@ -38,6 +38,7 @@ public slots:
     void closeConnection();
     void reconnectToVpn();
     Q_INVOKABLE void switchToContainer(int containerIndex);
+    Q_INVOKABLE void switchToServer(int serverIndex);
 
     ErrorCode getLastConnectionError();
     void onConnectionStateChanged(Vpn::ConnectionState state);

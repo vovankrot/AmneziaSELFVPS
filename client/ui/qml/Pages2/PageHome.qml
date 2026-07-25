@@ -180,14 +180,6 @@ PageType {
         PageController.goToPage(PageEnum.PageSetupWizardProtocolSettings)
     }
 
-    function xrayRealityButtonColor(container) {
-        return root.defaultContainer() === container ? AmneziaStyle.color.goldenApricot : AmneziaStyle.color.charcoalGray
-    }
-
-    function xrayRealityButtonTextColor(container) {
-        return root.defaultContainer() === container ? AmneziaStyle.color.midnightBlack : AmneziaStyle.color.paleGray
-    }
-
     // Installed VPN protocols on the default server — drives the home protocol selector.
     // Auto-updates when the default server's containers change.
     SortFilterProxyModel {
@@ -513,15 +505,71 @@ PageType {
                 }
             }
 
-            Text {
+            // ── Server switcher chip: server name + chevron, opens a bottom-sheet
+            // server picker. The redesign dropped on-screen server switching; this
+            // brings it back as one tap. by vovankrot
+            Rectangle {
+                id: serverSwitcherChip
+
                 Layout.alignment: Qt.AlignHCenter
                 Layout.topMargin: 6
+                Layout.maximumWidth: Math.min(parent.width - 48, 340)
+
                 visible: ServersModel.getServersCount() > 0
-                text: ServersModel.defaultServerName
-                color: AmneziaStyle.color.paleGray
-                font.family: "Inter"
-                font.pixelSize: 20
-                font.weight: 700
+
+                implicitWidth: serverSwitcherRow.implicitWidth + 28
+                implicitHeight: 40
+                radius: 12
+
+                color: serverChipMouse.containsMouse
+                       ? AmneziaStyle.color.slateGray
+                       : AmneziaStyle.color.deepBrown
+                border.width: 1
+                border.color: AmneziaStyle.color.slateGray
+
+                Behavior on color { ColorAnimation { duration: 140 } }
+
+                RowLayout {
+                    id: serverSwitcherRow
+                    anchors.centerIn: parent
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: 14
+                    anchors.rightMargin: 12
+                    spacing: 8
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: ServersModel.defaultServerName
+                        color: AmneziaStyle.color.paleGray
+                        font.family: "Inter"
+                        font.pixelSize: 18
+                        font.weight: 700
+                        elide: Text.ElideRight
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
+                    Image {
+                        source: "qrc:/images/controls/chevron-down.svg"
+                        sourceSize.width: 18
+                        sourceSize.height: 18
+                        opacity: 0.75
+                    }
+                }
+
+                MouseArea {
+                    id: serverChipMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: homeServerListDrawer.openTriggered()
+                }
+
+                HomeServerListDrawer {
+                    id: homeServerListDrawer
+                    objectName: "homeServerListDrawer"
+                    parent: root
+                }
             }
 
             Text {
@@ -750,14 +798,21 @@ PageType {
                 text: qsTr("Use this if the VPN is connected but sites do not open: the XRay container will be restarted and its DNS cache cleared.")
             }
 
+            // ── Protocol switcher: modern segmented control. Each installed VPN
+            // protocol is a full-height segment; the active one gets an animated
+            // accent fill instead of the old cramped button row. by vovankrot
+            // ── Protocol switcher: chip + bottom sheet, same pattern as the server
+            // switcher above. A segmented control breaks down once a server has more
+            // than 2-3 installed protocols (names collapse into unreadable "..."), so
+            // this mirrors the proven server-picker UX instead. by vovankrot
             ColumnLayout {
                 id: xrayRealityVariantBlock
                 objectName: "xrayRealityVariantBlock"
 
                 Layout.alignment: Qt.AlignHCenter
-                Layout.topMargin: 8
+                Layout.topMargin: 12
                 Layout.bottomMargin: 2
-                spacing: 4
+                spacing: 6
 
                 visible: !ServersModel.isDefaultServerFromApi && installedProtocolsModel.count > 1
 
@@ -771,48 +826,64 @@ PageType {
                 }
 
                 Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.preferredWidth: Math.max(188, installedProtocolsModel.count * 94)
-                    Layout.preferredHeight: 34
+                    id: protocolChip
 
-                    radius: 8
-                    color: AmneziaStyle.color.midnightBlack
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.maximumWidth: 300
+
+                    implicitWidth: protocolChipRow.implicitWidth + 26
+                    implicitHeight: 40
+                    radius: 12
+
+                    color: protocolChipMouse.containsMouse
+                           ? AmneziaStyle.color.slateGray
+                           : AmneziaStyle.color.onyxBlack
                     border.width: 1
-                    border.color: AmneziaStyle.color.charcoalGray
+                    border.color: AmneziaStyle.color.slateGray
+                    opacity: ConnectionController.isConnectionInProgress ? 0.55 : 1.0
+
+                    Behavior on color { ColorAnimation { duration: 140 } }
+                    Behavior on opacity { NumberAnimation { duration: 160 } }
 
                     RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 3
-                        spacing: 3
+                        id: protocolChipRow
+                        anchors.centerIn: parent
+                        spacing: 8
 
-                        Repeater {
-                            model: installedProtocolsModel
-
-                            delegate: BasicButtonType {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-
-                                implicitHeight: 28
-                                leftPadding: 8
-                                rightPadding: 8
-
-                                defaultColor: root.xrayRealityButtonColor(dockerContainer)
-                                hoveredColor: root.defaultContainer() === dockerContainer ? AmneziaStyle.color.goldenApricot : AmneziaStyle.color.slateGray
-                                pressedColor: AmneziaStyle.color.burntOrange
-                                disabledColor: AmneziaStyle.color.charcoalGray
-                                textColor: root.xrayRealityButtonTextColor(dockerContainer)
-                                borderWidth: 0
-                                text: name
-                                enabled: !ConnectionController.isConnectionInProgress
-
-                                buttonTextLabel.font.pixelSize: 12
-                                buttonTextLabel.font.weight: 600
-
-                                clickedFunc: function() {
-                                    root.switchXrayRealityVariant(dockerContainer)
-                                }
-                            }
+                        Text {
+                            text: ServersModel.defaultServerDefaultContainerName
+                            color: AmneziaStyle.color.paleGray
+                            font.family: "Inter"
+                            font.pixelSize: 14
+                            font.weight: 600
+                            elide: Text.ElideRight
                         }
+
+                        Image {
+                            source: "qrc:/images/controls/chevron-down.svg"
+                            sourceSize.width: 16
+                            sourceSize.height: 16
+                            opacity: 0.75
+                        }
+                    }
+
+                    MouseArea {
+                        id: protocolChipMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        enabled: !ConnectionController.isConnectionInProgress
+                        onClicked: homeProtocolListDrawer.openTriggered()
+                    }
+
+                    HomeProtocolListDrawer {
+                        id: homeProtocolListDrawer
+                        objectName: "homeProtocolListDrawer"
+                        parent: root
+
+                        protocolsModel: installedProtocolsModel
+                        switchFunction: root.switchXrayRealityVariant
+                        currentContainer: (root.xrayRealitySwitcherRefresh, root.defaultContainer())
                     }
                 }
             }

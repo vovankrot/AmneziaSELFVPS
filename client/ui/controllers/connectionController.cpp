@@ -103,6 +103,33 @@ void ConnectionController::switchToContainer(int containerIndex)
     emit reconnectWithUpdatedContainer(tr("Protocol changed"));
 }
 
+void ConnectionController::switchToServer(int serverIndex)
+{
+    // Mirrors switchToContainer: while connected/connecting we don't force the user to
+    // manually disconnect first -- flip the default server, tear the tunnel down, and
+    // let the existing m_reconnectAfterDisconnect machinery bring it back up against the
+    // new server once the disconnect actually completes. by vovankrot
+    if (serverIndex < 0 || serverIndex >= m_serversModel->getServersCount()) {
+        return;
+    }
+
+    const int currentServerIndex = m_serversModel->getDefaultServerIndex();
+    if (serverIndex == currentServerIndex) {
+        return;
+    }
+
+    m_serversModel->setDefaultServerIndex(serverIndex);
+
+    if (m_isConnected || m_isConnectionInProgress) {
+        m_reconnectAfterDisconnect = true;
+        emit reconnectWithUpdatedContainer(tr("Server changed, reconnecting..."));
+        closeConnection();
+        return;
+    }
+
+    emit reconnectWithUpdatedContainer(tr("Server changed"));
+}
+
 void ConnectionController::reconnectToVpn()
 {
     if (m_state != Vpn::ConnectionState::Connected) {

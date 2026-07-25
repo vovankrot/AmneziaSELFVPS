@@ -48,7 +48,39 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# The Build Studio launcher reads our stdout/stderr as UTF-8, but Windows PowerShell
+# 5.1 emits console text in the OEM code page by default -> non-ASCII (the localized
+# "WARNING:" prefix, winget/aqt output, Cyrillic) arrives as mojibake. Force UTF-8 so
+# both ends agree. Guarded because a redirected/no-console host can throw here.
+try { [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false) } catch {}
+$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+
 # ------------------------------------------------------------------ helpers ----
+
+function Sync-PathFromRegistry {
+    # A GUI launcher (Build Studio) freezes its environment at process start, so any
+    # child it spawns inherits a STALE PATH if tools were installed AFTER the app was
+    # launched -- winget/python/cmake then look "missing" even though they are on disk.
+    # Rebuild PATH from the LIVE Machine + User registry values (fully portable: no
+    # hardcoded paths, just whatever THIS machine actually has), exactly as a freshly
+    # opened shell would compose it. Non-fatal: on any error we keep the inherited PATH.
+    try {
+        $parts = @(
+            [System.Environment]::GetEnvironmentVariable('Path', 'Machine'),
+            [System.Environment]::GetEnvironmentVariable('Path', 'User')
+        ) | Where-Object { $_ }
+        if (-not $parts) { return }
+        $expanded = [System.Environment]::ExpandEnvironmentVariables(($parts -join ';'))
+        $seen = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+        $ordered = foreach ($p in ($expanded -split ';')) {
+            $t = $p.Trim()
+            if ($t -and $seen.Add($t)) { $t }
+        }
+        if ($ordered) { $env:Path = ($ordered -join ';') }
+    } catch {}
+}
+
+Sync-PathFromRegistry
 
 function Test-Command {
     param([string]$Name)
@@ -396,7 +428,7 @@ switch ($PSCmdlet.ParameterSetName) {
         foreach ($m in $missing) {
             $c = $components | Where-Object { $_.id -eq $m.id } | Select-Object -First 1
             Write-Host "`n=== $($c.name) ===" -ForegroundColor Cyan
-            try { & $c.install } catch { Write-Warning "Failed: $($c.name) - $($_.Exception.Message)`n    Manual: $($c.hint)" }
+            try { & $c.install } catch { Write-Host ("[FAILED] {0} - {1}`n    Manual: {2}" -f $c.name, $_.Exception.Message, $c.hint) -ForegroundColor Red }
         }
         Write-Host "`nInstall pass complete. Re-run detection to confirm." -ForegroundColor Green
     }

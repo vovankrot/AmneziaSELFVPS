@@ -95,6 +95,29 @@ if (-not $NoElevate -and -not (Test-IsAdministrator)) {
 }
 
 $ErrorActionPreference = "Stop"
+
+# When launched from Build Studio (or any long-running GUI), this script's parent
+# process may have started BEFORE cmake/dotnet/etc. were installed or added to PATH.
+# The child inherits that frozen PATH, so `Get-Command cmake` reports "not found" even
+# though it is on disk. Rebuild PATH from the LIVE Machine + User registry values
+# (fully portable -- no hardcoded locations, just what THIS machine actually has) so
+# the tool checks below see reality, not the launcher's stale snapshot.
+try {
+    $regParts = @(
+        [System.Environment]::GetEnvironmentVariable('Path', 'Machine'),
+        [System.Environment]::GetEnvironmentVariable('Path', 'User')
+    ) | Where-Object { $_ }
+    if ($regParts) {
+        $expandedPath = [System.Environment]::ExpandEnvironmentVariables(($regParts -join ';'))
+        $seenPathEntries = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+        $orderedPath = foreach ($p in ($expandedPath -split ';')) {
+            $t = $p.Trim()
+            if ($t -and $seenPathEntries.Add($t)) { $t }
+        }
+        if ($orderedPath) { $env:Path = ($orderedPath -join ';') }
+    }
+} catch {}
+
 $ProjectDir = $PSScriptRoot
 if (-not $BuildDir) {
     $BuildDir = Join-Path $ProjectDir "build-installer"
