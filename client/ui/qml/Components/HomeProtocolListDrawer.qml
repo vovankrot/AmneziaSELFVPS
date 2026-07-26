@@ -89,19 +89,29 @@ DrawerType2 {
 
                         ButtonGroup.group: protocolPickerGroup
 
-                        // Don't gate on isConnectionInProgress here: the tap needs to feel
-                        // instant even mid-disconnect. switchToContainer already handles
-                        // reconnect state -- it flips the default, tears the tunnel down and
-                        // brings it back up on the new protocol. Blocking here made taps on
-                        // wg silently no-op during the transient Disconnecting/Connecting
-                        // states, which is what stuck the 16:45-16:53 session. by vovankrot
+                        // NEVER test `checked` in here. RadioButton toggles itself and the
+                        // ButtonGroup unchecks its siblings BEFORE clicked() is emitted, so
+                        // `checked` is already true by the time this handler runs -- an
+                        // `if (checked) return` guard therefore swallowed *every* switch.
+                        // That is the actual reason tapping "AmneziaWG v2" moved the radio
+                        // dot but left the tunnel on XRay. Compare against the model-backed
+                        // value instead, which still holds the real current protocol.
+                        //
+                        // The self-toggle also destroys the declarative `checked` binding
+                        // above, so re-establish it -- otherwise the dot stays wherever the
+                        // user last tapped even if the switch never lands. by vovankrot
                         onClicked: {
-                            if (checked) {
+                            const tapped = dockerContainer
+                            checked = Qt.binding(function() {
+                                return dockerContainer === root.currentContainer
+                            })
+
+                            if (tapped === root.currentContainer) {
                                 return
                             }
 
                             if (root.switchFunction) {
-                                root.switchFunction(dockerContainer)
+                                root.switchFunction(tapped)
                             }
                             root.closeTriggered()
                         }

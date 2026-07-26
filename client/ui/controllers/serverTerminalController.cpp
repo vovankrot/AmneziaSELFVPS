@@ -2,6 +2,7 @@
 
 #include <QtConcurrent>
 #include <QRegularExpression>
+#include <QThreadPool>
 
 #include "core/controllers/serverController.h"
 #include "logger.h"
@@ -174,7 +175,10 @@ void ServerTerminalController::runRemoteCommand(const QString &cmd)
     // Capture shared_ptr to alive flag — safe even if `this` is destroyed
     std::weak_ptr<std::atomic<bool>> weakAlive = m_alive;
 
-    QtConcurrent::run([this, weakAlive, credentials, cmd]() {
+    // Fire-and-forget: the QFuture was discarded, which MSVC flags as C4858. Results
+    // come back via the logLineReady connection / invokeMethod, guarded by weakAlive.
+    // by vovankrot
+    QThreadPool::globalInstance()->start([this, weakAlive, credentials, cmd]() {
         QSharedPointer<ServerController> serverController(new ServerController(m_settings));
         QObject::connect(serverController.get(), &ServerController::logLineReady, this, [this, weakAlive](const QString &line) {
             auto alive = weakAlive.lock();

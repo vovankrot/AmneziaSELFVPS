@@ -98,17 +98,24 @@ DrawerType2 {
 
                             ButtonGroup.group: serverPickerGroup
 
-                            // Mirror the protocol drawer: don't refuse taps just because a
-                            // previous switch is still Disconnecting/Connecting. switchToServer
-                            // is idempotent about the same-target case and folds concurrent
-                            // switches through m_reconnectAfterDisconnect. by vovankrot
+                            // Same trap as the protocol drawer: RadioButton has already
+                            // flipped `checked` (and broken the binding above) before this
+                            // runs, so guard on the model value, then restore the binding.
+                            // We do NOT set selectedIndex here -- ServersModel emits
+                            // defaultServerIndexChanged and the Connections block below
+                            // updates it, so the dot only moves once the switch really
+                            // took effect. by vovankrot
                             onClicked: {
-                                if (index === listView.selectedIndex) {
+                                const tapped = index
+                                checked = Qt.binding(function() {
+                                    return index === listView.selectedIndex
+                                })
+
+                                if (tapped === listView.selectedIndex) {
                                     return
                                 }
 
-                                listView.selectedIndex = index
-                                ConnectionController.switchToServer(index)
+                                ConnectionController.switchToServer(tapped)
                                 root.closeTriggered()
                             }
 

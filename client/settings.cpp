@@ -352,6 +352,12 @@ QString Settings::routeModeString(RouteMode mode) const
     case VpnOnlyForwardSites: return "ForwardSites";
     case VpnAllExceptSites: return "ExceptSites";
     }
+
+    // routeMode() builds this enum with a static_cast straight off a QSettings int,
+    // so a corrupted/stale config really can land here out of range. Fall back to
+    // the default mode rather than returning an indeterminate value (MSVC C4715).
+    // by vovankrot
+    return "AllSites";
 }
 
 Settings::RouteMode Settings::routeMode() const
@@ -682,6 +688,10 @@ QString Settings::appsRouteModeString(AppsRouteMode mode) const
     case VpnOnlyForwardApps: return "ForwardApps";
     case VpnAllExceptApps: return "ExceptApps";
     }
+
+    // Same as routeModeString: getAppsRouteMode() static_casts a raw settings int,
+    // so guard the out-of-range path with the default mode (MSVC C4715). by vovankrot
+    return "AllApps";
 }
 
 Settings::AppsRouteMode Settings::getAppsRouteMode() const

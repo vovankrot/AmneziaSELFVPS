@@ -199,6 +199,12 @@ TransportProto ProtocolProps::defaultTransportProto(Proto p)
     case Proto::Sftp: return TransportProto::Tcp;
     case Proto::Socks5Proxy: return TransportProto::Tcp;
     }
+
+    // Every enumerator is handled above, but an enum variable can legally hold a
+    // value outside that set (e.g. from a static_cast of stored settings), so the
+    // compiler still needs a return here (MSVC C4715). Udp is the safest default:
+    // it matches the majority of the VPN protocols. by vovankrot
+    return TransportProto::Udp;
 }
 
 bool ProtocolProps::defaultTransportProtoChangeable(Proto p)

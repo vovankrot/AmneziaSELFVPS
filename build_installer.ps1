@@ -498,6 +498,42 @@ foreach ($testDll in @("Qt6QuickTest.dll", "Qt6Test.dll")) {
     if (Test-Path $tdPath) { Remove-Item $tdPath -Force }
 }
 
+# Drop unused QtQuick Controls styles.
+# amnezia_application.cpp calls QQuickStyle::setStyle("Basic") unconditionally, so
+# every other style windeployqt copies is dead weight that only inflates the setup
+# file. FluentWinUI3 alone is ~4.5 MB of assets that can never be loaded. "impl" is
+# the shared implementation Basic depends on, so it must stay.
+$keepStyles = @("Basic", "impl")
+$controlsDir = Join-Path $StageDir "qml\QtQuick\Controls"
+$prunedStyleMb = 0
+if (Test-Path $controlsDir) {
+    foreach ($styleDir in Get-ChildItem $controlsDir -Directory) {
+        if ($keepStyles -contains $styleDir.Name) { continue }
+        $prunedStyleMb += ((Get-ChildItem $styleDir.FullName -Recurse -File |
+                            Measure-Object Length -Sum).Sum / 1MB)
+        Remove-Item $styleDir.FullName -Recurse -Force
+    }
+}
+
+# ...and their matching root DLLs, which are only loaded by those styles.
+foreach ($styleDll in @("Qt6QuickControls2Imagine.dll", "Qt6QuickControls2Material.dll",
+                        "Qt6QuickControls2Universal.dll", "Qt6QuickControls2Fusion.dll",
+                        "Qt6QuickControls2FluentWinUI3.dll", "Qt6QuickControls2Windows.dll",
+                        "Qt6QuickControls2MaterialStyleImpl.dll",
+                        "Qt6QuickControls2UniversalStyleImpl.dll",
+                        "Qt6QuickControls2FusionStyleImpl.dll",
+                        "Qt6QuickControls2WindowsStyleImpl.dll",
+                        "Qt6QuickControls2FluentWinUI3StyleImpl.dll")) {
+    $sdPath = Join-Path $StageDir $styleDll
+    if (Test-Path $sdPath) {
+        $prunedStyleMb += ((Get-Item $sdPath).Length / 1MB)
+        Remove-Item $sdPath -Force
+    }
+}
+if ($prunedStyleMb -gt 0) {
+    Write-Host ("  Pruned unused QML styles: {0:N1} MB" -f $prunedStyleMb) -ForegroundColor DarkGray
+}
+
 $ErrorActionPreference = "Stop"
 
 # Verify critical Qt DLLs were deployed

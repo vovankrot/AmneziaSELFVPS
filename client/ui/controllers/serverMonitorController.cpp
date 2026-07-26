@@ -1,6 +1,7 @@
 #include "serverMonitorController.h"
 
 #include <QtConcurrent>
+#include <QThreadPool>
 
 #include "core/controllers/serverController.h"
 
@@ -97,7 +98,11 @@ void ServerMonitorController::pollMetrics()
     auto serversModel = m_serversModel;
     auto settings = m_settings;
 
-    QtConcurrent::run([this, serversModel, settings]() {
+    // QThreadPool::start() rather than QtConcurrent::run(): this is fire-and-forget
+    // polling, the QFuture was being dropped on the floor and MSVC rightly flagged it
+    // (C4858). Completion is reported through invokeMethod back onto this object.
+    // by vovankrot
+    QThreadPool::globalInstance()->start([this, serversModel, settings]() {
         const auto credentials = serversModel->getProcessedServerCredentials();
         if (credentials.hostName.isEmpty()) {
             QMetaObject::invokeMethod(this, [this]() {
