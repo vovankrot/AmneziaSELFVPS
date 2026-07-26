@@ -168,6 +168,20 @@ ErrorCode XrayProtocol::startXrayProcess(const QSharedPointer<IpcInterfaceReplic
 
 void XrayProtocol::stop()
 {
+    // Guard against reentrant / duplicate stop() calls. VpnConnection calls stop()
+    // explicitly on protocol change; then when the QSharedPointer<XrayProtocol> gets
+    // reset, ~XrayProtocol() runs stop() a second time. That second pass then hits
+    // xrayStop over an IPC that was already torn down and logs "failed to close all
+    // features > use of closed network connection" -- benign in isolation but the
+    // real cost is that on rapid protocol/server flapping we end up firing SplitTunnel
+    // stop, firewall clear and routing teardown twice back-to-back, which is what left
+    // the daemon in a wedged state on 2026-07-26 (16:45-16:53 window). Single-stop
+    // semantics; start() resets m_stopping. by vovankrot
+    if (m_stopping) {
+        qDebug() << "XrayProtocol::stop() already ran, skipping duplicate";
+        return;
+    }
+
     qDebug() << "XrayProtocol::stop()";
     m_stopping = true;
 

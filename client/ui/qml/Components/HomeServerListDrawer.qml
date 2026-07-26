@@ -94,12 +94,16 @@ DrawerType2 {
                             descriptionText: serverDescription
 
                             checked: index === listView.selectedIndex
-                            checkable: !ConnectionController.isConnectionInProgress
+                            checkable: true
 
                             ButtonGroup.group: serverPickerGroup
 
+                            // Mirror the protocol drawer: don't refuse taps just because a
+                            // previous switch is still Disconnecting/Connecting. switchToServer
+                            // is idempotent about the same-target case and folds concurrent
+                            // switches through m_reconnectAfterDisconnect. by vovankrot
                             onClicked: {
-                                if (ConnectionController.isConnectionInProgress || index === listView.selectedIndex) {
+                                if (index === listView.selectedIndex) {
                                     return
                                 }
 

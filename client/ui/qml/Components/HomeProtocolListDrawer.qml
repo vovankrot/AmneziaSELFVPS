@@ -85,12 +85,18 @@ DrawerType2 {
                         descriptionText: description
 
                         checked: dockerContainer === root.currentContainer
-                        checkable: !ConnectionController.isConnectionInProgress
+                        checkable: true
 
                         ButtonGroup.group: protocolPickerGroup
 
+                        // Don't gate on isConnectionInProgress here: the tap needs to feel
+                        // instant even mid-disconnect. switchToContainer already handles
+                        // reconnect state -- it flips the default, tears the tunnel down and
+                        // brings it back up on the new protocol. Blocking here made taps on
+                        // wg silently no-op during the transient Disconnecting/Connecting
+                        // states, which is what stuck the 16:45-16:53 session. by vovankrot
                         onClicked: {
-                            if (ConnectionController.isConnectionInProgress || checked) {
+                            if (checked) {
                                 return
                             }
 

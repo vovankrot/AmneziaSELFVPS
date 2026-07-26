@@ -94,9 +94,18 @@ void ConnectionController::switchToContainer(int containerIndex)
     m_serversModel->setDefaultContainer(serverIndex, nextContainer);
 
     if (m_isConnected || m_isConnectionInProgress) {
+        // If a previous switch already asked for a reconnect after the current
+        // disconnect finishes, just update the target -- the pending openConnection()
+        // will pick up the new default. Firing a second closeConnection() while a
+        // teardown is already in flight is what caused the double XrayProtocol::stop
+        // path (routes half-cleared, xrayStop against a torn-down inbound) on
+        // 2026-07-26. by vovankrot
+        const bool alreadyReconnecting = m_reconnectAfterDisconnect;
         m_reconnectAfterDisconnect = true;
         emit reconnectWithUpdatedContainer(tr("Protocol changed, reconnecting..."));
-        closeConnection();
+        if (!alreadyReconnecting) {
+            closeConnection();
+        }
         return;
     }
 
@@ -121,9 +130,15 @@ void ConnectionController::switchToServer(int serverIndex)
     m_serversModel->setDefaultServerIndex(serverIndex);
 
     if (m_isConnected || m_isConnectionInProgress) {
+        // Same coalescing as switchToContainer: never fire closeConnection() twice
+        // while a teardown is already pending, otherwise SplitTunnel/routing state
+        // gets torn down in duplicate. by vovankrot
+        const bool alreadyReconnecting = m_reconnectAfterDisconnect;
         m_reconnectAfterDisconnect = true;
         emit reconnectWithUpdatedContainer(tr("Server changed, reconnecting..."));
-        closeConnection();
+        if (!alreadyReconnecting) {
+            closeConnection();
+        }
         return;
     }
 
