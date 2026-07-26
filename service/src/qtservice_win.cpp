@@ -632,7 +632,16 @@ void WINAPI QtServiceSysPrivate::handler( DWORD code )
                 pSetServiceStatus(instance->serviceStatus, &instance->status);
             instance->mutex.unlock();
             Logger::flush();
-            ::ExitProcess(0);
+            // ExitProcess() waits for every thread to actually terminate and runs
+            // DLL_PROCESS_DETACH on every loaded module -- if the thread that's stuck
+            // is blocked inside a kernel driver call (e.g. a wedged DeviceIoControl to
+            // the split-tunnel driver), ExitProcess() can itself hang right here,
+            // which is exactly what let a stuck event loop escalate into SCM's own
+            // 90s timeout (event 7011) and, once, a full OS freeze requiring a hard
+            // reset. TerminateProcess on our own process skips all of that: it tears
+            // the process down at the OS level without waiting on any of our threads.
+            // by vovankrot
+            ::TerminateProcess(::GetCurrentProcess(), 0);
         }
         // status will be reported as stopped by start() when qapp::exec returns
         break;
@@ -671,7 +680,10 @@ void WINAPI QtServiceSysPrivate::handler( DWORD code )
                 pSetServiceStatus(instance->serviceStatus, &instance->status);
             instance->mutex.unlock();
             Logger::flush();
-            ::ExitProcess(0);
+            // See the SERVICE_CONTROL_STOP branch above: TerminateProcess, not
+            // ExitProcess, so a thread stuck in a kernel driver call can't block
+            // our own emergency exit. by vovankrot
+            ::TerminateProcess(::GetCurrentProcess(), 0);
         }
         // status will be reported as stopped by start() when qapp::exec returns
         break;

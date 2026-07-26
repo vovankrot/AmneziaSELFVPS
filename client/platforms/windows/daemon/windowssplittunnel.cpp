@@ -27,6 +27,10 @@
 #include <QScopeGuard>
 #include <QThread>
 
+#include <atomic>
+#include <chrono>
+#include <thread>
+
 #pragma region
 
 // Driver Configuration structures
@@ -150,6 +154,58 @@ ProcessInfo getProcessInfo(HANDLE process, const PROCESSENTRY32W& processMeta) {
   return pi;
 }
 
+// The 2026-07-26 incident: DeviceIoControl() to this driver hung indefinitely
+// on the daemon's only thread (the same one that services SERVICE_CONTROL_STOP),
+// which wedged the whole service and, in the worst case, the OS itself hard
+// enough to need a power-cycle. The driver handle was opened WITHOUT
+// FILE_FLAG_OVERLAPPED (see CreateFileW in create()), so a true overlapped
+// cancel isn't available -- instead we run the call on a disposable worker
+// thread and only wait a bounded time on the CALLING thread. If the driver
+// never answers, we abandon that worker (it may never finish) and return
+// failure instead of hanging forever. by vovankrot
+constexpr int kIoctlTimeoutMs = 5000;
+
+BOOL DeviceIoControlWithTimeout(HANDLE device, DWORD code, LPVOID inBuf, DWORD inSize,
+                                LPVOID outBuf, DWORD outSize, DWORD* bytesReturned,
+                                const char* opName) {
+  struct Result {
+    std::atomic<bool> done{false};
+    BOOL ok = FALSE;
+    DWORD err = 0;
+    DWORD bytesReturned = 0;
+  };
+  auto result = std::make_shared<Result>();
+
+  std::thread worker([device, code, inBuf, inSize, outBuf, outSize, result]() {
+    DWORD bytes = 0;
+    BOOL ok = DeviceIoControl(device, code, inBuf, inSize, outBuf, outSize, &bytes, nullptr);
+    result->err = ok ? 0 : GetLastError();
+    result->bytesReturned = bytes;
+    result->ok = ok;
+    result->done.store(true, std::memory_order_release);
+  });
+  worker.detach();
+
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(kIoctlTimeoutMs);
+  while (!result->done.load(std::memory_order_acquire)) {
+    if (std::chrono::steady_clock::now() >= deadline) {
+      logger.error() << "DeviceIoControl(" << opName << ") did not return within"
+                     << kIoctlTimeoutMs << "ms -- driver appears stuck, giving up on this call";
+      SetLastError(ERROR_TIMEOUT);
+      return FALSE;
+    }
+    QThread::msleep(20);
+  }
+
+  if (bytesReturned) {
+    *bytesReturned = result->bytesReturned;
+  }
+  if (!result->ok) {
+    SetLastError(result->err);
+  }
+  return result->ok;
+}
+
 }  // namespace
 
 std::unique_ptr<WindowsSplitTunnel> WindowsSplitTunnel::create(
@@ -255,8 +311,8 @@ bool WindowsSplitTunnel::initDriver(HANDLE driverIO) {
   }
 
   DWORD bytesReturned;
-  auto ok = DeviceIoControl(driverIO, IOCTL_INITIALIZE, nullptr, 0, nullptr, 0,
-                            &bytesReturned, nullptr);
+  auto ok = DeviceIoControlWithTimeout(driverIO, IOCTL_INITIALIZE, nullptr, 0, nullptr, 0,
+                                       &bytesReturned, "IOCTL_INITIALIZE");
   if (!ok) {
     auto err = GetLastError();
     logger.error() << "Driver init failed err -" << err;
@@ -295,9 +351,9 @@ bool WindowsSplitTunnel::excludeApps(const QStringList& appPaths) {
   }
 
   DWORD bytesReturned;
-  auto ok = DeviceIoControl(m_driver, IOCTL_SET_CONFIGURATION, &config[0],
-                            (DWORD)config.size(), nullptr, 0, &bytesReturned,
-                            nullptr);
+  auto ok = DeviceIoControlWithTimeout(m_driver, IOCTL_SET_CONFIGURATION, &config[0],
+                                       (DWORD)config.size(), nullptr, 0, &bytesReturned,
+                                       "IOCTL_SET_CONFIGURATION");
   if (!ok) {
     auto err = GetLastError();
     WindowsUtils::windowsLog("Set Config Failed:");
@@ -317,8 +373,8 @@ bool WindowsSplitTunnel::start(int inetAdapterIndex, int vpnAdapterIndex) {
   if (getState() == STATE_STARTED) {
     logger.debug() << "Driver needs Init Call";
     DWORD bytesReturned;
-    auto ok = DeviceIoControl(m_driver, IOCTL_INITIALIZE, nullptr, 0, nullptr,
-                              0, &bytesReturned, nullptr);
+    auto ok = DeviceIoControlWithTimeout(m_driver, IOCTL_INITIALIZE, nullptr, 0, nullptr,
+                                         0, &bytesReturned, "IOCTL_INITIALIZE");
     if (!ok) {
       logger.error() << "Driver init failed";
       return false;
@@ -334,9 +390,9 @@ bool WindowsSplitTunnel::start(int inetAdapterIndex, int vpnAdapterIndex) {
       return false;
     }
 
-    auto ok = DeviceIoControl(m_driver, IOCTL_REGISTER_PROCESSES, config.data(),
-                              (DWORD)config.size(), nullptr, 0, &bytesReturned,
-                              nullptr);
+    auto ok = DeviceIoControlWithTimeout(m_driver, IOCTL_REGISTER_PROCESSES, config.data(),
+                                         (DWORD)config.size(), nullptr, 0, &bytesReturned,
+                                         "IOCTL_REGISTER_PROCESSES");
     if (!ok) {
       logger.error() << "Failed to set Process Config";
       return false;
@@ -373,9 +429,9 @@ bool WindowsSplitTunnel::start(int inetAdapterIndex, int vpnAdapterIndex) {
     return false;
   }
 
-  auto ok = DeviceIoControl(m_driver, IOCTL_REGISTER_IP_ADDRESSES, config.data(),
-                            (DWORD)config.size(), nullptr, 0, &bytesReturned,
-                            nullptr);
+  auto ok = DeviceIoControlWithTimeout(m_driver, IOCTL_REGISTER_IP_ADDRESSES, config.data(),
+                                       (DWORD)config.size(), nullptr, 0, &bytesReturned,
+                                       "IOCTL_REGISTER_IP_ADDRESSES");
   if (!ok) {
     logger.error() << "Failed to set Network Config";
     return false;
@@ -397,8 +453,8 @@ bool WindowsSplitTunnel::stop() {
   }
 
   DWORD bytesReturned;
-  auto ok = DeviceIoControl(m_driver, IOCTL_CLEAR_CONFIGURATION, nullptr, 0,
-                            nullptr, 0, &bytesReturned, nullptr);
+  auto ok = DeviceIoControlWithTimeout(m_driver, IOCTL_CLEAR_CONFIGURATION, nullptr, 0,
+                                       nullptr, 0, &bytesReturned, "IOCTL_CLEAR_CONFIGURATION");
   if (ok && !isRunning()) {
     logger.debug() << "Stopping Split tunnel successfull, new state:" << stateString();
     return true;
@@ -429,8 +485,8 @@ bool WindowsSplitTunnel::stop() {
 
 bool WindowsSplitTunnel::resetDriver(HANDLE driverIO) {
   DWORD bytesReturned;
-  auto ok = DeviceIoControl(driverIO, IOCTL_ST_RESET, nullptr, 0, nullptr, 0,
-                            &bytesReturned, nullptr);
+  auto ok = DeviceIoControlWithTimeout(driverIO, IOCTL_ST_RESET, nullptr, 0, nullptr, 0,
+                                       &bytesReturned, "IOCTL_ST_RESET");
   if (!ok) {
     logger.error() << "Reset Split tunnel not successfull";
     return false;
@@ -447,8 +503,8 @@ WindowsSplitTunnel::DRIVER_STATE WindowsSplitTunnel::getState(HANDLE driverIO) {
   }
   DWORD bytesReturned;
   SIZE_T outBuffer;
-  bool ok = DeviceIoControl(driverIO, IOCTL_GET_STATE, nullptr, 0, &outBuffer,
-                            sizeof(outBuffer), &bytesReturned, nullptr);
+  bool ok = DeviceIoControlWithTimeout(driverIO, IOCTL_GET_STATE, nullptr, 0, &outBuffer,
+                                       sizeof(outBuffer), &bytesReturned, "IOCTL_GET_STATE");
   if (!ok) {
     WindowsUtils::windowsLog("getState response failure");
     return STATE_UNKNOWN;
