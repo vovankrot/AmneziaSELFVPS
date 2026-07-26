@@ -73,6 +73,11 @@ signals:
     void timeoutTimerEvent();
     void protocolError(amnezia::ErrorCode e);
     void tunnelAddressesUpdated(const QString& gateway, const QString& localAddress);
+    // Raised by a protocol when it decides the current session is dead even though
+    // its state is still Connected -- e.g. post-Connect healthcheck failure.
+    // Wired to VpnConnection::reconnectToVpn() so a stuck "ghost connected" tunnel
+    // gets rebuilt without user intervention. by vovankrot
+    void reconnectRequested();
 
 public slots:
     virtual void onTimeout(); // todo: remove?

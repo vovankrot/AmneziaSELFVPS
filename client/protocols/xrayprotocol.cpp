@@ -184,6 +184,7 @@ void XrayProtocol::stop()
 
     qDebug() << "XrayProtocol::stop()";
     m_stopping = true;
+    cancelHealthCheck();
 
     // Use short timeouts (2s) to prevent disconnect from hanging
     // if service is slow to respond. Default Qt RO timeout is 30s!
@@ -292,6 +293,7 @@ ErrorCode XrayProtocol::startTun2Socks()
                 setLastError(res);
             } else {
                 setConnectionState(Vpn::ConnectionState::Connected);
+                scheduleHealthCheck();
             }
         }
     }, Qt::QueuedConnection);
@@ -618,4 +620,90 @@ ErrorCode XrayProtocol::setupRouting() {
     [] () {
         return ErrorCode::AmneziaServiceConnectionFailed;
     });
+}
+
+// Post-Connect healthcheck: the tunnel can reach Connected (xray up, tun2socks
+// up, routes in place) but still not actually carry traffic -- this shows up
+// after cold boot where some part of the stack (WFP filters, split-tunnel
+// driver, adapter binding) is in a stale/half-initialized state carried over
+// from the previous session. The client sits happily on "Подключено" while
+// nothing works, and only a full Windows restart clears it -- reported by the
+// user on 2026-07-26.
+//
+// Fix: after we transition to Connected, kick off a background probe through
+// the SOCKS inbound at intervals. Only after several failures in a row do we
+// tear the protocol down with an error, so that the ordinary reconnect/failover
+// path can bring it back up cleanly. by vovankrot
+namespace {
+constexpr int kHealthCheckFirstDelayMs = 5000;
+constexpr int kHealthCheckIntervalMs = 30000;
+constexpr int kHealthCheckTimeoutMs = 3500;
+constexpr int kHealthCheckFailuresBeforeReset = 3;
+}  // namespace
+
+void XrayProtocol::scheduleHealthCheck()
+{
+    m_healthCheckFailures = 0;
+    if (!m_healthTimer) {
+        m_healthTimer = new QTimer(this);
+        m_healthTimer->setSingleShot(false);
+        connect(m_healthTimer, &QTimer::timeout, this, &XrayProtocol::runHealthCheck);
+    }
+    m_healthTimer->stop();
+    // Fire the FIRST check after the short delay, then let interval mode take over.
+    m_healthTimer->setInterval(kHealthCheckIntervalMs);
+    QTimer::singleShot(kHealthCheckFirstDelayMs, this, [this]() {
+        if (m_stopping || connectionState() != Vpn::ConnectionState::Connected) {
+            return;
+        }
+        runHealthCheck();
+        if (m_healthTimer) {
+            m_healthTimer->start();
+        }
+    });
+}
+
+void XrayProtocol::cancelHealthCheck()
+{
+    if (m_healthTimer) {
+        m_healthTimer->stop();
+    }
+    m_healthCheckFailures = 0;
+}
+
+void XrayProtocol::runHealthCheck()
+{
+    if (m_stopping || connectionState() != Vpn::ConnectionState::Connected) {
+        cancelHealthCheck();
+        return;
+    }
+
+    const bool ok = performSocks5Probe(probeHost(), probePort(), kHealthCheckTimeoutMs);
+    if (ok) {
+        if (m_healthCheckFailures > 0) {
+            qDebug() << "XRay healthcheck recovered after" << m_healthCheckFailures << "failure(s)";
+        }
+        m_healthCheckFailures = 0;
+        return;
+    }
+
+    ++m_healthCheckFailures;
+    qWarning() << "XRay healthcheck failed" << m_healthCheckFailures << "/"
+               << kHealthCheckFailuresBeforeReset;
+
+    if (m_healthCheckFailures < kHealthCheckFailuresBeforeReset) {
+        return;
+    }
+
+    // Threshold hit. The tunnel is "Connected" but no traffic is actually
+    // going through it. Emit reconnectRequested() -- VpnConnection wires this
+    // to reconnectToVpn(), which cleanly stops the current protocol, rebuilds
+    // the config from scratch, and starts fresh. We deliberately do NOT drop
+    // into Error state: that would leave the user staring at an error banner
+    // and require a manual retry, whereas the whole point here is to recover
+    // silently from the post-boot "ghost connected" case. by vovankrot
+    qCritical() << "XRay healthcheck: tunnel is Connected but not carrying traffic,"
+                << "forcing reconnect (failed" << m_healthCheckFailures << "probes in a row)";
+    cancelHealthCheck();
+    emit reconnectRequested();
 }

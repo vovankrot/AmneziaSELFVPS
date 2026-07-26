@@ -488,6 +488,7 @@ void VpnConnection::connectToVpn(int serverIndex, const ServerCredentials &crede
 #ifdef AMNEZIA_DESKTOP
     if (m_vpnProtocol) {
         disconnect(m_vpnProtocol.data(), &VpnProtocol::protocolError, this, &VpnConnection::vpnProtocolError);
+        disconnect(m_vpnProtocol.data(), &VpnProtocol::reconnectRequested, this, &VpnConnection::reconnectToVpn);
         m_vpnProtocol->stop();
         m_vpnProtocol.reset();
     }
@@ -530,6 +531,11 @@ void VpnConnection::createProtocolConnections()
     connect(m_vpnProtocol.data(), &VpnProtocol::protocolError, this, &VpnConnection::vpnProtocolError);
     connect(m_vpnProtocol.data(), &VpnProtocol::connectionStateChanged, this, &VpnConnection::setConnectionState);
     connect(m_vpnProtocol.data(), SIGNAL(bytesChanged(quint64, quint64)), this, SLOT(onBytesChanged(quint64, quint64)));
+    // A protocol raises reconnectRequested() when it detects the tunnel is dead
+    // despite still being in Connected state (e.g. post-Connect healthcheck saw
+    // no traffic through the SOCKS inbound). QueuedConnection so the emitting
+    // slot fully returns before we start tearing the protocol down. by vovankrot
+    connect(m_vpnProtocol.data(), &VpnProtocol::reconnectRequested, this, &VpnConnection::reconnectToVpn, Qt::QueuedConnection);
 
 #ifdef AMNEZIA_DESKTOP
     IpcClient::withInterface([this](QSharedPointer<IpcInterfaceReplica> rep) {
@@ -937,6 +943,7 @@ void VpnConnection::reconnectToVpn() {
 
     // Stop and destroy old protocol
     disconnect(m_vpnProtocol.data(), &VpnProtocol::protocolError, this, &VpnConnection::vpnProtocolError);
+    disconnect(m_vpnProtocol.data(), &VpnProtocol::reconnectRequested, this, &VpnConnection::reconnectToVpn);
     m_vpnProtocol->stop();
     m_vpnProtocol.reset();
 

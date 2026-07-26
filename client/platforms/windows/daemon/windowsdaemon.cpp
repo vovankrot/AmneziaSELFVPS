@@ -54,6 +54,156 @@ bool parseIpv4RouteKey(const QString& ipRange, quint64& routeKey) {
   return true;
 }
 
+// Fold overlapping/adjacent IPv4 CIDRs into the smallest equivalent set, and
+// drop anything that would touch a private / reserved / multicast range.
+//
+// Two problems this fixes at once:
+//
+// 1) A raw GeoIP-RU list is ~8600 lines. Every one of those becomes a
+//    CreateIpForwardEntry2() call and lives in the OS route table forever
+//    while the tunnel is up. Windows handles it, but userland UI on top of
+//    a route table that big feels visibly laggy -- reported by the user on
+//    2026-07-26 as "система начала тормозить" after enabling GeoIP bypass on
+//    a non-XRay protocol. Merging adjacent /24s into their covering /23 or
+//    /22 typically cuts the count roughly in half without changing coverage.
+//
+// 2) The list source is configurable. A malicious or broken feed could ship
+//    192.168.0.0/16, 127.0.0.0/8, etc. -- those would land in the OS route
+//    table with a low metric and silently redirect LAN / loopback traffic
+//    through the physical gateway. The user was explicit: "только не убей
+//    локалку". So we drop those unconditionally, regardless of what the feed
+//    says.
+namespace geoCidr {
+
+struct Range {
+  quint32 start;
+  quint32 end;
+};
+
+bool isPrivateOrReservedV4(quint32 addr) {
+  // Octets, MSB first.
+  const quint8 a = static_cast<quint8>((addr >> 24) & 0xFF);
+  const quint8 b = static_cast<quint8>((addr >> 16) & 0xFF);
+
+  if (a == 0) return true;                          // 0.0.0.0/8
+  if (a == 10) return true;                         // RFC1918
+  if (a == 127) return true;                        // loopback
+  if (a == 169 && b == 254) return true;            // link-local
+  if (a == 172 && b >= 16 && b <= 31) return true;  // RFC1918
+  if (a == 192 && b == 168) return true;            // RFC1918
+  if (a >= 224) return true;                        // multicast + reserved (240-255) + broadcast
+  return false;
+}
+
+bool parseCidr(const QString& cidr, Range& out) {
+  const QStringList parts = cidr.split('/');
+  if (parts.size() != 2) return false;
+
+  QHostAddress addr(parts[0]);
+  if (addr.protocol() != QAbstractSocket::IPv4Protocol) return false;
+
+  bool ok = false;
+  const int prefixLen = parts[1].toInt(&ok);
+  if (!ok || prefixLen < 0 || prefixLen > 32) return false;
+
+  const quint32 base = addr.toIPv4Address();
+  const quint32 mask = (prefixLen == 0) ? 0u : (~0u << (32 - prefixLen));
+  out.start = base & mask;
+  out.end = out.start | ~mask;
+  return true;
+}
+
+// Emit the minimal set of CIDRs that exactly covers [start, end], no overshoot.
+// Standard range-to-CIDR: at each step take the largest block whose alignment
+// (bits set in `start`) fits and whose size doesn't overshoot `end`.
+QStringList rangeToCidrs(quint32 start, quint32 end) {
+  QStringList out;
+  while (true) {
+    // Largest prefix length permitted by alignment of `start` -- limited by
+    // how many low-order zero bits it has. A start of 0 can align to /0.
+    int alignMaxSize = 32;
+    if (start != 0) {
+      // count trailing zeros in start
+      int tz = 0;
+      quint32 s = start;
+      while ((s & 1) == 0) { s >>= 1; ++tz; }
+      alignMaxSize = tz;  // block size in bits (0..32), block covers 2^tz addresses
+    }
+
+    // Largest prefix length permitted by remaining span.
+    quint64 remaining = static_cast<quint64>(end) - static_cast<quint64>(start) + 1;
+    int spanMaxSize = 0;
+    quint64 v = 1;
+    while ((v << 1) <= remaining && spanMaxSize < 32) { v <<= 1; ++spanMaxSize; }
+
+    const int blockBits = qMin(alignMaxSize, spanMaxSize);
+    const int prefixLen = 32 - blockBits;
+
+    out.append(QStringLiteral("%1/%2")
+                   .arg(QHostAddress(start).toString())
+                   .arg(prefixLen));
+
+    const quint64 blockSize = static_cast<quint64>(1) << blockBits;
+    if (static_cast<quint64>(start) + blockSize > 0xFFFFFFFFull) break;  // wrapped
+    start += static_cast<quint32>(blockSize);
+    if (start > end) break;
+  }
+  return out;
+}
+
+// Public entry point.
+QStringList aggregateAndSanitize(const QStringList& in) {
+  QList<Range> ranges;
+  ranges.reserve(in.size());
+
+  int filteredPrivate = 0;
+  int filteredMalformed = 0;
+
+  for (const QString& raw : in) {
+    Range r{};
+    if (!parseCidr(raw, r)) {
+      ++filteredMalformed;
+      continue;
+    }
+    // Drop the entire block if ANY address in it is private/reserved -- we do
+    // not slice around private ranges, we just refuse to touch a feed that
+    // spills into them.
+    if (isPrivateOrReservedV4(r.start) || isPrivateOrReservedV4(r.end)) {
+      ++filteredPrivate;
+      continue;
+    }
+    ranges.append(r);
+  }
+
+  std::sort(ranges.begin(), ranges.end(),
+            [](const Range& a, const Range& b) { return a.start < b.start; });
+
+  // Merge overlapping / adjacent (end+1 == next.start).
+  QList<Range> merged;
+  merged.reserve(ranges.size());
+  for (const Range& r : ranges) {
+    if (!merged.isEmpty() &&
+        static_cast<quint64>(merged.last().end) + 1 >= static_cast<quint64>(r.start)) {
+      if (r.end > merged.last().end) merged.last().end = r.end;
+    } else {
+      merged.append(r);
+    }
+  }
+
+  QStringList out;
+  out.reserve(merged.size());
+  for (const Range& r : merged) {
+    out.append(rangeToCidrs(r.start, r.end));
+  }
+
+  logger.info() << "GeoIP CIDR aggregation:" << in.size() << "in ->" << out.size()
+                << "out (dropped" << filteredPrivate << "private/reserved,"
+                << filteredMalformed << "malformed)";
+  return out;
+}
+
+}  // namespace geoCidr
+
 QStringList sanitizeSplitTunnelApps(const QStringList& appPaths) {
   QStringList sanitizedApps;
   QSet<QString> seenEntries;
@@ -390,24 +540,35 @@ void WindowsDaemon::deactivateSiteExclusionRoutes() {
 
 void WindowsDaemon::activateGeoExclusionRoutes(const QStringList& cidrs) {
   deactivateGeoExclusionRoutes();
-  
+
   if (cidrs.isEmpty()) {
     return;
   }
-  
+
+  // Fold overlapping / adjacent networks and strip anything that would touch
+  // LAN, loopback, or multicast BEFORE we start writing rows into the OS route
+  // table. Also cuts route count roughly in half for the standard RU GeoIP
+  // feed, which measurably reduces UI-side lag on the WG/Hysteria2 paths.
+  const QStringList aggregated = geoCidr::aggregateAndSanitize(cidrs);
+
+  if (aggregated.isEmpty()) {
+    logger.warning() << "Geo exclusion routes: aggregation dropped everything, nothing to add";
+    return;
+  }
+
   quint32 gatewayIp = 0;
   quint64 ifLuid = 0;
   if (!getDefaultGateway(gatewayIp, ifLuid)) {
     logger.error() << "Cannot add geo exclusion routes: no default gateway found";
     return;
   }
-  
-  logger.info() << "Adding" << cidrs.size() << "geo exclusion routes via"
+
+  logger.info() << "Adding" << aggregated.size() << "geo exclusion routes via"
                 << QHostAddress(gatewayIp).toString();
-  
+
   int added = 0;
   int failed = 0;
-  for (const QString& cidr : cidrs) {
+  for (const QString& cidr : aggregated) {
     QStringList parts = cidr.split('/');
     if (parts.size() != 2) continue;
     
