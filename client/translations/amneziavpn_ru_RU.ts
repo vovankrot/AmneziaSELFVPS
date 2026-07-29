@@ -1282,22 +1282,21 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation type="vanished">Обновить сейчас</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1172"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1220"/>
         <source>Speed test</source>
         <translation>Тест скорости</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1104"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1152"/>
         <source>VPN server</source>
         <translation>VPN-сервер</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1112"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1160"/>
         <source>Moscow</source>
         <translation>Москва</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="899"/>
         <source>Auto-failover</source>
         <translation>Автопереключение</translation>
     </message>
@@ -1326,23 +1325,23 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation>Бета: автоматически переключаться на резервный сервер или протокол при ухудшении соединения</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="962"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1010"/>
         <source>Applying fix...</source>
         <translation>Применяем исправление...</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1031"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1079"/>
         <source>Fix</source>
         <translation>Исправить</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1051"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1099"/>
         <source>Copy error</source>
         <translation>Скопировать ошибку</translation>
     </message>
     <message>
         <location filename="../ui/qml/Pages2/PageHome.qml" line="734"/>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1056"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1104"/>
         <source>Copied</source>
         <translation type="unfinished">Скопировано</translation>
     </message>
@@ -1352,32 +1351,42 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1070"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="947"/>
+        <source>Header protection</source>
+        <translation>Защита заголовков</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="977"/>
+        <source>Applies after reinstalling AmneziaWG on the server</source>
+        <translation>Применится после переустановки AmneziaWG на сервере</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1118"/>
         <source>Skip</source>
         <translation>Пропустить</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1083"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1131"/>
         <source>%1 of %2 issues</source>
         <translation>%1 из %2 проблем</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1220"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1268"/>
         <source>Split tunneling enabled</source>
         <translation>Раздельное туннелирование включено</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1220"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1268"/>
         <source>Split tunneling disabled</source>
         <translation>Раздельное туннелирование выключено</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1489"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1537"/>
         <source>VPN protocol</source>
         <translation>VPN-протокол</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1542"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1590"/>
         <source>Servers</source>
         <translation>Серверы</translation>
     </message>
@@ -1516,14 +1525,12 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation>Настройки AmneziaWG</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="521"/>
         <source>Header protection (AmneziaWG 3)</source>
-        <translation>Защита заголовков (AmneziaWG 3)</translation>
+        <translation type="vanished">Защита заголовков (AmneziaWG 3)</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="522"/>
         <source>Encrypts packet headers and adds random padding, so the traffic loses the signature filters look for. Requires AmneziaWG 3 on every device: the Android app does not support it yet and will stop connecting. Applies on the next AmneziaWG install or reinstall.</source>
-        <translation>Шифрует заголовки пакетов и добавляет случайный паддинг — трафик теряет признак, по которому его узнают фильтры. Требует AmneziaWG 3 на всех устройствах: приложение для Android пока не умеет и перестанет подключаться. Применится при следующей установке или переустановке AmneziaWG.</translation>
+        <translation type="vanished">Шифрует заголовки пакетов и добавляет случайный паддинг — трафик теряет признак, по которому его узнают фильтры. Требует AmneziaWG 3 на всех устройствах: приложение для Android пока не умеет и перестанет подключаться. Применится при следующей установке или переустановке AmneziaWG.</translation>
     </message>
     <message>
         <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="107"/>
@@ -1556,17 +1563,17 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation>I5 - Special junk 5</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="586"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="545"/>
         <source>The value of the field S1 + message initiation size (148) must not equal S2 + message response size (92) + S3 + cookie reply size (64) + S4 + transport packet size (32)</source>
         <translation>Значение поля S1 + размер инициализации сообщения (148) не должно равняться S2 + размер ответа сообщения (92) + S3 + размер ответа cookie (64) + S4 + размер транспортного пакета (32)</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="592"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="551"/>
         <source>All users with whom you shared a connection with will no longer be able to connect to it.</source>
         <translation>Все пользователи, с которыми вы поделились конфигурацией вашего VPN, больше не смогут к нему подключаться.</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="563"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="522"/>
         <source>Save</source>
         <translation>Сохранить</translation>
     </message>
@@ -1631,27 +1638,27 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation>H3 - Underload packet magic header</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="578"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="537"/>
         <source>The values of the H1-H4 fields must be unique</source>
         <translation>Значения в полях H1-H4 должны быть уникальными</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="591"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="550"/>
         <source>Save settings?</source>
         <translation>Сохранить настройки?</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="593"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="552"/>
         <source>Continue</source>
         <translation>Продолжить</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="594"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="553"/>
         <source>Cancel</source>
         <translation>Отменить</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="598"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="557"/>
         <source>Unable change settings while there is an active connection</source>
         <translation>Невозможно изменить настройки во время активного соединения</translation>
     </message>

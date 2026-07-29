@@ -496,47 +496,6 @@ PageType {
                 }
             }
 
-            DividerType {
-                Layout.fillWidth: true
-                Layout.topMargin: 24
-                Layout.leftMargin: 16
-                Layout.rightMargin: 16
-            }
-
-            // AmneziaWG 3. Off by default on purpose: the header protection key has to
-            // match on both peers, so switching it on locks out every device still
-            // running a pre-AWG3 build -- which currently includes our own Android
-            // client. The description says so plainly rather than hiding it behind a
-            // help link. by vovankrot
-            SwitcherType {
-                id: awgHeaderProtectionSwitcher
-
-                Layout.fillWidth: true
-                Layout.topMargin: 16
-                Layout.leftMargin: 16
-                Layout.rightMargin: 16
-
-                enabled: delegateItem.isEnabled
-
-                text: qsTr("Header protection (AmneziaWG 3)")
-                descriptionText: qsTr("Encrypts packet headers and adds random padding, so the traffic loses the "
-                                      + "signature filters look for. Requires AmneziaWG 3 on every device: the "
-                                      + "Android app does not support it yet and will stop connecting. Applies on "
-                                      + "the next AmneziaWG install or reinstall.")
-
-                checked: SettingsController.isAwgHeaderProtectionEnabled
-                onToggled: function() {
-                    const wanted = checked
-                    // Switch flips itself before this runs, which destroys the binding
-                    // above. Re-establish it so the control keeps showing the setting's
-                    // real value rather than whatever the tap left behind.
-                    checked = Qt.binding(function() {
-                        return SettingsController.isAwgHeaderProtectionEnabled
-                    })
-                    SettingsController.isAwgHeaderProtectionEnabled = wanted
-                }
-            }
-
             BasicButtonType {
                 id: saveRestartButton
 

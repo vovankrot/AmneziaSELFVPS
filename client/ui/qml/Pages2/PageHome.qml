@@ -932,6 +932,54 @@ PageType {
                 }
             }
 
+            // AmneziaWG header protection. Lives here rather than buried in the
+            // protocol settings page because it is a connection-shaping choice, not a
+            // tuning parameter -- same reasoning as the auto-failover switch above.
+            // Only meaningful while AmneziaWG is the active protocol, so it is hidden
+            // for every other one. by vovankrot
+            RowLayout {
+                id: awgHeaderProtectionRow
+                Layout.alignment: Qt.AlignHCenter
+                spacing: 8
+                visible: (root.xrayRealitySwitcherRefresh, root.defaultContainer()) === ContainerEnum.Awg2
+
+                CaptionTextType {
+                    text: qsTr("Header protection")
+                    color: SettingsController.isAwgHeaderProtectionEnabled
+                           ? AmneziaStyle.color.goldenApricot
+                           : AmneziaStyle.color.mutedGray
+                    font.pixelSize: 13
+                }
+
+                SwitcherType {
+                    id: awgHeaderProtectionSwitch
+                    implicitWidth: 42
+                    implicitHeight: 24
+                    checked: SettingsController.isAwgHeaderProtectionEnabled
+                    onCheckedChanged: {
+                        if (checked !== SettingsController.isAwgHeaderProtectionEnabled) {
+                            SettingsController.isAwgHeaderProtectionEnabled = checked
+                        }
+                    }
+                }
+
+                Image {
+                    source: "qrc:/images/controls/info.svg"
+                    sourceSize.width: 16
+                    sourceSize.height: 16
+                    opacity: 0.5
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            PageController.showNotificationMessage(
+                                qsTr("Applies after reinstalling AmneziaWG on the server"))
+                        }
+                    }
+                }
+            }
+
             // Diagnostics banner - shows issues one at a time
             Rectangle {
                 id: diagnosticsBanner
