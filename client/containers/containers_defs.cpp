@@ -105,8 +105,14 @@ QMap<DockerContainer, QString> ContainerProps::containerHumanNames()
              { DockerContainer::ShadowSocks, "OpenVPN over SS" },
              { DockerContainer::Cloak, "OpenVPN over Cloak" },
              { DockerContainer::WireGuard, "WireGuard" },
-             { DockerContainer::Awg, "AmneziaWG" },
-             { DockerContainer::Awg2, "AmneziaWG v2" },
+             // Awg2 is the container id (amnezia-awg2 on the server), not a protocol
+             // generation. Which AmneziaWG generation actually runs now depends on the
+             // header-protection switch: off behaves as v2, on is v3. Hardcoding "v2"
+             // in the label was therefore wrong either way, and read as "the update
+             // did not install". No version in the name; the AmneziaWG settings page
+             // is where the generation is chosen.
+             { DockerContainer::Awg, QObject::tr("AmneziaWG (legacy)") },
+             { DockerContainer::Awg2, "AmneziaWG" },
              { DockerContainer::Xray, "XRay" },
              { DockerContainer::Ipsec, QObject::tr("IPsec") },
              { DockerContainer::SSXray, "Shadowsocks (XRay)"},
