@@ -252,6 +252,7 @@ QString ProtocolProps::getProtocolVersionString(const QJsonObject &protocolConfi
 {
     auto version = getProtocolVersion(protocolConfig);
 
+    if (version == protocols::awg::awgV3) return QObject::tr(" (version 3)");
     if (version == protocols::awg::awgV2) return QObject::tr(" (version 2)");
     if (version == protocols::awg::awgV1_5) return QObject::tr(" (version 1.5)");
     return "";

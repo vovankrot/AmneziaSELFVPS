@@ -206,7 +206,13 @@ void InstallController::install(DockerContainer container, int port, TransportPr
             containerConfig.insert(config_key::subnet_address, protocols::wireguard::defaultSubnetAddress);
 
             if (container == DockerContainer::Awg2) {
-                containerConfig[config_key::protocolVersion] = "2";
+                // The generation follows the configuration, not the binaries. We ask for
+                // header protection here; configure_container.sh only keeps the key if the
+                // installed amneziawg-go actually accepted it, and the rescan path below
+                // re-derives this from the server's own awg0.conf, so a server that refused
+                // gets corrected back to 2 rather than being mislabelled forever.
+                containerConfig[config_key::protocolVersion] =
+                        m_settings->isAwgHeaderProtectionEnabled() ? protocols::awg::awgV3 : protocols::awg::awgV2;
 
                 QString junkPacketCount = QString::number(QRandomGenerator::global()->bounded(4, 7));
                 QString junkPacketMinSize = QString::number(10);
@@ -737,7 +743,13 @@ ErrorCode InstallController::getAlreadyInstalledContainers(const ServerCredentia
                         containerConfig[config_key::specialJunk5] = serverConfigMap.value(QString("# ") + config_key::specialJunk5);
 
                         if (container == DockerContainer::Awg2) {
-                            containerConfig[config_key::protocolVersion] = "2";
+                            // Read off the server's actual awg0.conf: a HeaderProtectionKey
+                            // line is present only when header protection really is active,
+                            // which is precisely what separates generation 3 from 2.
+                            containerConfig[config_key::protocolVersion] =
+                                    serverConfigMap.contains(config_key::headerProtectionKey)
+                                    ? protocols::awg::awgV3
+                                    : protocols::awg::awgV2;
                             containerConfig[config_key::cookieReplyPacketJunkSize] =
                                     serverConfigMap.value(config_key::cookieReplyPacketJunkSize);
                             containerConfig[config_key::transportPacketJunkSize] = serverConfigMap.value(config_key::transportPacketJunkSize);

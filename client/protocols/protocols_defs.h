@@ -348,6 +348,11 @@ namespace amnezia
 
             constexpr char awgV1_5[] = "1.5";
             constexpr char awgV2[] = "2";
+            // Recorded when a container is installed with header protection on. The
+            // generation is a property of the CONFIGURATION, not of the binaries:
+            // an AWG3-capable client talking to a server that mints no header
+            // protection key is running v2, and labelling it v3 would be a lie.
+            constexpr char awgV3[] = "3";
         }
 
         namespace socks5Proxy
