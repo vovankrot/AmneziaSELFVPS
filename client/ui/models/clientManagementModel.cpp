@@ -324,8 +324,20 @@ ErrorCode ClientManagementModel::updateModel(const DockerContainer container, co
 
     QByteArray clientsTableString = serverController->getTextFileFromContainer(container, credentials, clientsTableFile, error);
     if (error != ErrorCode::NoError) {
-        if (container == DockerContainer::Xray && error == ErrorCode::ServerCheckFailed) {
-            logger.warning() << "Xray clientsTable is missing; using empty clients table and rebuilding from server.json";
+        // A missing clientsTable is the NORMAL state right after a container is
+        // installed -- nothing creates the file during setup, the model writes it
+        // once it has enumerated clients. The empty-table branch below already
+        // rebuilds the list from the server for every user-management container
+        // (getOpenVpnClients / getWireGuardClients / getXrayClients), so bailing
+        // out here just prevents that recovery from ever running.
+        //
+        // This tolerance used to be spelled for Xray only, presumably because that
+        // is where it was first hit. Every other container reported a fresh install
+        // as "Server check failed" instead -- which is exactly what installing
+        // AmneziaWG on a clean server did. by vovankrot
+        if (error == ErrorCode::ServerCheckFailed) {
+            logger.warning() << "clientsTable is missing for" << ContainerProps::containerToString(container)
+                             << "-- treating as empty and rebuilding from the server";
             clientsTableString = QByteArrayLiteral("[]");
             error = ErrorCode::NoError;
         } else {
