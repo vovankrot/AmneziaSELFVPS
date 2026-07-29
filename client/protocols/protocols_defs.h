@@ -95,6 +95,16 @@ namespace amnezia
         constexpr char specialJunk4[] = "I4";
         constexpr char specialJunk5[] = "I5";
 
+        // AmneziaWG 3 keys. These are the literal names used in the .conf file, so they
+        // double as both the JSON keys and the config-line labels. by vovankrot
+        constexpr char headerProtectionKey[] = "HeaderProtectionKey";
+        constexpr char contentPaddingAddition[] = "ContentPaddingAddition";
+        constexpr char rekeyAfterTime[] = "RekeyAfterTime";
+        constexpr char rekeyTimeout[] = "RekeyTimeout";
+        constexpr char rejectAfterTime[] = "RejectAfterTime";
+        constexpr char keepaliveTimeout[] = "KeepaliveTimeout";
+        constexpr char maxHandshakeAttempts[] = "MaxHandshakeAttempts";
+
         constexpr char protocolVersion[] = "protocol_version";
 
         constexpr char openvpn[] = "openvpn";
@@ -292,6 +302,10 @@ namespace amnezia
             constexpr char serverLegacyConfigPath[] = "/opt/amnezia/awg/wg0.conf";
             constexpr char serverPublicKeyPath[] = "/opt/amnezia/awg/wireguard_server_public_key.key";
             constexpr char serverPskKeyPath[] = "/opt/amnezia/awg/wireguard_psk.key";
+            // AmneziaWG 3 header protection key. Written by configure_container.sh on
+            // install; absent on containers created before AWG3, which is how the client
+            // feature-detects and silently falls back to plain AWG2 behaviour.
+            constexpr char serverHeaderProtectionKeyPath[] = "/opt/amnezia/awg/awg_header_protection.key";
 
             constexpr char defaultJunkPacketCount[] = "3";
             constexpr char defaultJunkPacketMinSize[] = "10";
@@ -310,6 +324,27 @@ namespace amnezia
             constexpr char defaultSpecialJunk3[] = "";
             constexpr char defaultSpecialJunk4[] = "";
             constexpr char defaultSpecialJunk5[] = "";
+
+            // --- AmneziaWG 3 ---------------------------------------------------
+            // Header protection encrypts the low-entropy header fields that make a
+            // WireGuard packet identifiable in the first place: handshakes and cookies
+            // are encrypted whole, transport packets have their 16-byte header
+            // encrypted. It requires S1..S4 >= 8 as crypto-padding/nonce space -- our
+            // defaults above (15/18/20/23) already satisfy that.
+            //
+            // ContentPaddingAddition replaces WireGuard's fixed 16-byte alignment with
+            // a random per-packet addition, so packet sizes stop forming the regular
+            // ladder that size-based classifiers look for. Range form "min-max".
+            //
+            // Only headerProtectionKey has to be identical on both peers; everything
+            // below is client-side and may differ per device. Empty string means "do
+            // not emit the line at all", which is what keeps pre-AWG3 servers working.
+            constexpr char defaultContentPaddingAddition[] = "40-200";
+            constexpr char defaultRekeyAfterTime[] = "";
+            constexpr char defaultRekeyTimeout[] = "";
+            constexpr char defaultRejectAfterTime[] = "";
+            constexpr char defaultKeepaliveTimeout[] = "";
+            constexpr char defaultMaxHandshakeAttempts[] = "";
 
             constexpr char awgV1_5[] = "1.5";
             constexpr char awgV2[] = "2";

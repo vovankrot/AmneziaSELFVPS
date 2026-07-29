@@ -25,6 +25,7 @@
 #include <QFileInfo>
 #include <QNetworkInterface>
 #include <QScopeGuard>
+#include <QUrl>
 #include <QThread>
 
 #include <atomic>
@@ -206,6 +207,24 @@ BOOL DeviceIoControlWithTimeout(HANDLE device, DWORD code, LPVOID inBuf, DWORD i
   return result->ok;
 }
 
+// App paths reach us from several places -- the QML file dialog hands back
+// "file:///C:/..." URIs, the app-list provider hands back native paths, and an
+// imported config can carry either separator style. Fold all of that into a
+// plain native path before anything tries to resolve it, otherwise QueryDosDevice
+// gets a drive letter of "file:" and the app silently never gets excluded.
+// Ported from upstream 5.0.0.5. by vovankrot
+QString normalizeExecutablePath(const QString& path) {
+  QString normalized = path.trimmed();
+  if (normalized.startsWith("file:", Qt::CaseInsensitive)) {
+    const QString localPath = QUrl(normalized).toLocalFile();
+    if (!localPath.isEmpty()) {
+      normalized = localPath;
+    }
+  }
+  normalized.replace('/', '\\');
+  return normalized;
+}
+
 }  // namespace
 
 std::unique_ptr<WindowsSplitTunnel> WindowsSplitTunnel::create(
@@ -376,7 +395,7 @@ bool WindowsSplitTunnel::start(int inetAdapterIndex, int vpnAdapterIndex) {
     auto ok = DeviceIoControlWithTimeout(m_driver, IOCTL_INITIALIZE, nullptr, 0, nullptr,
                                          0, &bytesReturned, "IOCTL_INITIALIZE");
     if (!ok) {
-      logger.error() << "Driver init failed";
+      logger.error() << "Driver init failed. Error:" << GetLastError();
       return false;
     }
   }
@@ -394,7 +413,7 @@ bool WindowsSplitTunnel::start(int inetAdapterIndex, int vpnAdapterIndex) {
                                          (DWORD)config.size(), nullptr, 0, &bytesReturned,
                                          "IOCTL_REGISTER_PROCESSES");
     if (!ok) {
-      logger.error() << "Failed to set Process Config";
+      logger.error() << "Failed to set Process Config. Error:" << GetLastError();
       return false;
     }
     logger.debug() << "Set Process Config ok || new State:" << stateString();
@@ -433,7 +452,7 @@ bool WindowsSplitTunnel::start(int inetAdapterIndex, int vpnAdapterIndex) {
                                        (DWORD)config.size(), nullptr, 0, &bytesReturned,
                                        "IOCTL_REGISTER_IP_ADDRESSES");
   if (!ok) {
-    logger.error() << "Failed to set Network Config";
+    logger.error() << "Failed to set Network Config. Error:" << GetLastError();
     return false;
   }
   logger.debug() << "New Network Config Applied || new State:" << stateString();
@@ -673,7 +692,10 @@ std::vector<uint8_t> WindowsSplitTunnel::generateProcessBlob() {
     auto process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE,
                                       currentProcess.th32ProcessID);
 
-    if (process_handle == INVALID_HANDLE_VALUE) {
+    // OpenProcess returns NULL on failure, NOT INVALID_HANDLE_VALUE -- the old
+    // check never fired, so a failed open fell through into getProcessInfo() and
+    // CloseHandle() with a null handle. Upstream 5.0.0.5. by vovankrot
+    if (process_handle == nullptr) {
       continue;
     }
     ProcessInfo info = getProcessInfo(process_handle, currentProcess);
@@ -793,34 +815,61 @@ bool WindowsSplitTunnel::isInstalled() {
 }
 
 QString WindowsSplitTunnel::convertPath(const QString& path) {
-  QFileInfo fileInfo(QDir::fromNativeSeparators(path.trimmed()));
+  // Strip any file: URI wrapper first -- QFileInfo would otherwise treat the
+  // whole "file:///C:/..." string as a relative name.
+  QFileInfo fileInfo(QDir::fromNativeSeparators(normalizeExecutablePath(path)));
   QString normalizedPath = fileInfo.canonicalFilePath();
   if (normalizedPath.isEmpty()) {
     normalizedPath = fileInfo.absoluteFilePath();
+  }
+  if (normalizedPath.isEmpty()) {
+    logger.error() << "Empty executable path for DOS device conversion";
+    return "";
   }
 
   auto parts = QDir::fromNativeSeparators(QDir::cleanPath(normalizedPath))
                    .split("/", Qt::SkipEmptyParts);
   if (parts.isEmpty()) {
+    logger.error() << "Invalid executable path for DOS device conversion:"
+                   << normalizedPath;
     return "";
   }
 
   QString driveLetter = parts.takeFirst();
   if (!driveLetter.contains(":") || parts.size() == 0) {
     // device should contain : for e.g C:
+    logger.error() << "Invalid executable path for DOS device conversion:"
+                   << normalizedPath;
     return "";
   }
-  QByteArray buffer(2048, 0xFFu);
-  auto ok = QueryDosDeviceW(qUtf16Printable(driveLetter),
-                            (wchar_t*)buffer.data(), buffer.size() / 2);
 
-  if (ok == 0 && GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+  // Grow the buffer until QueryDosDeviceW stops complaining rather than giving
+  // up after a single retry -- a drive with many symlinked device names can
+  // exceed 4 KB. Bounded at 4 attempts (2048 -> 16384 wchars). Upstream 5.0.0.5.
+  QByteArray buffer(2048 * sizeof(wchar_t), 0);
+  DWORD ok = 0;
+  DWORD err = ERROR_SUCCESS;
+  for (int attempt = 0; attempt < 4; ++attempt) {
+    ok = QueryDosDeviceW(reinterpret_cast<LPCWSTR>(driveLetter.utf16()),
+                         reinterpret_cast<LPWSTR>(buffer.data()),
+                         buffer.size() / sizeof(wchar_t));
+    if (ok != 0) {
+      break;
+    }
+    err = GetLastError();
+    if (err != ERROR_INSUFFICIENT_BUFFER) {
+      WindowsUtils::windowsLog("Err fetching dos path");
+      logger.error() << "QueryDosDeviceW failed for" << driveLetter
+                     << "error:" << err;
+      return "";
+    }
     buffer.resize(buffer.size() * 2);
-    ok = QueryDosDeviceW(qUtf16Printable(driveLetter), (wchar_t*)buffer.data(),
-                         buffer.size() / 2);
+    buffer.fill(0);
   }
   if (ok == 0) {
     WindowsUtils::windowsLog("Err fetching dos path");
+    logger.error() << "QueryDosDeviceW failed after buffer growth for"
+                   << driveLetter << "error:" << err;
     return "";
   }
   QString deviceName;

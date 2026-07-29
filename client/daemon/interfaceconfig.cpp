@@ -155,6 +155,31 @@ QString InterfaceConfig::toWgConf(const QMap<QString, QString>& extra) const {
     out << key << " = " << m_specialJunk[key] << "\n";
   }
 
+  // AmneziaWG 3 parameters -- see the note in interfaceconfig.h. Each is written
+  // only when set, so a config that never carried them produces byte-identical
+  // output to before. Ported from upstream 5.0.0.5. by vovankrot
+  if (!m_headerProtectionKey.isEmpty()) {
+    out << "HeaderProtectionKey = " << m_headerProtectionKey << "\n";
+  }
+  if (!m_contentPaddingAddition.isEmpty()) {
+    out << "ContentPaddingAddition = " << m_contentPaddingAddition << "\n";
+  }
+  if (!m_rekeyAfterTime.isEmpty()) {
+    out << "RekeyAfterTime = " << m_rekeyAfterTime << "\n";
+  }
+  if (!m_rekeyTimeout.isEmpty()) {
+    out << "RekeyTimeout = " << m_rekeyTimeout << "\n";
+  }
+  if (!m_rejectAfterTime.isEmpty()) {
+    out << "RejectAfterTime = " << m_rejectAfterTime << "\n";
+  }
+  if (!m_keepaliveTimeout.isEmpty()) {
+    out << "KeepaliveTimeout = " << m_keepaliveTimeout << "\n";
+  }
+  if (!m_maxHandshakeAttempts.isEmpty()) {
+    out << "MaxHandshakeAttempts = " << m_maxHandshakeAttempts << "\n";
+  }
+
   // If any extra config was provided, append it now.
   for (const QString& key : extra.keys()) {
     out << key << " = " << extra[key] << "\n";

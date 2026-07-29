@@ -158,6 +158,7 @@ WireguardConfigurator::ConnectionData WireguardConfigurator::prepareWireguardCon
         return connData;
     }
 
+
     // Add client to config
     QString configPart = QString("[Peer]\n"
                                  "PublicKey = %1\n"
@@ -201,6 +202,19 @@ QString WireguardConfigurator::createConfig(const ServerCredentials &credentials
     config.replace("$WIREGUARD_CLIENT_IP", connData.clientIP);
     config.replace("$WIREGUARD_SERVER_PUBLIC_KEY", connData.serverPubKey);
     config.replace("$WIREGUARD_PSK", connData.pskKey);
+
+    // AmneziaWG 3 (header protection / content padding) is deliberately NOT emitted
+    // into generated configs yet. The bundled Windows tunnel implementation
+    // (3rd-prebuilt tunnel.dll) predates AWG3 and rejects a config carrying those
+    // keys outright, which kills the tunnel rather than degrading it. Generating
+    // them server-side would be worse still: the server would apply header
+    // protection that no shipped client can speak.
+    //
+    // Turning this on is gated on bumping the prebuilt amneziawg tunnel binaries
+    // for every desktop platform first. The read/parse path in AwgConfigurator and
+    // InterfaceConfig stays in place regardless, so an IMPORTED third-party AWG3
+    // config is still honoured instead of having its lines silently dropped.
+    // by vovankrot
 
     const QJsonObject &wireguarConfig = containerConfig.value(ProtocolProps::protoToString(Proto::WireGuard)).toObject();
     QJsonObject jConfig;

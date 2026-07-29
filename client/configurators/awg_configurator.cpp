@@ -52,6 +52,20 @@ QString AwgConfigurator::createConfig(const ServerCredentials &credentials, Dock
     jsonConfig[config_key::specialJunk4] = configMap.value(amnezia::config_key::specialJunk4);
     jsonConfig[config_key::specialJunk5] = configMap.value(amnezia::config_key::specialJunk5);
 
+    // AmneziaWG 3. Lift only the keys the generated .conf actually carries -- the
+    // header protection line is absent whenever the server container predates AWG3,
+    // and writing an empty value into the JSON would make the daemon emit a
+    // valueless config line that amneziawg rejects. by vovankrot
+    for (const char *awg3Key : { config_key::headerProtectionKey, config_key::contentPaddingAddition,
+                                 config_key::rekeyAfterTime, config_key::rekeyTimeout,
+                                 config_key::rejectAfterTime, config_key::keepaliveTimeout,
+                                 config_key::maxHandshakeAttempts }) {
+        const QString value = configMap.value(QString::fromLatin1(awg3Key));
+        if (!value.isEmpty()) {
+            jsonConfig[awg3Key] = value;
+        }
+    }
+
     jsonConfig[config_key::mtu] =
             containerConfig.value(ProtocolProps::protoToString(Proto::Awg)).toObject().value(config_key::mtu).toString(protocols::awg::defaultMtu);
 

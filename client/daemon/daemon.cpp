@@ -441,6 +441,26 @@ bool Daemon::parseConfig(const QJsonObject& obj, InterfaceConfig& config) {
     config.m_specialJunk["I5"] = obj.value("I5").toString();
   }
 
+  // AmneziaWG 3 tuning parameters (upstream 5.0.0.5). Only present in configs
+  // that actually declare them -- our own installer doesn't, so a self-hosted
+  // tunnel is unaffected. Without this an imported AWG3 config lost these lines
+  // and the tunnel ran with parameters the peer didn't agree to. by vovankrot
+  static const QVector<QPair<const char*, QString InterfaceConfig::*>> kAwg3Fields = {
+      { "HeaderProtectionKey", &InterfaceConfig::m_headerProtectionKey },
+      { "ContentPaddingAddition", &InterfaceConfig::m_contentPaddingAddition },
+      { "RekeyAfterTime", &InterfaceConfig::m_rekeyAfterTime },
+      { "RekeyTimeout", &InterfaceConfig::m_rekeyTimeout },
+      { "RejectAfterTime", &InterfaceConfig::m_rejectAfterTime },
+      { "KeepaliveTimeout", &InterfaceConfig::m_keepaliveTimeout },
+      { "MaxHandshakeAttempts", &InterfaceConfig::m_maxHandshakeAttempts },
+  };
+  for (const auto& field : kAwg3Fields) {
+    const QJsonValue value = obj.value(QLatin1String(field.first));
+    if (!value.isNull() && !value.isUndefined()) {
+      config.*(field.second) = value.toString();
+    }
+  }
+
   return true;
 }
 

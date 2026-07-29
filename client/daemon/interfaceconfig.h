@@ -58,6 +58,20 @@ class InterfaceConfig {
   QString m_transportPacketMagicHeader;
   QMap<QString, QString> m_specialJunk;
 
+  // AmneziaWG 3 tuning knobs (upstream 5.0.0.5). Purely pass-through: our own
+  // server installer never emits them, so for a self-hosted tunnel they stay
+  // empty and nothing changes. They matter when importing a third-party AWG3
+  // config that specifies them -- previously those lines were dropped and the
+  // tunnel silently ran with different parameters than the peer expected.
+  // Emitted only when non-empty, so old configs are unaffected. by vovankrot
+  QString m_headerProtectionKey;
+  QString m_contentPaddingAddition;
+  QString m_rekeyAfterTime;
+  QString m_rekeyTimeout;
+  QString m_rejectAfterTime;
+  QString m_keepaliveTimeout;
+  QString m_maxHandshakeAttempts;
+
   QJsonObject toJson() const;
   QString toWgConf(
       const QMap<QString, QString>& extra = QMap<QString, QString>()) const;
