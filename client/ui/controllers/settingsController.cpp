@@ -373,6 +373,23 @@ bool SettingsController::isKillSwitchEnabled()
     return m_settings->isKillSwitchEnabled();
 }
 
+bool SettingsController::isAwgHeaderProtectionEnabled()
+{
+    return m_settings->isAwgHeaderProtectionEnabled();
+}
+
+void SettingsController::toggleAwgHeaderProtection(bool enable)
+{
+    // Deliberately does NOT trigger a reconnect or a container reinstall. The header
+    // protection key is minted server-side while the AWG container is being set up,
+    // so the switch only takes effect the next time AmneziaWG is installed or
+    // reinstalled on a server -- reconnecting an existing tunnel would change
+    // nothing and would just look like the setting did something it didn't.
+    // by vovankrot
+    m_settings->setAwgHeaderProtectionEnabled(enable);
+    emit awgHeaderProtectionEnabledChanged();
+}
+
 void SettingsController::toggleKillSwitch(bool enable)
 {
     m_settings->setKillSwitchEnabled(enable);

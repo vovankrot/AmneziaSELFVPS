@@ -354,51 +354,51 @@
 <context>
     <name>ConnectionController</name>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="98"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="105"/>
         <source>Protocol changed, reconnecting...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="103"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="112"/>
         <source>Protocol changed</source>
         <translation>Протокол изменён</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="125"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="138"/>
         <source>Server changed, reconnecting...</source>
         <translation>Сервер изменён, переподключение...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="130"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="145"/>
         <source>Server changed</source>
         <translation>Сервер изменён</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="152"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="167"/>
         <source>Connecting...</source>
         <translation>Подключение...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="153"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="161"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="178"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="194"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="168"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="176"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="193"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="209"/>
         <source>Disconnect</source>
         <translation type="unfinished">Отключиться</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="160"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="175"/>
         <source>Connected</source>
         <translation>Подключено</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="199"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="200"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="214"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="215"/>
         <source>Preparing...</source>
         <translation>Подготовка...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="234"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="249"/>
         <source>Settings updated successfully, reconnecting...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -407,44 +407,44 @@
         <translation type="vanished">Настройки успешно обновлены, переподключение...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="237"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="252"/>
         <source>Settings updated successfully</source>
         <translation>Настройки успешно обновлены</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="305"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="320"/>
         <source>Trying fallback connection...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="353"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="368"/>
         <source>Switching to %1...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="367"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="382"/>
         <source>Switching to server %1...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="177"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="192"/>
         <source>Reconnecting...</source>
         <translation>Переподключение...</translation>
     </message>
     <message>
         <location filename="../ui/controllers/connectionController.h" line="86"/>
         <location filename="../ui/controllers/connectionController.h" line="87"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="183"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="184"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="205"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="206"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="198"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="199"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="220"/>
         <location filename="../ui/controllers/connectionController.cpp" line="221"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="222"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="236"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="237"/>
         <source>Connect</source>
         <translation>Подключиться</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="193"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="208"/>
         <source>Disconnecting...</source>
         <translation>Отключение...</translation>
     </message>
@@ -600,7 +600,7 @@
         <translation>Нажмите на сервер, чтобы сделать его основным</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Components/HomeServerListDrawer.qml" line="172"/>
+        <location filename="../ui/qml/Components/HomeServerListDrawer.qml" line="183"/>
         <source>Manage servers</source>
         <translation>Управление серверами</translation>
     </message>
@@ -1516,6 +1516,16 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation>Настройки AmneziaWG</translation>
     </message>
     <message>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="521"/>
+        <source>Header protection (AmneziaWG 3)</source>
+        <translation>Защита заголовков (AmneziaWG 3)</translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="522"/>
+        <source>Encrypts packet headers and adds random padding, so the traffic loses the signature filters look for. Requires AmneziaWG 3 on every device: the Android app does not support it yet and will stop connecting. Applies on the next AmneziaWG install or reinstall.</source>
+        <translation>Шифрует заголовки пакетов и добавляет случайный паддинг — трафик теряет признак, по которому его узнают фильтры. Требует AmneziaWG 3 на всех устройствах: приложение для Android пока не умеет и перестанет подключаться. Применится при следующей установке или переустановке AmneziaWG.</translation>
+    </message>
+    <message>
         <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="107"/>
         <source>Port</source>
         <translation>Порт</translation>
@@ -1546,17 +1556,17 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation>I5 - Special junk 5</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="545"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="586"/>
         <source>The value of the field S1 + message initiation size (148) must not equal S2 + message response size (92) + S3 + cookie reply size (64) + S4 + transport packet size (32)</source>
         <translation>Значение поля S1 + размер инициализации сообщения (148) не должно равняться S2 + размер ответа сообщения (92) + S3 + размер ответа cookie (64) + S4 + размер транспортного пакета (32)</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="551"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="592"/>
         <source>All users with whom you shared a connection with will no longer be able to connect to it.</source>
         <translation>Все пользователи, с которыми вы поделились конфигурацией вашего VPN, больше не смогут к нему подключаться.</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="522"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="563"/>
         <source>Save</source>
         <translation>Сохранить</translation>
     </message>
@@ -1621,27 +1631,27 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation>H3 - Underload packet magic header</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="537"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="578"/>
         <source>The values of the H1-H4 fields must be unique</source>
         <translation>Значения в полях H1-H4 должны быть уникальными</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="550"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="591"/>
         <source>Save settings?</source>
         <translation>Сохранить настройки?</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="552"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="593"/>
         <source>Continue</source>
         <translation>Продолжить</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="553"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="594"/>
         <source>Cancel</source>
         <translation>Отменить</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="557"/>
+        <location filename="../ui/qml/Pages2/PageProtocolAwgSettings.qml" line="598"/>
         <source>Unable change settings while there is an active connection</source>
         <translation>Невозможно изменить настройки во время активного соединения</translation>
     </message>
@@ -6791,12 +6801,12 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
         <translation>Прокси-сервер SOCKS5</translation>
     </message>
     <message>
-        <location filename="../protocols/protocols_defs.cpp" line="249"/>
+        <location filename="../protocols/protocols_defs.cpp" line="255"/>
         <source> (version 2)</source>
         <translation> (версия 2)</translation>
     </message>
     <message>
-        <location filename="../protocols/protocols_defs.cpp" line="250"/>
+        <location filename="../protocols/protocols_defs.cpp" line="256"/>
         <source> (version 1.5)</source>
         <translation> (версия 1.5)</translation>
     </message>
@@ -7314,22 +7324,22 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
         <translation>Запуск стартового скрипта в %1.</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1579"/>
+        <location filename="../core/controllers/serverController.cpp" line="1595"/>
         <source>Detecting server environment...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1593"/>
+        <location filename="../core/controllers/serverController.cpp" line="1609"/>
         <source>Server preflight returned no output.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1598"/>
+        <location filename="../core/controllers/serverController.cpp" line="1614"/>
         <source>Server probe: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1608"/>
+        <location filename="../core/controllers/serverController.cpp" line="1624"/>
         <source>Cancel requested, interrupting current SSH operation...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7338,17 +7348,17 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
         <translation type="vanished">Запрошена отмена, остановка на ближайшей контрольной точке...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1870"/>
+        <location filename="../core/controllers/serverController.cpp" line="1886"/>
         <source>Package manager probe timed out. The remote command stopped responding.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1884"/>
+        <location filename="../core/controllers/serverController.cpp" line="1900"/>
         <source>Package manager is busy (attempt %1/30), waiting 10s... Output: %2</source>
         <translation>Менеджер пакетов занят (попытка %1/30), ожидание 10 с... Вывод: %2</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1896"/>
+        <location filename="../core/controllers/serverController.cpp" line="1912"/>
         <source>Package manager is still busy after 30 attempts, giving up.</source>
         <translation>Менеджер пакетов всё ещё занят после 30 попыток, прекращаем ожидание.</translation>
     </message>
@@ -7356,12 +7366,12 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
 <context>
     <name>ServerMonitorController</name>
     <message>
-        <location filename="../ui/controllers/serverMonitorController.cpp" line="104"/>
+        <location filename="../ui/controllers/serverMonitorController.cpp" line="109"/>
         <source>No server selected</source>
         <translation>Сервер не выбран</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverMonitorController.cpp" line="138"/>
+        <location filename="../ui/controllers/serverMonitorController.cpp" line="143"/>
         <source>SSH connection failed</source>
         <translation>SSH-подключение не удалось</translation>
     </message>
@@ -7369,17 +7379,17 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
 <context>
     <name>ServerTerminalController</name>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="96"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="97"/>
         <source>BLOCKED: this command is potentially destructive.</source>
         <translation>Команда заблокирована: она потенциально разрушительна.</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="97"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="98"/>
         <source>If you really need it, connect via SSH directly.</source>
         <translation>Если это действительно нужно, подключитесь по SSH напрямую.</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="108"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="109"/>
         <source>XRay Logs</source>
         <translation>Логи XRay</translation>
     </message>
@@ -7388,47 +7398,47 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
         <translation type="vanished">Логи XRay недоступны (контейнер может использовать --log-driver none)</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="122"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="123"/>
         <source>No XRay/SSXray container found on server</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="127"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="128"/>
         <source>Docker Containers</source>
         <translation>Контейнеры Docker</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="132"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="133"/>
         <source>Docker not available</source>
         <translation>Docker недоступен</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="137"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="138"/>
         <source>System Errors (last 24h)</source>
         <translation>Системные ошибки (последние 24 ч)</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="143"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="144"/>
         <source>No system error logs available</source>
         <translation>Системные журналы ошибок недоступны</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="148"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="149"/>
         <source>SSH Auth Log (last 50)</source>
         <translation>Журнал SSH-аутентификации (последние 50)</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="153"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="154"/>
         <source>No SSH auth logs found</source>
         <translation>Журналы SSH-аутентификации не найдены</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="165"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="166"/>
         <source>Error: no server selected</source>
         <translation>Ошибка: сервер не выбран</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="207"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="211"/>
         <source>Error: SSH command failed</source>
         <translation>Ошибка: SSH-команда завершилась неудачно</translation>
     </message>
@@ -7686,12 +7696,12 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
 <context>
     <name>VpnConnection</name>
     <message>
-        <location filename="../vpnconnection.cpp" line="566"/>
+        <location filename="../vpnconnection.cpp" line="572"/>
         <source>Site split tunneling works only with XRay; full VPN is used for this protocol</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../vpnconnection.cpp" line="921"/>
+        <location filename="../vpnconnection.cpp" line="927"/>
         <source>Mbps</source>
         <translation>Мбит/с</translation>
     </message>
