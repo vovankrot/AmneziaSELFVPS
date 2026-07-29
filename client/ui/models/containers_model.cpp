@@ -5,12 +5,25 @@
 namespace {
 bool isCuratedInstallableVpn(amnezia::DockerContainer container)
 {
-    // Desktop-hardened curated set: obfuscated/proxy-class protocols suitable
-    // for new installs. AnyTLS is exposed from the XRay setup page as a
-    // variant toggle; already-installed AnyTLS containers still remain visible
-    // through the isInstalled branch in the QML filters.
+    // Curated set offered for NEW installs. This gate only hides things from the
+    // setup wizard -- ContainersModelFilters keeps anything already deployed
+    // visible through its isInstalled branch, so a legacy container can still be
+    // inspected and removed from the server. Dropping something from this list
+    // therefore means "no longer offered", never "orphaned on the server".
+    //
+    // Cloak and ShadowSocks are gone from here: upstream removed both containers
+    // outright in 5.0.0.5, and OpenVPN-over-Cloak has not been a credible answer
+    // to current filtering for a while. Existing installs stay removable.
+    //
+    // AmneziaWG belongs here. It was missing, which is why "install WireGuard on
+    // the server" had quietly disappeared from the wizard -- the protocol was
+    // still switchable on the home screen (that list is driven by what is already
+    // installed), so it looked like it vanished only when adding it to a server.
+    //
+    // AnyTLS stays out on purpose: it is offered from the XRay setup page as a
+    // variant toggle rather than a standalone entry.
     switch (container) {
-    case amnezia::DockerContainer::Cloak:
+    case amnezia::DockerContainer::Awg2:
     case amnezia::DockerContainer::Xray:
     case amnezia::DockerContainer::SSXray:
     case amnezia::DockerContainer::Hysteria2:
