@@ -144,6 +144,11 @@ $ClientRelease = Join-Path $BuildDir "client\Release"
 $ServiceRelease = Join-Path $BuildDir "service\server\Release"
 $StageDir = Join-Path $BuildDir "installer_stage"
 $PrebuiltDir = Join-Path $ProjectDir "client\3rd-prebuilt\deploy-prebuilt\windows\x64"
+# Fork-owned binaries, layered over the submodule's copies during staging.
+# client\3rd-prebuilt is a submodule pointing at Amnezia's repository, so anything
+# dropped into its working tree cannot be committed here and is missing from a fresh
+# clone. See deploy\prebuilt-selfvps\README.md.
+$PrebuiltOverrideDir = Join-Path $ProjectDir "deploy\prebuilt-selfvps\windows\x64"
 $DeployDataDir = Join-Path $ProjectDir "deploy\data\windows\x64"
 $AppIcon = Join-Path $ProjectDir "client\images\app.ico"
 $InstallerProject = Join-Path $InstallerProjectDir "AmneziaVPN.Installer.csproj"
@@ -562,6 +567,30 @@ if (Test-Path $PrebuiltDir) {
     }
     $prebuiltCount = (Get-ChildItem $PrebuiltDir -Recurse -File | Where-Object { $_.Extension -ne '.sha256' }).Count
     Write-Host "  Prebuilt: $prebuiltCount files (incl. subdirs)" -ForegroundColor Gray
+}
+
+# Layer fork-owned binaries over whatever the submodule provided. Must run AFTER the
+# block above so these win. Currently this is how the AWG3-capable tunnel.dll reaches
+# the installer -- the submodule ships a pre-AWG3 build that rejects AWG3 config keys.
+if (Test-Path $PrebuiltOverrideDir) {
+    $overridden = @()
+    Get-ChildItem $PrebuiltOverrideDir -File | Where-Object { $_.Extension -ne '.sha256' } |
+        ForEach-Object {
+            Copy-Item $_.FullName $StageDir -Force
+            $overridden += $_.Name
+            # Keep the checksum sidecar next to the binary when one is provided.
+            $sidecar = "$($_.FullName).sha256"
+            if (Test-Path $sidecar) { Copy-Item $sidecar $StageDir -Force }
+        }
+    Get-ChildItem $PrebuiltOverrideDir -Directory | ForEach-Object {
+        Copy-Item (Join-Path $_.FullName "*") (Join-Path $StageDir $_.Name) -Recurse -Force
+        $overridden += "$($_.Name)\*"
+    }
+    if ($overridden.Count -gt 0) {
+        Write-Host "  SELFVPS overrides: $($overridden -join ', ')" -ForegroundColor Gray
+    }
+} else {
+    Write-Warning "deploy\prebuilt-selfvps\windows\x64 not found - the build will use the submodule's tunnel.dll, which has no AmneziaWG 3 support."
 }
 
 if (Test-Path $DeployDataDir) {
