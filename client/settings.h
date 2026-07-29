@@ -89,17 +89,16 @@ public:
 
     // AmneziaWG 3 header protection.
     //
-    // Off by default, and that default is deliberate: HeaderProtectionKey must be
-    // byte-identical on both peers, so the moment the server starts using it every
-    // client that cannot speak AWG3 stops connecting -- including our own Android
-    // build, which still ships a pre-AWG3 tunnel. Turning this on is therefore a
-    // conscious "all my devices are updated" decision, not something to infer.
+    // On by default: this fork ships AWG3-capable natives for both Windows and
+    // Android, so a new install has no reason to configure the weaker generation.
+    // The switch stays because the key must be byte-identical on both peers --
+    // anyone still running an older client on some device needs a way to go back.
     //
     // Takes effect on the next AWG container install/reinstall, since the key is
     // minted server-side at that point. by vovankrot
     bool isAwgHeaderProtectionEnabled() const
     {
-        return m_settings.value("Conf/awgHeaderProtection", false).toBool();
+        return m_settings.value("Conf/awgHeaderProtection", true).toBool();
     }
     void setAwgHeaderProtectionEnabled(bool enabled)
     {

@@ -1722,6 +1722,32 @@ ErrorCode ServerController::isServerPortBusy(const ServerCredentials &credential
         return ErrorCode::NoError;
     }
 
+    // If the container we are about to install is already on the server, it is
+    // holding its own port -- that is a reinstall, not a conflict. The install
+    // flow removes the old container before starting the new one, so reporting
+    // "port already used" here just blocks every reconfiguration that goes down
+    // the fresh-install path rather than the isUpdate one. Enabling AmneziaWG
+    // header protection is exactly such a case: same container, same port, new
+    // settings, and it failed with error 201 against the user's own tunnel.
+    // by vovankrot
+    {
+        const QString containerName = ContainerProps::containerToString(container);
+        QString existing;
+        auto cbExisting = [&existing](const QString &data, libssh::Client &) {
+            existing += data;
+            return ErrorCode::NoError;
+        };
+        const QString checkScript =
+                QString("sudo docker ps -a --filter name=^/%1$ --format '{{.Names}}' 2>/dev/null || true")
+                        .arg(containerName);
+        if (runScript(credentials, replaceVars(checkScript, genVarsForScript(credentials, container)), cbExisting)
+            == ErrorCode::NoError
+            && existing.contains(containerName)) {
+            emit logLineReady(tr("%1 is already installed, skipping the port check").arg(containerName));
+            return ErrorCode::NoError;
+        }
+    }
+
     QString stdOut;
     auto cbReadStdOut = [&](const QString &data, libssh::Client &) {
         stdOut += data + "\n";
