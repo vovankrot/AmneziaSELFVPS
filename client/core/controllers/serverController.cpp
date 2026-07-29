@@ -1521,6 +1521,22 @@ ServerController::Vars ServerController::genVarsForScript(const ServerCredential
     vars.append({ { "$SPECIAL_JUNK_4", amneziaWireguarConfig.value(config_key::specialJunk4).toString() } });
     vars.append({ { "$SPECIAL_JUNK_5", amneziaWireguarConfig.value(config_key::specialJunk5).toString() } });
 
+    // --- AmneziaWG 3 (opt-in) -------------------------------------------------
+    // Both knobs ride the same switch on purpose. Header protection has to match on
+    // both peers, and content padding -- while nominally per-peer -- still has to be
+    // understood by whatever tunnel binary the client ships. A device on a pre-AWG3
+    // build rejects either line outright, so exposing them separately would only
+    // create more ways to end up with a config half the fleet cannot load.
+    //
+    // Off means empty string here, and WireguardConfigurator drops the whole line
+    // rather than emitting a valueless key. by vovankrot
+    const bool awg3Enabled = m_settings->isAwgHeaderProtectionEnabled();
+    vars.append({ { "$AWG_ENABLE_HEADER_PROTECTION", awg3Enabled ? "true" : "false" } });
+    vars.append({ { "$AWG_CONTENT_PADDING_ADDITION",
+                    awg3Enabled ? amneziaWireguarConfig.value(config_key::contentPaddingAddition)
+                                          .toString(protocols::awg::defaultContentPaddingAddition)
+                                : QString() } });
+
     // Socks5 proxy vars
     vars.append({ { "$SOCKS5_PROXY_PORT", socks5ProxyConfig.value(config_key::port).toString(protocols::socks5Proxy::defaultPort) } });
     auto username = socks5ProxyConfig.value(config_key::userName).toString();

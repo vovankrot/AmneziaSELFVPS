@@ -25,6 +25,12 @@ public:
         QString pskKey;        // preshared key
         QString host;          // host ip
         QString port;
+        // AmneziaWG 3 header protection key. Must be BYTE-IDENTICAL on both peers,
+        // so it is minted on the server and read back here. Empty whenever header
+        // protection is off or the container cannot do AWG3 -- the config line is
+        // then omitted entirely and the tunnel behaves exactly as before.
+        // by vovankrot
+        QString headerProtectionKey;
     };
 
     QString createConfig(const ServerCredentials &credentials, DockerContainer container,
@@ -46,6 +52,7 @@ private:
     QString m_serverConfigPath;
     QString m_serverPublicKeyPath;
     QString m_serverPskKeyPath;
+    QString m_serverHeaderProtectionKeyPath;
     amnezia::ProtocolScriptType m_configTemplate;
     QString m_protocolName;
     QString m_defaultPort;

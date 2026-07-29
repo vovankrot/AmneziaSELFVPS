@@ -31,6 +31,9 @@ WireguardConfigurator::WireguardConfigurator(std::shared_ptr<Settings> settings,
             m_isAwg ? amnezia::protocols::awg::serverPublicKeyPath : amnezia::protocols::wireguard::serverPublicKeyPath;
     m_serverPskKeyPath =
             m_isAwg ? amnezia::protocols::awg::serverPskKeyPath : amnezia::protocols::wireguard::serverPskKeyPath;
+    // Only AWG has header protection; plain WireGuard leaves this empty.
+    m_serverHeaderProtectionKeyPath =
+            m_isAwg ? amnezia::protocols::awg::serverHeaderProtectionKeyPath : QString();
     m_configTemplate = m_isAwg ? ProtocolScriptType::awg_template : ProtocolScriptType::wireguard_template;
 
     m_protocolName = m_isAwg ? config_key::awg : config_key::wireguard;
@@ -158,6 +161,27 @@ WireguardConfigurator::ConnectionData WireguardConfigurator::prepareWireguardCon
         return connData;
     }
 
+    // AmneziaWG 3 header protection key -- optional by design.
+    // configure_container.sh writes this file only when header protection was both
+    // requested and accepted by the installed amneziawg-go, so a missing file is the
+    // normal state for every container built before AWG3 and for anyone who left the
+    // option off. Read it opportunistically and swallow the error: the tunnel is
+    // perfectly valid without it, and failing the whole config build here would break
+    // every existing installation. by vovankrot
+    if (!m_serverHeaderProtectionKeyPath.isEmpty()) {
+        ErrorCode headerKeyError = ErrorCode::NoError;
+        QString headerKey = m_serverController->getTextFileFromContainer(
+                container, credentials, m_serverHeaderProtectionKeyPath, headerKeyError);
+        headerKey.replace("\n", "");
+        headerKey = headerKey.trimmed();
+        if (headerKeyError == ErrorCode::NoError && !headerKey.isEmpty()) {
+            connData.headerProtectionKey = headerKey;
+            qDebug() << "AWG3: server provides header protection";
+        } else {
+            qDebug() << "AWG3: no header protection on this server, building plain AWG2 config";
+        }
+    }
+
 
     // Add client to config
     QString configPart = QString("[Peer]\n"
@@ -203,18 +227,26 @@ QString WireguardConfigurator::createConfig(const ServerCredentials &credentials
     config.replace("$WIREGUARD_SERVER_PUBLIC_KEY", connData.serverPubKey);
     config.replace("$WIREGUARD_PSK", connData.pskKey);
 
-    // AmneziaWG 3 (header protection / content padding) is deliberately NOT emitted
-    // into generated configs yet. The bundled Windows tunnel implementation
-    // (3rd-prebuilt tunnel.dll) predates AWG3 and rejects a config carrying those
-    // keys outright, which kills the tunnel rather than degrading it. Generating
-    // them server-side would be worse still: the server would apply header
-    // protection that no shipped client can speak.
-    //
-    // Turning this on is gated on bumping the prebuilt amneziawg tunnel binaries
-    // for every desktop platform first. The read/parse path in AwgConfigurator and
-    // InterfaceConfig stays in place regardless, so an IMPORTED third-party AWG3
-    // config is still honoured instead of having its lines silently dropped.
-    // by vovankrot
+    // AWG3 header protection: substitute the key, or drop the line outright.
+    // An empty "HeaderProtectionKey = " line is NOT equivalent to no line at all --
+    // amneziawg parses it as a zero-length key and refuses the whole config, so the
+    // no-key path has to remove the line rather than blank it out. Same reasoning
+    // for ContentPaddingAddition below. by vovankrot
+    if (connData.headerProtectionKey.isEmpty()) {
+        static const QRegularExpression headerProtectionLine(
+                QStringLiteral("^[ \\t]*HeaderProtectionKey[ \\t]*=.*(?:\\r?\\n|$)"),
+                QRegularExpression::MultilineOption);
+        config.remove(headerProtectionLine);
+    } else {
+        config.replace("$AWG_HEADER_PROTECTION_KEY", connData.headerProtectionKey);
+    }
+
+    {
+        static const QRegularExpression emptyContentPaddingLine(
+                QStringLiteral("^[ \\t]*ContentPaddingAddition[ \\t]*=[ \\t]*(?:\\r?\\n|$)"),
+                QRegularExpression::MultilineOption);
+        config.remove(emptyContentPaddingLine);
+    }
 
     const QJsonObject &wireguarConfig = containerConfig.value(ProtocolProps::protoToString(Proto::WireGuard)).toObject();
     QJsonObject jConfig;
