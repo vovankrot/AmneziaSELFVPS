@@ -583,7 +583,11 @@ if (Test-Path $PrebuiltOverrideDir) {
             if (Test-Path $sidecar) { Copy-Item $sidecar $StageDir -Force }
         }
     Get-ChildItem $PrebuiltOverrideDir -Directory | ForEach-Object {
-        Copy-Item (Join-Path $_.FullName "*") (Join-Path $StageDir $_.Name) -Recurse -Force
+        $destSub = Join-Path $StageDir $_.Name
+        # On a clean clone the submodule may not have created this subdirectory,
+        # and Copy-Item with a wildcard source will not create it for us.
+        if (-not (Test-Path $destSub)) { New-Item -ItemType Directory -Path $destSub -Force | Out-Null }
+        Copy-Item (Join-Path $_.FullName "*") $destSub -Recurse -Force
         $overridden += "$($_.Name)\*"
     }
     if ($overridden.Count -gt 0) {

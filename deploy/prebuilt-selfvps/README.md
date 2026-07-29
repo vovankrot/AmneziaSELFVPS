@@ -23,6 +23,9 @@ self-contained.
 | File | Source | Why it is here |
 |------|--------|----------------|
 | `windows/x64/tunnel.dll` | [`amneziawg-windows`](https://github.com/amnezia-vpn/amneziawg-windows) v3.0.2 | AmneziaWG 3 support. The submodule's copy is an April 2026 build that predates AWG3 and **rejects** a config containing `HeaderProtectionKey` or `ContentPaddingAddition` outright, killing the tunnel rather than ignoring the keys. |
+| `windows/x64/hysteria/hysteria.exe` | Hysteria 2 | Protocol this fork added; never existed upstream. |
+| `windows/x64/anytls/anytls-client.exe` | AnyTLS | Protocol this fork added; never existed upstream. |
+| `android/arm64-v8a/libwg-go.so`, `libwg.so`, `libwg-quick.so` | [`amneziawg-android`](https://github.com/amnezia-vpn/amneziawg-android) v3.0.1, NDK r27c | AmneziaWG 3 for Android. Same story as `tunnel.dll`: the submodule's build has no AWG3 support. `client/cmake/android.cmake` prefers these and warns when falling back. |
 
 ## Rebuilding tunnel.dll
 
@@ -53,15 +56,46 @@ strings -a tunnel.dll | grep -E "header_protection_key|content_padding_addition"
 
 Then drop it in `windows/x64/` and refresh `tunnel.dll.sha256`.
 
+## Rebuilding the Android natives
+
+Needs a Linux host (the `libwg-go` Makefile only knows Go hashes for
+`linux-amd64` and macOS) plus the Android NDK r27c and CMake. WSL works. No Go
+needed up front — the Makefile downloads and patches its own.
+
+```bash
+git clone --depth 1 --recurse-submodules --branch v3.0.1 \
+    https://github.com/amnezia-vpn/amneziawg-android.git
+cmake -S amneziawg-android/tunnel/tools -B build \
+    -DCMAKE_TOOLCHAIN_FILE=$NDK/build/cmake/android.toolchain.cmake \
+    -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-28 \
+    -DANDROID_PACKAGE_NAME=org.amnezia.vpn \
+    -DGRADLE_USER_HOME=build/gradle_user_home \
+    -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=build/out
+cmake --build build --target libwg-go.so libwg.so libwg-quick.so
+$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip --strip-unneeded build/out/*.so
+```
+
+`ANDROID_PACKAGE_NAME` is baked into the socket path inside `libwg-go.so`, so it
+has to match the app's package.
+
+> If you extract the NDK zip with `python3 -m zipfile`, **don't**. It silently
+> drops symlinks — `bin/clang` becomes a text file containing `clang-18` — and
+> CMake then reports "C compiler identification is unknown". Use `unzip`, or an
+> extractor that handles symlinks and permission bits.
+
+Verify the same way as the Windows build before shipping:
+
+```bash
+strings -a libwg-go.so | grep -E "header_protection_key|content_padding_addition"
+```
+
+Only `arm64-v8a` is built today, matching the APK this fork ships. The other ABIs
+still fall back to the submodule's pre-AWG3 prebuilts, and `android.cmake` emits
+a CMake warning when that happens.
+
 ## Still missing from a clean clone
 
-These are also fork-only and still live in the submodule working tree, so a fresh
-clone will not have them:
+- `3rd-prebuilt/openssl/lib/libcrypto.lib`, `libssl.lib` (~38 MB)
 
-- `deploy-prebuilt/windows/x64/hysteria/hysteria.exe` (~21 MB)
-- `deploy-prebuilt/windows/x64/anytls/anytls-client.exe` (~6 MB)
-- `3rd-prebuilt/openssl/lib/libcrypto.lib`, `libssl.lib` (~38 MB, link-time only)
-
-Moving the first two here would make the Windows installer fully reproducible
-from a clean clone. The OpenSSL libs are a separate problem: they are needed at
-link time, before staging runs, so this mechanism does not cover them.
+These are needed at **link** time, before staging runs, so this mechanism does not
+cover them; a clean clone still cannot link the Windows client without them.

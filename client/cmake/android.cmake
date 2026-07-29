@@ -43,8 +43,23 @@ set(SOURCES ${SOURCES}
 )
 
 foreach(abi IN ITEMS ${QT_ANDROID_ABIS})
+    # Prefer the fork's own AmneziaWG native, fall back to the submodule's.
+    # client/3rd-prebuilt is a submodule pointing at Amnezia's repository, so a
+    # binary dropped into its working tree cannot be committed here and is absent
+    # from a fresh clone. deploy/prebuilt-selfvps is ours and holds the AWG3 build
+    # (the submodule's libwg-go.so has no AWG3 support at all).
+    # See deploy/prebuilt-selfvps/README.md.
+    set(SELFVPS_LIBWG_GO ${CMAKE_CURRENT_SOURCE_DIR}/../deploy/prebuilt-selfvps/android/${abi}/libwg-go.so)
+    if(EXISTS ${SELFVPS_LIBWG_GO})
+        set(AMNEZIAWG_GO_LIB ${SELFVPS_LIBWG_GO})
+        message(STATUS "AmneziaWG (${abi}): using SELFVPS AWG3 build")
+    else()
+        set(AMNEZIAWG_GO_LIB ${CMAKE_CURRENT_SOURCE_DIR}/3rd-prebuilt/3rd-prebuilt/amneziawg/android/${abi}/libwg-go.so)
+        message(WARNING "AmneziaWG (${abi}): falling back to the submodule prebuilt, which has no AmneziaWG 3 support")
+    endif()
+
     set_property(TARGET ${PROJECT} PROPERTY QT_ANDROID_EXTRA_LIBS
-        ${CMAKE_CURRENT_SOURCE_DIR}/3rd-prebuilt/3rd-prebuilt/amneziawg/android/${abi}/libwg-go.so
+        ${AMNEZIAWG_GO_LIB}
         ${CMAKE_CURRENT_SOURCE_DIR}/3rd-prebuilt/3rd-prebuilt/openvpn/android/${abi}/libck-ovpn-plugin.so
         ${CMAKE_CURRENT_SOURCE_DIR}/3rd-prebuilt/3rd-prebuilt/openvpn/android/${abi}/libovpn3.so
         ${CMAKE_CURRENT_SOURCE_DIR}/3rd-prebuilt/3rd-prebuilt/openvpn/android/${abi}/libovpnutil.so
