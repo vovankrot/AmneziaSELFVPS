@@ -197,8 +197,19 @@ WireguardConfigurator::ConnectionData WireguardConfigurator::prepareWireguardCon
                 connData.headerProtectionKey = headerKey;
                 qDebug() << "AWG3: server provides header protection";
             } else {
+                // Not a reason to quietly settle for generation 2. The base image gained
+                // AWG3-capable amneziawg-tools on 2026-07-30; a container built before
+                // that carries tools from 2021 that do not know the key. Since
+                // build_container.sh already runs `docker build --no-cache --pull`,
+                // simply reinstalling AmneziaWG pulls a current image and AWG3 works.
+                // So say that out loud in the install log instead of leaving the user to
+                // wonder why the switch is on and nothing changed. by vovankrot
+                emit m_serverController->logLineReady(
+                        tr("This AmneziaWG container is too old for AmneziaWG 3 — its amneziawg tools cannot "
+                           "read the header protection key. Reinstall AmneziaWG on this server to get it: the "
+                           "container will be rebuilt from a current image. Falling back to generation 2 for now."));
                 qWarning() << "AWG3: server has a header protection key but its amneziawg tools cannot parse it;"
-                           << "removing it so the tunnel keeps working";
+                           << "removing it so the tunnel keeps working -- reinstall the container for real AWG3";
                 // Bring the interface back with awg-quick, not syncconf. syncconf takes a
                 // FILE PATH and needs an interface that already exists -- and it does not:
                 // awg-quick up failed at container start on the very key we just removed,
