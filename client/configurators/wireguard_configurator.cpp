@@ -175,8 +175,38 @@ WireguardConfigurator::ConnectionData WireguardConfigurator::prepareWireguardCon
         headerKey.replace("\n", "");
         headerKey = headerKey.trimmed();
         if (headerKeyError == ErrorCode::NoError && !headerKey.isEmpty()) {
-            connData.headerProtectionKey = headerKey;
-            qDebug() << "AWG3: server provides header protection";
+            // The key file existing is NOT proof the server can use it. Some images
+            // ship an AWG3 daemon alongside older userspace tools, and awg-quick /
+            // awg setconf are what actually parse awg0.conf -- they reject
+            // HeaderProtectionKey as an unrecognised line. Once such a key is on the
+            // server, EVERY later operation fails, because adding a client runs
+            // `awg syncconf` over that same config. Trusting the file alone is how a
+            // server ends up permanently stuck reporting "Server command failed".
+            //
+            // So verify the tools themselves, and if they cannot parse it, undo the
+            // damage rather than propagating it into a client config: drop the line,
+            // remove the key file, resync. by vovankrot
+            const QString probe = QStringLiteral(
+                    "sudo docker exec $CONTAINER_NAME sh -c "
+                    "'grep -aq HeaderProtectionKey \"$(command -v awg || echo /usr/bin/awg)\"'");
+            ErrorCode probeError = m_serverController->runScript(
+                    credentials, m_serverController->replaceVars(
+                                         probe, m_serverController->genVarsForScript(credentials, container)));
+
+            if (probeError == ErrorCode::NoError) {
+                connData.headerProtectionKey = headerKey;
+                qDebug() << "AWG3: server provides header protection";
+            } else {
+                qWarning() << "AWG3: server has a header protection key but its amneziawg tools cannot parse it;"
+                           << "removing it so the tunnel keeps working";
+                const QString repair = QString("sudo docker exec $CONTAINER_NAME sh -c "
+                                               "'sed -i /^HeaderProtectionKey/d %1; rm -f %2; "
+                                               "awg syncconf awg0 \"$(awg-quick strip %1)\" 2>/dev/null || true'")
+                                               .arg(m_serverConfigPath, m_serverHeaderProtectionKeyPath);
+                m_serverController->runScript(
+                        credentials,
+                        m_serverController->replaceVars(repair, m_serverController->genVarsForScript(credentials, container)));
+            }
         } else {
             qDebug() << "AWG3: no header protection on this server, building plain AWG2 config";
         }
