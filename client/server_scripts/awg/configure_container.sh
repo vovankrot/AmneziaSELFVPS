@@ -22,7 +22,20 @@ echo $WIREGUARD_PSK > /opt/amnezia/awg/wireguard_psk.key
 AWG_HEADER_PROTECTION_KEY=""
 rm -f /opt/amnezia/awg/awg_header_protection.key
 if [ "$AWG_ENABLE_HEADER_PROTECTION" = "true" ]; then
-    AWG_HEADER_PROTECTION_KEY=$(awg genkey 2>/dev/null || true)
+    # Both halves have to understand header protection before we commit to it:
+    # the Go daemon reads it over UAPI as header_protection_key, the userspace
+    # tools parse HeaderProtectionKey out of the .conf. Probe the binaries for
+    # those literals -- they exist only in AWG3 builds. Writing a key that either
+    # half cannot use produces a config that loads but carries no traffic, which
+    # is far worse than staying on generation 2.
+    AWG_GO_BIN=$(command -v amneziawg-go 2>/dev/null || command -v awg-go 2>/dev/null || echo /usr/bin/amneziawg-go)
+    AWG_TOOL_BIN=$(command -v awg 2>/dev/null || echo /usr/bin/awg)
+    if grep -aq 'header_protection_key' "$AWG_GO_BIN" 2>/dev/null \
+       && grep -aq 'HeaderProtectionKey' "$AWG_TOOL_BIN" 2>/dev/null; then
+        AWG_HEADER_PROTECTION_KEY=$(awg genkey 2>/dev/null || true)
+    else
+        echo "AmneziaWG 3 not supported by this image, installing generation 2" >&2
+    fi
 fi
 
 cat > /opt/amnezia/awg/awg0.conf <<EOF
@@ -48,14 +61,15 @@ H4 = $TRANSPORT_PACKET_MAGIC_HEADER
 # I5 = $SPECIAL_JUNK_5
 EOF
 
-# Append header protection and prove the daemon accepts the result. If awg refuses
-# the config we take the line back out and leave no key file, so the client builds
-# a plain AWG2 config instead of one the server cannot honour.
+# Capability was already established above, so commit the key. The file is what the
+# client feature-detects on, so it exists only when header protection is really in
+# the config.
+#
+# Note: do NOT try to validate with `awg-quick strip` here. strip performs no
+# validation at all -- it filters out wg-quick-only keys and echoes the rest,
+# passing unknown keys straight through -- so it succeeds regardless and proves
+# nothing. The real parse happens in start.sh via `awg-quick up`.
 if [ -n "$AWG_HEADER_PROTECTION_KEY" ]; then
     echo "HeaderProtectionKey = $AWG_HEADER_PROTECTION_KEY" >> /opt/amnezia/awg/awg0.conf
-    if awg-quick strip /opt/amnezia/awg/awg0.conf >/dev/null 2>&1; then
-        echo "$AWG_HEADER_PROTECTION_KEY" > /opt/amnezia/awg/awg_header_protection.key
-    else
-        sed -i '/^HeaderProtectionKey = /d' /opt/amnezia/awg/awg0.conf
-    fi
+    echo "$AWG_HEADER_PROTECTION_KEY" > /opt/amnezia/awg/awg_header_protection.key
 fi

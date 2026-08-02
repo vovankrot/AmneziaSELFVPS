@@ -123,7 +123,14 @@ int ProtocolProps::getPortForInstall(Proto p)
     case OpenVpn:
     case Socks5Proxy:
     case AnyTls:
-        return QRandomGenerator::global()->bounded(30000, 50000);
+    // Xray and Hysteria2 belong here too, and their absence was doing real damage:
+    // they fell through to defaultPort(), so a new XRay install landed on 443 -- the
+    // most inspected UDP port there is -- while every other obfuscated protocol got a
+    // high random one. On a flagged IP that is the difference between a tunnel that
+    // carries traffic and one that connects and then sits silent. by vovankrot
+    case Xray:
+    case Hysteria2:
+        return QRandomGenerator::global()->bounded(protocols::minObfuscatedPort, protocols::maxObfuscatedPort);
     default:
         return defaultPort(p);
     }

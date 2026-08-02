@@ -195,6 +195,32 @@ void InstallController::install(DockerContainer container, int port, TransportPr
         emit installLogMessage(tr("AnyTLS variant selected — installing AnyTLS container instead of XRay"));
     }
 
+    // Refuse to put an obfuscated protocol on a well-known port. Those are the ports
+    // DPI actually inspects; the tunnel comes up, reports connected, and then carries
+    // nothing -- which is far harder to diagnose than a refused install. This is the
+    // choke point every install path goes through, so a hand-typed port in the wizard
+    // is covered as well as the proposed one. by vovankrot
+    switch (container) {
+    case DockerContainer::Xray:
+    case DockerContainer::SSXray:
+    case DockerContainer::AnyTls:
+    case DockerContainer::Hysteria2:
+    case DockerContainer::Awg2:
+    case DockerContainer::WireGuard:
+        if (port > 0 && port < protocols::minObfuscatedPort) {
+            emit installLogMessage(tr("Port %1 is too low for %2. Traffic filtering targets well-known ports; "
+                                      "use a port above %3.")
+                                           .arg(port)
+                                           .arg(ContainerProps::containerHumanNames().value(container))
+                                           .arg(protocols::minObfuscatedPort));
+            emit installationErrorOccurred(ErrorCode::ServerPortAlreadyAllocatedError);
+            return;
+        }
+        break;
+    default:
+        break;
+    }
+
     QJsonObject config;
     auto mainProto = ContainerProps::defaultProtocol(container);
     for (auto protocol : ContainerProps::protocolsForContainer(container)) {

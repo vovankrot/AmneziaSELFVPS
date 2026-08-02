@@ -143,6 +143,20 @@ namespace amnezia
 
     namespace protocols
     {
+        // Lowest port a new obfuscated-protocol install may use.
+        //
+        // On the RKN/TSPU path this fork targets, the port number decides whether the
+        // tunnel survives: well-known UDP ports are inspected and dropped, high ports
+        // are not. Measured on a flagged IP -- UDP/443 dies, a high port carries
+        // traffic on the same server, same second. XRay in particular used to install
+        // on 443 by default, which is the single worst choice available: it is the
+        // protocol most dependent on evading DPI and it was landing on the most
+        // scrutinised port.
+        //
+        // Enforced in InstallController::install so it applies to every install path,
+        // and used as the floor for the randomised port in getPortForInstall.
+        constexpr int minObfuscatedPort = 30000;
+        constexpr int maxObfuscatedPort = 50000;
 
         namespace dns
         {
@@ -195,6 +209,8 @@ namespace amnezia
             constexpr char salamanderKeyPath[] = "/opt/amnezia/xray/xray_salamander.key";
             constexpr char defaultSite[] = "www.cloudflare.com";
 
+            // Kept for parsing configs that carry no explicit port. It is NOT what a
+            // new install gets -- see minObfuscatedPort below.
             constexpr char defaultPort[] = "443";
             constexpr char defaultLocalProxyPort[] = "10808";
             constexpr char defaultLocalAddr[] = "10.33.0.2";
