@@ -199,9 +199,16 @@ WireguardConfigurator::ConnectionData WireguardConfigurator::prepareWireguardCon
             } else {
                 qWarning() << "AWG3: server has a header protection key but its amneziawg tools cannot parse it;"
                            << "removing it so the tunnel keeps working";
+                // Bring the interface back with awg-quick, not syncconf. syncconf takes a
+                // FILE PATH and needs an interface that already exists -- and it does not:
+                // awg-quick up failed at container start on the very key we just removed,
+                // so awg0 was never created and syncconf answers "Unable to retrieve
+                // current interface configuration: Protocol not supported". down-then-up
+                // recreates it from the now-clean config, which is what start.sh does.
+                // by vovankrot
                 const QString repair = QString("sudo docker exec $CONTAINER_NAME sh -c "
-                                               "'sed -i /^HeaderProtectionKey/d %1; rm -f %2; "
-                                               "awg syncconf awg0 \"$(awg-quick strip %1)\" 2>/dev/null || true'")
+                                               "\"sed -i '/^HeaderProtectionKey/d' %1; rm -f %2; "
+                                               "awg-quick down %1 >/dev/null 2>&1; awg-quick up %1\"")
                                                .arg(m_serverConfigPath, m_serverHeaderProtectionKeyPath);
                 m_serverController->runScript(
                         credentials,
