@@ -113,81 +113,10 @@ ErrorCode ServerController::runScript(const ServerCredentials &credentials, QStr
                                       int idleTimeoutMs,
                                       int totalTimeoutMs)
 {
-    if (m_cancelInstallation.load()) {
-        return ErrorCode::ServerCancelInstallation;
-    }
-
-    const QString currentTarget = sshTargetLabel(credentials);
-    if (!m_loggedSshConnection || m_loggedSshTarget != currentTarget) {
-        emit logLineReady(sshConnectionLogLine(credentials));
-    }
-
-    auto error = m_sshClient.connectToHost(credentials);
-    if (error != ErrorCode::NoError) {
-        m_loggedSshConnection = false;
-        m_loggedSshTarget.clear();
-        emit logLineReady(tr("SSH connection failed: %1").arg(errorString(error)));
-        return error;
-    }
-
-    m_loggedSshConnection = true;
-    m_loggedSshTarget = currentTarget;
-
-    script.replace("\r", "");
-
-    qDebug() << "ServerController::Run script";
-
-    QString totalLine;
-    const QStringList &lines = script.split("\n", Qt::SkipEmptyParts);
-    for (int i = 0; i < lines.count(); i++) {
-        QString currentLine = lines.at(i);
-
-        if (totalLine.isEmpty()) {
-            totalLine = currentLine;
-        } else {
-            totalLine = totalLine + "\n" + currentLine;
-        }
-
-        QString lineToExec;
-        if (currentLine.endsWith("\\")) {
-            continue;
-        } else {
-            lineToExec = totalLine;
-            totalLine.clear();
-        }
-
-        if (lineToExec.startsWith("#")) {
-            continue;
-        }
-
-        if (m_cancelInstallation.load()) {
-            return ErrorCode::ServerCancelInstallation;
-        }
-
-        auto wrappedStdOut = [&cbReadStdOut](const QString &output, libssh::Client &client) -> ErrorCode {
-            if (cbReadStdOut) return cbReadStdOut(output, client);
-            return ErrorCode::NoError;
-        };
-        auto wrappedStdErr = [&cbReadStdErr](const QString &output, libssh::Client &client) -> ErrorCode {
-            if (cbReadStdErr) return cbReadStdErr(output, client);
-            return ErrorCode::NoError;
-        };
-
-        error = m_sshClient.executeCommand(lineToExec, wrappedStdOut, wrappedStdErr, idleTimeoutMs, totalTimeoutMs);
-        if (error != ErrorCode::NoError) {
-            if (error == ErrorCode::ServerCommandFailedError) {
-                emit logLineReady(tr("Remote command exited with code %1.").arg(m_sshClient.lastExitStatus()));
-            }
-            if (error == ErrorCode::SshCommandTimeoutError) {
-                emit logLineReady(tr("Remote command timed out while waiting for server response."));
-            }
-            emit logLineReady(tr("Command failed: %1").arg(errorString(error)));
-            return error;
-        }
-    }
-
-    qDebug().noquote() << "ServerController::runScript finished\n";
-    return ErrorCode::NoError;
+    // Execute scripts as real shell scripts so multiline constructs such as heredocs
+    // and block bodies work correctly. The previous line-by-line path broke AWG
+    // container setup because configure_container.sh uses a heredoc to write awg0.conf.
+    return runHostScript(credentials, std::move(script), cbReadStdOut, cbReadStdErr, idleTimeoutMs, totalTimeoutMs);
 }
 
 ErrorCode ServerController::runHostScript(const ServerCredentials &credentials, const QString &script,

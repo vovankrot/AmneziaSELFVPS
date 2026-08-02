@@ -75,6 +75,7 @@ void VpnProtocol::setBytesChanged(quint64 receivedBytes, quint64 sentBytes)
 
     m_receivedBytes = receivedBytes;
     m_sentBytes = sentBytes;
+    m_bytesEverReported = true;
 }
 
 void VpnProtocol::setConnectionState(Vpn::ConnectionState state)
@@ -114,12 +115,23 @@ void VpnProtocol::startSilenceWatchdog()
 
     m_bytesAtConnect = m_receivedBytes;
     m_silenceReported = false;
+    m_bytesEverReported = false;
 
     if (!m_silenceTimer) {
         m_silenceTimer = new QTimer(this);
         m_silenceTimer->setSingleShot(true);
         connect(m_silenceTimer, &QTimer::timeout, this, [this]() {
             if (m_connectionState != Vpn::ConnectionState::Connected || m_silenceReported) {
+                return;
+            }
+            // Not every protocol feeds byte counters back. The desktop XRay path never
+            // calls setBytesChanged at all, so its counter sits at zero on a perfectly
+            // healthy tunnel -- which is exactly how this watchdog first accused a
+            // connection whose own SOCKS probe was succeeding every 30 seconds. Only
+            // judge protocols that actually report; for the rest there is nothing to
+            // measure and silence proves nothing. by vovankrot
+            if (!m_bytesEverReported) {
+                qDebug() << "Silence watchdog: this protocol reports no byte counters, skipping";
                 return;
             }
             if (m_receivedBytes > m_bytesAtConnect) {

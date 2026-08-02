@@ -120,6 +120,9 @@ private:
     QTimer* m_silenceTimer = nullptr;
     quint64 m_bytesAtConnect = 0;
     bool m_silenceReported = false;
+    // Set by the first setBytesChanged() of a session. Protocols that never report
+    // counters (desktop XRay) must not be judged by a counter that cannot move.
+    bool m_bytesEverReported = false;
 };
 
 #endif // VPNPROTOCOL_H

@@ -605,7 +605,7 @@
         <translation>Нажмите на сервер, чтобы сделать его основным</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Components/HomeServerListDrawer.qml" line="183"/>
+        <location filename="../ui/qml/Components/HomeServerListDrawer.qml" line="189"/>
         <source>Manage servers</source>
         <translation>Управление серверами</translation>
     </message>
@@ -7730,44 +7730,52 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
 <context>
     <name>VpnProtocol</name>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="182"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="194"/>
         <source>Unknown</source>
         <translation>Неизвестный</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="183"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="195"/>
         <source>Disconnected</source>
         <translation>Отключено</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="184"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="196"/>
         <source>Preparing</source>
         <translation>Подготовка</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="185"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="197"/>
         <source>Connecting...</source>
         <translation>Подключение...</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="186"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="198"/>
         <source>Connected</source>
         <translation>Подключено</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="187"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="199"/>
         <source>Disconnecting...</source>
         <translation>Отключение...</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="188"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="200"/>
         <source>Reconnecting...</source>
         <translation>Переподключение...</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="189"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="201"/>
         <source>Error</source>
         <translation>Ошибка</translation>
+    </message>
+</context>
+<context>
+    <name>WireguardConfigurator</name>
+    <message>
+        <location filename="../configurators/wireguard_configurator.cpp" line="208"/>
+        <source>This AmneziaWG container is too old for AmneziaWG 3 — its amneziawg tools cannot read the header protection key. Reinstall AmneziaWG on this server to get it: the container will be rebuilt from a current image. Falling back to generation 2 for now.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

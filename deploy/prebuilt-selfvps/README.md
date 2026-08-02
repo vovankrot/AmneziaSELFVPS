@@ -1,14 +1,5 @@
 # Fork-owned prebuilt binaries
 
-> ⚠️ **`windows/x64/tunnel.dll` is temporarily a DEBUG build**, not the release one.
-> It logs the exact UAPI configuration string the client sends to the AmneziaWG
-> daemon (jc/jmin/jmax/s1-s4/h1-h4/header_protection_key/...; `private_key` is
-> redacted) to the service log, to diagnose an AWG3 handshake that never
-> completes despite matching keys on both ends -- see the "AWG3 diagnostics"
-> section below. Once the header-protection issue is understood, rebuild a clean
-> `tunnel.dll` with the "Rebuilding tunnel.dll" recipe below (same source, no
-> debug patch) and drop it back in here.
-
 Binaries that this fork ships but upstream's `client/3rd-prebuilt` submodule does
 not carry. Everything here is layered **on top of** the submodule during staging,
 so the submodule itself stays pristine and can be updated from upstream without
@@ -101,39 +92,6 @@ strings -a libwg-go.so | grep -E "header_protection_key|content_padding_addition
 Only `arm64-v8a` is built today, matching the APK this fork ships. The other ABIs
 still fall back to the submodule's pre-AWG3 prebuilts, and `android.cmake` emits
 a CMake warning when that happens.
-
-## AWG3 diagnostics (temporary)
-
-The client and server both apply AWG3 header protection with byte-identical
-keys (verified via hexdump on both ends), S1-S4 well above the 12-byte nonce
-minimum, and packets confirmed reaching the server (tcpdump) -- yet the
-handshake never completes, silently, on both sides (which is by design for
-AWG: DPI must not be able to tell valid traffic from garbage, so failed parses
-are never logged). Static review of `amneziawg-go`'s header-protection crypto
-(send.go/receive.go/noise-protocol.go) and its commit history between the
-v3.0.1 tag this client is built against and the server's ~July 31 build found
-no functional change to that code path -- only a cosmetic error-message fix.
-
-This build adds one temporary debug line to `service.go` right after
-`config.ToUAPI()`, logging every line of the UAPI string the client is about
-to send to the daemon (`private_key` redacted, everything else -- including
-`header_protection_key` -- left visible) into the same service log this
-project already reads via ringlogger. The goal is a byte-exact comparison
-against what `awg show` reports on the server, without guessing further from
-source alone.
-
-Once connected with this build, the client's `AmneziaVPN-service.log` should
-contain a block bracketed by:
-
-```
-DEBUG uapiConf BEGIN
-DEBUG uapi> jc=...
-DEBUG uapi> ...
-DEBUG uapi> header_protection_key=<hex>
-DEBUG uapiConf END
-```
-
-Compare that against the server's `awg show` / `/opt/amnezia/awg/awg0.conf`.
 
 ## Still missing from a clean clone
 

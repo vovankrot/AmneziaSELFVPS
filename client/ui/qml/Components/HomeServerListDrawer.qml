@@ -106,7 +106,13 @@ DrawerType2 {
                             // updates it, so the dot only moves once the switch really
                             // took effect. by vovankrot
                             onClicked: {
+                                // Same ordering trap as the protocol drawer: switchToServer
+                                // repopulates the model and destroys this delegate, so close
+                                // first and reach the drawer through a captured handle rather
+                                // than `root` afterwards. by vovankrot
+                                const drawer = root
                                 const tapped = index
+
                                 checked = Qt.binding(function() {
                                     return index === listView.selectedIndex
                                 })
@@ -115,8 +121,8 @@ DrawerType2 {
                                     return
                                 }
 
+                                drawer.closeTriggered()
                                 ConnectionController.switchToServer(tapped)
-                                root.closeTriggered()
                             }
 
                             Keys.onEnterPressed: this.clicked()

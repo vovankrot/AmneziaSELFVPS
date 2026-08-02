@@ -292,51 +292,56 @@
 ကျေးဇူးပြု၍ VPN ကွန်တိန်နာကို အရင်ထည့်သွင်းပါ။</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="98"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="33"/>
+        <source>Connected, but no data is coming back. The saved configuration for this server is probably out of date — re-import it from the server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/connectionController.cpp" line="112"/>
         <source>Protocol changed, reconnecting...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="103"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="119"/>
         <source>Protocol changed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="125"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="145"/>
         <source>Server changed, reconnecting...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="130"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="152"/>
         <source>Server changed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="152"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="174"/>
         <source>Connecting...</source>
         <translation>ချိတ်ဆက်နေပါပြီ...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="153"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="161"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="178"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="194"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="175"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="183"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="200"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="216"/>
         <source>Disconnect</source>
         <translation type="unfinished">ဖြုတ်ချမည်</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="160"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="182"/>
         <source>Connected</source>
         <translation>ချိတ်ဆက်ပြီးသွားပါပြီ</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="199"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="200"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="221"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="222"/>
         <source>Preparing...</source>
         <translation>ပြင်ဆင်နေသည်...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="234"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="256"/>
         <source>Settings updated successfully, reconnecting...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -345,22 +350,22 @@
         <translation type="vanished">ဆက်တင်များကို အောင်မြင်စွာ အပ်ဒိတ်လုပ်ပြီးပါပြီ၊ ပြန်လည်ချိတ်ဆက်နေပါသည်...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="237"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="259"/>
         <source>Settings updated successfully</source>
         <translation>ဆက်တင်များကို အောင်မြင်စွာ အပ်ဒိတ်လုပ်ပြီးပါပြီ</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="305"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="327"/>
         <source>Trying fallback connection...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="353"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="375"/>
         <source>Switching to %1...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="367"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="389"/>
         <source>Switching to server %1...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -373,24 +378,24 @@
         <translation type="vanished">configuration ဖန်တီး၍မရပါ</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="177"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="199"/>
         <source>Reconnecting...</source>
         <translation>ပြန်လည်ချိတ်ဆက်နေပါသည်...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.h" line="86"/>
         <location filename="../ui/controllers/connectionController.h" line="87"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="183"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="184"/>
+        <location filename="../ui/controllers/connectionController.h" line="88"/>
         <location filename="../ui/controllers/connectionController.cpp" line="205"/>
         <location filename="../ui/controllers/connectionController.cpp" line="206"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="221"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="222"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="227"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="228"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="243"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="244"/>
         <source>Connect</source>
         <translation>ချိတ်ဆက်မည်</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="193"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="215"/>
         <source>Disconnecting...</source>
         <translation>အဆက်အသွယ်ဖြတ်နေပါသည်...</translation>
     </message>
@@ -542,7 +547,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Components/HomeServerListDrawer.qml" line="172"/>
+        <location filename="../ui/qml/Components/HomeServerListDrawer.qml" line="189"/>
         <source>Manage servers</source>
         <translation type="unfinished"></translation>
     </message>
@@ -632,86 +637,86 @@ Can&apos;t be disabled for current server</source>
 <context>
     <name>InstallController</name>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="330"/>
+        <location filename="../ui/controllers/installController.cpp" line="362"/>
         <source>Checking installed containers...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="334"/>
+        <location filename="../ui/controllers/installController.cpp" line="366"/>
         <source>Error checking containers: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="345"/>
+        <location filename="../ui/controllers/installController.cpp" line="377"/>
         <source>Setup failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="351"/>
+        <location filename="../ui/controllers/installController.cpp" line="383"/>
         <source>%1 installed successfully. </source>
         <translation>%1 ကို အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ. </translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="353"/>
+        <location filename="../ui/controllers/installController.cpp" line="385"/>
         <source>Container already exists on server.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="354"/>
+        <location filename="../ui/controllers/installController.cpp" line="386"/>
         <source>%1 is already installed on the server. </source>
         <translation>%1 ကို ဆာဗာတွင် ထည့်သွင်းပြီးဖြစ်သည်. </translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="359"/>
+        <location filename="../ui/controllers/installController.cpp" line="391"/>
         <source>Creating protocol configurations...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="367"/>
+        <location filename="../ui/controllers/installController.cpp" line="399"/>
         <source>Building local profile for %1...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="371"/>
+        <location filename="../ui/controllers/installController.cpp" line="403"/>
         <source>Config creation failed for %1: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="379"/>
+        <location filename="../ui/controllers/installController.cpp" line="411"/>
         <source>Profile ready for %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="413"/>
+        <location filename="../ui/controllers/installController.cpp" line="445"/>
         <source>Finalizing...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="428"/>
+        <location filename="../ui/controllers/installController.cpp" line="460"/>
         <source>Internal error: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="432"/>
+        <location filename="../ui/controllers/installController.cpp" line="464"/>
         <source>Internal error (unknown)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="443"/>
+        <location filename="../ui/controllers/installController.cpp" line="475"/>
         <source>
 Added containers that were already installed on the server</source>
         <translation>
 ဆာဗာတွင် ထည့်သွင်းပြီးသား ကွန်တိန်နာများကို ပေါင်းထည့်ပြီးပါပြီ။</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="507"/>
+        <location filename="../ui/controllers/installController.cpp" line="539"/>
         <source>
 Already installed containers were found on the server. All installed containers have been added to the application</source>
         <translation>
 ထည့်သွင်းပြီးသား ကွန်တိန်နာများကို ဆာဗာပေါ်တွင် တွေ့ရှိခဲ့သည်။ ထည့်သွင်းထားသည့် ကွန်တိန်နာအားလုံးကို အပလီကေးရှင်းထဲသို့ ပေါင်းထည့်ပြီးပါပြီ။</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="591"/>
+        <location filename="../ui/controllers/installController.cpp" line="623"/>
         <source>Server check: no credentials available, skipping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -751,200 +756,205 @@ Already installed containers were found on the server. All installed containers 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="616"/>
+        <location filename="../ui/controllers/installController.cpp" line="211"/>
+        <source>Port %1 is too low for %2. Traffic filtering targets well-known ports; use a port above %3.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/installController.cpp" line="648"/>
         <source>Server check: no Amnezia containers found on server</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="618"/>
+        <location filename="../ui/controllers/installController.cpp" line="650"/>
         <source>Server check: found %1 container(s): %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="623"/>
+        <location filename="../ui/controllers/installController.cpp" line="655"/>
         <source>Server check: failed to query containers (error %1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="673"/>
-        <location filename="../ui/controllers/installController.cpp" line="971"/>
+        <location filename="../ui/controllers/installController.cpp" line="705"/>
+        <location filename="../ui/controllers/installController.cpp" line="1009"/>
         <source>Inspecting installed container: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="924"/>
+        <location filename="../ui/controllers/installController.cpp" line="962"/>
         <source>Failed to parse Cloak config for %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="944"/>
+        <location filename="../ui/controllers/installController.cpp" line="982"/>
         <source>Failed to parse Shadowsocks config for %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="956"/>
+        <location filename="../ui/controllers/installController.cpp" line="994"/>
         <source>Skipped container %1: no readable config (zombie from a failed install); it will be reinstalled cleanly</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="959"/>
-        <location filename="../ui/controllers/installController.cpp" line="1005"/>
+        <location filename="../ui/controllers/installController.cpp" line="997"/>
+        <location filename="../ui/controllers/installController.cpp" line="1043"/>
         <source>Finished inspecting container: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1039"/>
+        <location filename="../ui/controllers/installController.cpp" line="1077"/>
         <source>Settings updated successfully</source>
         <translation>ဆက်တင်များကို အောင်မြင်စွာ အပ်ဒိတ်လုပ်ပြီးပါပြီ။</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1056"/>
+        <location filename="../ui/controllers/installController.cpp" line="1094"/>
         <source>Server &apos;%1&apos; was rebooted</source>
         <translation>ဆာဗာ &apos;%1&apos; ကို ပြန်လည်စတင်ခဲ့သည်။</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1068"/>
+        <location filename="../ui/controllers/installController.cpp" line="1106"/>
         <source>Server &apos;%1&apos; was removed</source>
         <translation>ဆာဗာ &apos;%1&apos; ကို ဖယ်ရှားခဲ့သည်။</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1079"/>
+        <location filename="../ui/controllers/installController.cpp" line="1117"/>
         <source>All containers from server &apos;%1&apos; have been removed</source>
         <translation>ဆာဗာ &apos;%1&apos; မှ ကွန်တိန်နာအားလုံးကို ဖယ်ရှားလိုက်ပါပြီ။</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1103"/>
+        <location filename="../ui/controllers/installController.cpp" line="1141"/>
         <source>Server &apos;%1&apos; has been fully cleaned up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1132"/>
+        <location filename="../ui/controllers/installController.cpp" line="1170"/>
         <source>%1 has been removed from the server &apos;%2&apos;</source>
         <translation>%1 ကို ဆာဗာ &apos;%2&apos; မှ ဖယ်ရှားလိုက်ပါပြီ</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1141"/>
+        <location filename="../ui/controllers/installController.cpp" line="1179"/>
         <source>Api config removed</source>
         <translation>Api config ကိုဖယ်ရှားလိုက်သည်</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1163"/>
+        <location filename="../ui/controllers/installController.cpp" line="1201"/>
         <source>%1 cached profile cleared</source>
         <translation>ကက်ရှ်လုပ်ထားတဲ့ ပရိုဖိုင် %1 ခုကို ရှင်းပြီးပါပြီ</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1304"/>
+        <location filename="../ui/controllers/installController.cpp" line="1342"/>
         <source>Please login as the user</source>
         <translation>အသုံးပြုသူအဖြစ် log in ဝင်ရောက်ပါ</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1332"/>
+        <location filename="../ui/controllers/installController.cpp" line="1370"/>
         <source>Server added successfully</source>
         <translation>ဆာဗာကို အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1481"/>
+        <location filename="../ui/controllers/installController.cpp" line="1519"/>
         <source>Local XRay port hint is invalid (%1). Falling back to the current server config.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1492"/>
+        <location filename="../ui/controllers/installController.cpp" line="1530"/>
         <source>Local XRay site hint is invalid (%1). Falling back to the current server config.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1496"/>
+        <location filename="../ui/controllers/installController.cpp" line="1534"/>
         <source>Starting hot reconfigure...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1511"/>
+        <location filename="../ui/controllers/installController.cpp" line="1549"/>
         <source>Container is not running. Please reinstall the protocol first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1521"/>
+        <location filename="../ui/controllers/installController.cpp" line="1559"/>
         <source>Saving configuration snapshot...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1528"/>
+        <location filename="../ui/controllers/installController.cpp" line="1566"/>
         <source>Snapshot saved successfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1530"/>
+        <location filename="../ui/controllers/installController.cpp" line="1568"/>
         <source>Warning: snapshot save failed, continuing anyway</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1535"/>
+        <location filename="../ui/controllers/installController.cpp" line="1573"/>
         <source>Running hot_reconfigure_xray.sh script...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1568"/>
+        <location filename="../ui/controllers/installController.cpp" line="1606"/>
         <source>Hot reconfigure applied successfully after XRay restarted and closed the container exec session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1576"/>
+        <location filename="../ui/controllers/installController.cpp" line="1614"/>
         <source>Warning: server version metadata update failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1582"/>
+        <location filename="../ui/controllers/installController.cpp" line="1620"/>
         <source>Hot reconfigure completed successfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1583"/>
+        <location filename="../ui/controllers/installController.cpp" line="1621"/>
         <source>Server configuration updated successfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1594"/>
+        <location filename="../ui/controllers/installController.cpp" line="1632"/>
         <source>Updated XRay config could not be verified on the server</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1659"/>
+        <location filename="../ui/controllers/installController.cpp" line="1697"/>
         <source>Starting Reality DNS recovery...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1774"/>
+        <location filename="../ui/controllers/installController.cpp" line="1812"/>
         <source>Reality DNS recovery completed successfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1775"/>
+        <location filename="../ui/controllers/installController.cpp" line="1813"/>
         <source>Reality DNS has been recovered on the server</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1783"/>
+        <location filename="../ui/controllers/installController.cpp" line="1821"/>
         <source>Failed to recover DNS</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1785"/>
+        <location filename="../ui/controllers/installController.cpp" line="1823"/>
         <source>Reality DNS recovery failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1512"/>
-        <location filename="../ui/controllers/installController.cpp" line="1598"/>
+        <location filename="../ui/controllers/installController.cpp" line="1550"/>
+        <location filename="../ui/controllers/installController.cpp" line="1636"/>
         <source>Hot reconfigure failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1638"/>
+        <location filename="../ui/controllers/installController.cpp" line="1676"/>
         <source>Configuration restored from snapshot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1640"/>
+        <location filename="../ui/controllers/installController.cpp" line="1678"/>
         <source>Failed to restore snapshot</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1082,7 +1092,7 @@ Already installed containers were found on the server. All installed containers 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1172"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1220"/>
         <source>Speed test</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1200,23 +1210,33 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="962"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="947"/>
+        <source>Header protection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="977"/>
+        <source>Applies after reinstalling AmneziaWG on the server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1010"/>
         <source>Applying fix...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1031"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1079"/>
         <source>Fix</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1051"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1099"/>
         <source>Copy error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../ui/qml/Pages2/PageHome.qml" line="734"/>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1056"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1104"/>
         <source>Copied</source>
         <translation type="unfinished">ကူးယူပြီးပါပြီ</translation>
     </message>
@@ -1226,42 +1246,42 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1070"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1118"/>
         <source>Skip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1083"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1131"/>
         <source>%1 of %2 issues</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1104"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1152"/>
         <source>VPN server</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1112"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1160"/>
         <source>Moscow</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1220"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1268"/>
         <source>Split tunneling enabled</source>
         <translation>split tunnelling ဖွင့်ထားပါသည်</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1220"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1268"/>
         <source>Split tunneling disabled</source>
         <translation>split tunnelling ပိတ်ထားပါသည်</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1489"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1537"/>
         <source>VPN protocol</source>
         <translation>VPN ပရိုတိုကော</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageHome.qml" line="1542"/>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="1590"/>
         <source>Servers</source>
         <translation>ဆာဗာများ</translation>
     </message>
@@ -6179,7 +6199,7 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <translation>စက်တွင်းဖြစ်သော မှားယွင်းမှု</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="111"/>
+        <location filename="../containers/containers_defs.cpp" line="117"/>
         <source>IPsec</source>
         <translation>IPsec</translation>
     </message>
@@ -6196,12 +6216,12 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <translation type="vanished">REALITY ပါဝင်သော XRay - အင်တာနက်ဆင်ဆာဖြတ်တောက်မှုအပြင်းထန်ဆုံးနိုင်ငံများအတွက် သင့်လျော်သည်။ Web traffic အဖြစ် အသွားအလာကို TLS အဆင့်ဖြင့် ဖုံးကွယ်ပေးထားခြင်း၊ Active probing နည်းလမ်းများဖြင့် ထောက်လှမ်းခံရခြင်းမှ ကာကွယ်ပေးခြင်းများ။.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="145"/>
+        <location filename="../containers/containers_defs.cpp" line="151"/>
         <source>IKEv2/IPsec -  Modern stable protocol, a bit faster than others, restores connection after signal loss. It has native support on the latest versions of Android and iOS.</source>
         <translation>IKEv2/IPsec -  ခေတ်မီပြီးတည်ငြိမ်သော ပရိုတိုကော၊ အခြားပရိုတိုကောများထက် အနည်းငယ်ပိုမြန်သည်၊ Signal ဆုံးရှုံးပြီးနောက် ချိတ်ဆက်မှုကို ပြန်လည်ရယူနိုင်သည်။ Android နှင့် iOS ၏ နောက်ဆုံးဗားရှင်းများတွင် native ပံ့ပိုးမှုရရှိသည်။.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="152"/>
+        <location filename="../containers/containers_defs.cpp" line="158"/>
         <source>Create a file vault on your server to securely store and transfer files.</source>
         <translation>ဖိုင်များကို လုံခြုံစွာသိမ်းဆည်းရန်နှင့် လွှဲပြောင်းရန်အတွက် သင့်ဆာဗာပေါ်တွင် fire vault တစ်ခု ဖန်တီးပါ.</translation>
     </message>
@@ -6294,73 +6314,78 @@ IKEv2 သည် လုံခြုံရေး၊ တည်ငြိမ်မှ
 * UDP ကွန်ရက်ပရိုတိုကော၊ port 500 နှင့် 4500 ကျော်တွင် အလုပ်လုပ်သည်။.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="246"/>
+        <location filename="../containers/containers_defs.cpp" line="252"/>
         <source>DNS Service</source>
         <translation>DNS ဝန်ဆောင်မှု</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="118"/>
+        <location filename="../containers/containers_defs.cpp" line="124"/>
         <source>SFTP file sharing service</source>
         <translation>SFTP ဖိုင်မျှဝေခြင်းဆားဗစ်</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="116"/>
-        <location filename="../containers/containers_defs.cpp" line="245"/>
+        <location filename="../containers/containers_defs.cpp" line="114"/>
+        <source>AmneziaWG (legacy)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../containers/containers_defs.cpp" line="122"/>
+        <location filename="../containers/containers_defs.cpp" line="251"/>
         <source>Website in Tor network</source>
         <translation>Tor ကွန်ရက်ထဲရှိ ဝဘ်ဆိုဒ်</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="117"/>
+        <location filename="../containers/containers_defs.cpp" line="123"/>
         <source>AmneziaDNS</source>
         <translation>AmneziaDNS</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="125"/>
+        <location filename="../containers/containers_defs.cpp" line="131"/>
         <source>OpenVPN is the most popular VPN protocol, with flexible configuration options. It uses its own security protocol with SSL/TLS for key exchange.</source>
         <translation>OpenVPN သည် ပြောင်းလွယ်ပြင်လွယ် ဖွဲ့စည်းမှုရွေးချယ်စရာများပါရှိသော လူကြိုက်အများဆုံး VPN ပရိုတိုကောဖြစ်သည်. ၎င်းသည် key လဲလှယ်မှုအတွက် SSL/TLS ဖြင့် ၎င်း၏ကိုယ်ပိုင်လုံခြုံရေးပရိုတိုကောကို အသုံးပြုသည်.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="128"/>
+        <location filename="../containers/containers_defs.cpp" line="134"/>
         <source>Shadowsocks masks VPN traffic, making it resemble normal web traffic, but it may still be detected by certain analysis systems.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="130"/>
+        <location filename="../containers/containers_defs.cpp" line="136"/>
         <source>OpenVPN over Cloak - OpenVPN with VPN masquerading as web traffic and protection against active-probing detection. It is very resistant to detection, but offers low speed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="133"/>
+        <location filename="../containers/containers_defs.cpp" line="139"/>
         <source>WireGuard - popular VPN protocol with high performance, high speed and low power consumption.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="136"/>
+        <location filename="../containers/containers_defs.cpp" line="142"/>
         <source>AmneziaWG is a special protocol from Amnezia based on WireGuard. It provides high connection speed and ensures stable operation even in the most challenging network conditions.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="139"/>
+        <location filename="../containers/containers_defs.cpp" line="145"/>
         <source>AmneziaWG is a modified WireGuard-based protocol with traffic obfuscation. It can perform well in some networks, but real-world resistance to blocking depends on the current DPI/TSPU profile.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="142"/>
+        <location filename="../containers/containers_defs.cpp" line="148"/>
         <source>XRay with REALITY and XHTTP masks VPN traffic as HTTPS-like web traffic. This fork installs it with randomized path and traffic padding, but effectiveness depends on the server using the current XRay configuration.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="158"/>
+        <location filename="../containers/containers_defs.cpp" line="164"/>
         <source>Hysteria 2 — QUIC/UDP-based VPN with HTTPS masquerading and Brutal congestion control. Very fast on lossy networks; UDP-only.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="161"/>
+        <location filename="../containers/containers_defs.cpp" line="167"/>
         <source>AnyTLS — TLS-in-TLS proxy with multiplexing. Looks like ordinary HTTPS traffic, TCP-based.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="211"/>
+        <location filename="../containers/containers_defs.cpp" line="217"/>
         <source>AmneziaWG is a modern VPN protocol based on WireGuard, combining simplified architecture with high performance across all devices. It adds obfuscation on top of WireGuard, but practical resistance to blocking depends on the current network environment and DPI/TSPU rules.
 
 Use it when you specifically need a WireGuard-like path and have validated it on the target network.
@@ -6374,7 +6399,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="222"/>
+        <location filename="../containers/containers_defs.cpp" line="228"/>
         <source>REALITY is an innovative protocol developed by the creators of XRay, designed specifically to combat high levels of internet censorship. REALITY identifies censorship systems during the TLS handshake, redirecting suspicious traffic seamlessly to legitimate websites like google.com while providing genuine TLS certificates. In this fork, fresh installation pairs REALITY with XHTTP, randomized path and padding bytes so traffic looks closer to regular HTTPS.
 Unlike older protocols such as VMess, VLESS, and XTLS-Vision, REALITY incorporates an advanced built-in &quot;friend-or-foe&quot; detection mechanism, effectively protecting against DPI and other traffic analysis methods.
 
@@ -6387,7 +6412,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="261"/>
+        <location filename="../containers/containers_defs.cpp" line="267"/>
         <source>Hysteria 2 is a modern censorship-resistant proxy built on QUIC.
 It runs over UDP and uses HTTPS masquerading: unauthenticated clients see a real-looking website.
 
@@ -6399,7 +6424,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="269"/>
+        <location filename="../containers/containers_defs.cpp" line="275"/>
         <source>AnyTLS is a TLS-in-TLS multiplexed proxy.
 It looks like ordinary HTTPS traffic to DPI, and uses TCP — so it works on UDP-blocked networks.
 
@@ -6410,12 +6435,12 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="156"/>
+        <location filename="../containers/containers_defs.cpp" line="162"/>
         <source>Shadowsocks proxy via XRay core. Lightweight, fast, and resistant to DPI detection.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="168"/>
+        <location filename="../containers/containers_defs.cpp" line="174"/>
         <source>OpenVPN is one of the most popular and reliable VPN protocols. It uses SSL/TLS encryption, supports a wide variety of devices and operating systems, and is continuously improved by the community due to its open-source nature. It provides a good balance between speed and security but is easily recognized by DPI systems, making it susceptible to blocking.
 
 Features:
@@ -6426,7 +6451,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="179"/>
+        <location filename="../containers/containers_defs.cpp" line="185"/>
         <source>Shadowsocks is based on the SOCKS5 protocol and encrypts connections using AEAD cipher. Although designed to be discreet, it doesn&apos;t mimic a standard HTTPS connection and can be detected by some DPI systems. Due to limited support in Amnezia, we recommend using the AmneziaWG protocol.
 
 Features:
@@ -6438,7 +6463,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="188"/>
+        <location filename="../containers/containers_defs.cpp" line="194"/>
         <source>This combination includes the OpenVPN protocol and the Cloak plugin, specifically designed to protect against blocking.
 
 OpenVPN securely encrypts all internet traffic between your device and the server.
@@ -6456,7 +6481,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="201"/>
+        <location filename="../containers/containers_defs.cpp" line="207"/>
         <source>WireGuard is a modern, streamlined VPN protocol offering stable connectivity and excellent performance across all devices. It uses fixed encryption settings, delivering lower latency and higher data transfer speeds compared to OpenVPN. However, WireGuard is easily identifiable by DPI systems due to its distinctive packet signatures, making it susceptible to blocking.
 
 Features:
@@ -6468,7 +6493,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="235"/>
+        <location filename="../containers/containers_defs.cpp" line="241"/>
         <source>IKEv2, combined with IPSec encryption, is a modern and reliable VPN protocol. It reconnects quickly when switching networks or devices, making it ideal for dynamic network environments. While it provides good security and speed, it&apos;s easily recognized by DPI systems and susceptible to blocking.
 
 Features:
@@ -6480,7 +6505,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="254"/>
+        <location filename="../containers/containers_defs.cpp" line="260"/>
         <source>Shadowsocks proxy implemented with XRay core.
 Lightweight protocol that effectively masks VPN traffic as regular web data.
 
@@ -6499,12 +6524,12 @@ Features:
         <translation type="vanished">AmneziaWG - WireGuard ကိုအခြေခံထားသော Amnezia မှ အထူးပရိုတိုကော. ၎င်းသည် WireGuard ကဲ့သို့မြန်ဆန်သော်ပြီး ပိတ်ဆို့ခြင်းများကိုလည်း ခံနိုင်ရည်ရှိပါသည်. ဆင်ဆာဖြတ်တောက်မှု မြင့်မားသော ဒေသများတွင်အသုံးပြုရန် အကြံပြုပါသည်.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="148"/>
+        <location filename="../containers/containers_defs.cpp" line="154"/>
         <source>Deploy a WordPress site on the Tor network in two clicks.</source>
         <translation>ကလစ်နှစ်ချက်နှိပ်ရုံဖြင့် Tor ကွန်ရက်ပေါ်တွင် WordPress ဆိုက်တစ်ခုကို ဖြန့်ကျက်လိုက်ပါ.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="150"/>
+        <location filename="../containers/containers_defs.cpp" line="156"/>
         <source>Replace the current DNS server with your own. This will increase your privacy level.</source>
         <translation>လက်ရှိ DNS ဆာဗာကို သင့်ကိုယ်ပိုင် DNS ဆာဗာဖြင့် အစားထိုးပါ. ဤသို့ပြုလုပ်ခြင်းသည် သင်၏ကိုယ်ရေးကိုယ်တာလုံခြုံမှုအဆင့်ကို တိုးမြှင့်ပေးလိမ့်မည်.</translation>
     </message>
@@ -6561,7 +6586,7 @@ WireGuard သည် ၎င်း၏ စွမ်းဆောင်ရည်အ�
 * UDP ကွန်ရက်ပရိုတိုကောပေါ်တွင် အလုပ်လုပ်သည်။.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="248"/>
+        <location filename="../containers/containers_defs.cpp" line="254"/>
         <source>After installation, Amnezia will create a
 
  file storage on your server. You will be able to access it using
@@ -6586,18 +6611,23 @@ For more detailed information, you can
     </message>
     <message>
         <location filename="../protocols/protocols_defs.cpp" line="84"/>
-        <location filename="../containers/containers_defs.cpp" line="119"/>
-        <location filename="../containers/containers_defs.cpp" line="252"/>
+        <location filename="../containers/containers_defs.cpp" line="125"/>
+        <location filename="../containers/containers_defs.cpp" line="258"/>
         <source>SOCKS5 proxy server</source>
         <translation>SOCKS5 proxy ဆာဗာ</translation>
     </message>
     <message>
-        <location filename="../protocols/protocols_defs.cpp" line="249"/>
+        <location filename="../protocols/protocols_defs.cpp" line="262"/>
+        <source> (version 3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../protocols/protocols_defs.cpp" line="263"/>
         <source> (version 2)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../protocols/protocols_defs.cpp" line="250"/>
+        <location filename="../protocols/protocols_defs.cpp" line="264"/>
         <source> (version 1.5)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6788,7 +6818,7 @@ For more detailed information, you can
         <translation>Hostname နှင့် port ကြားရှိ colon separator ကို ရှာမတွေ့ပါ</translation>
     </message>
     <message>
-        <location filename="../ui/models/containers_model.cpp" line="57"/>
+        <location filename="../ui/models/containers_model.cpp" line="70"/>
         <source>AmneziaWG Legacy is a outdated version of AmneziaWG protocol. To upgrade, install AmneziaWG and recreate users.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6827,380 +6857,369 @@ For more detailed information, you can
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="129"/>
-        <location filename="../core/controllers/serverController.cpp" line="212"/>
+        <location filename="../core/controllers/serverController.cpp" line="141"/>
         <source>SSH connection failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="179"/>
-        <source>Remote command exited with code %1.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../core/controllers/serverController.cpp" line="182"/>
-        <source>Remote command timed out while waiting for server response.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../core/controllers/serverController.cpp" line="184"/>
-        <source>Command failed: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../core/controllers/serverController.cpp" line="229"/>
+        <location filename="../core/controllers/serverController.cpp" line="158"/>
         <source>Failed to upload script to host: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="270"/>
+        <location filename="../core/controllers/serverController.cpp" line="199"/>
         <source>Uploading container script to %1 in %2 (%3 bytes, sha256 %4...)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="277"/>
+        <location filename="../core/controllers/serverController.cpp" line="206"/>
         <source>Container script upload failed for %1 in %2: %3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="282"/>
+        <location filename="../core/controllers/serverController.cpp" line="211"/>
         <source>Container script uploaded to %1 in %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="300"/>
+        <location filename="../core/controllers/serverController.cpp" line="229"/>
         <source>Launching container script in %1: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="303"/>
+        <location filename="../core/controllers/serverController.cpp" line="232"/>
         <source>Container script failed in %1: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="384"/>
+        <location filename="../core/controllers/serverController.cpp" line="313"/>
         <source>Reading %1 from %2...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="406"/>
-        <location filename="../core/controllers/serverController.cpp" line="415"/>
-        <location filename="../core/controllers/serverController.cpp" line="427"/>
+        <location filename="../core/controllers/serverController.cpp" line="335"/>
+        <location filename="../core/controllers/serverController.cpp" line="344"/>
+        <location filename="../core/controllers/serverController.cpp" line="356"/>
         <source>Read failed for %1 in %2: %3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="432"/>
+        <location filename="../core/controllers/serverController.cpp" line="361"/>
         <source>Read warning for %1 in %2: %3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="437"/>
+        <location filename="../core/controllers/serverController.cpp" line="366"/>
         <source>Read completed for %1 in %2 (empty file).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="439"/>
+        <location filename="../core/controllers/serverController.cpp" line="368"/>
         <source>Read completed for %1 in %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="527"/>
+        <location filename="../core/controllers/serverController.cpp" line="456"/>
         <source>Server preflight failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="532"/>
+        <location filename="../core/controllers/serverController.cpp" line="461"/>
         <source>Cancelled before sudo check</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="535"/>
+        <location filename="../core/controllers/serverController.cpp" line="464"/>
         <source>Checking sudo access...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="538"/>
+        <location filename="../core/controllers/serverController.cpp" line="467"/>
         <source>Sudo check failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="541"/>
+        <location filename="../core/controllers/serverController.cpp" line="470"/>
         <source>Sudo check passed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="544"/>
+        <location filename="../core/controllers/serverController.cpp" line="473"/>
         <source>Cancelled before package manager check</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="547"/>
+        <location filename="../core/controllers/serverController.cpp" line="476"/>
         <source>Checking if package manager is busy...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="550"/>
+        <location filename="../core/controllers/serverController.cpp" line="479"/>
         <source>Package manager check failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="553"/>
+        <location filename="../core/controllers/serverController.cpp" line="482"/>
         <source>Package manager is free.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="555"/>
+        <location filename="../core/controllers/serverController.cpp" line="484"/>
         <source>Installing Docker...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="558"/>
+        <location filename="../core/controllers/serverController.cpp" line="487"/>
         <source>Docker install failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="562"/>
+        <location filename="../core/controllers/serverController.cpp" line="491"/>
         <source>Cancelled after: install Docker</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="565"/>
+        <location filename="../core/controllers/serverController.cpp" line="494"/>
         <source>Step completed: install Docker</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="568"/>
+        <location filename="../core/controllers/serverController.cpp" line="497"/>
         <source>Checking server port availability...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="571"/>
+        <location filename="../core/controllers/serverController.cpp" line="500"/>
         <source>Port check failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="576"/>
+        <location filename="../core/controllers/serverController.cpp" line="505"/>
         <source>Preparing host...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="579"/>
+        <location filename="../core/controllers/serverController.cpp" line="508"/>
         <source>Prepare host failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="583"/>
+        <location filename="../core/controllers/serverController.cpp" line="512"/>
         <source>Cancelled after: prepare host</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="586"/>
+        <location filename="../core/controllers/serverController.cpp" line="515"/>
         <source>Step completed: prepare host</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="703"/>
+        <location filename="../core/controllers/serverController.cpp" line="632"/>
         <source>Removing old container...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="706"/>
+        <location filename="../core/controllers/serverController.cpp" line="635"/>
         <source>Cancelled after: remove container</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="709"/>
+        <location filename="../core/controllers/serverController.cpp" line="638"/>
         <source>Step completed: remove old container</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="711"/>
+        <location filename="../core/controllers/serverController.cpp" line="640"/>
         <source>Building container...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="714"/>
+        <location filename="../core/controllers/serverController.cpp" line="643"/>
         <source>Build container failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="718"/>
+        <location filename="../core/controllers/serverController.cpp" line="647"/>
         <source>Cancelled after: build container</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="721"/>
+        <location filename="../core/controllers/serverController.cpp" line="650"/>
         <source>Step completed: build container</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="723"/>
+        <location filename="../core/controllers/serverController.cpp" line="652"/>
         <source>Starting container...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="726"/>
+        <location filename="../core/controllers/serverController.cpp" line="655"/>
         <source>Start container failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="730"/>
+        <location filename="../core/controllers/serverController.cpp" line="659"/>
         <source>Cancelled after: start container</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="733"/>
+        <location filename="../core/controllers/serverController.cpp" line="662"/>
         <source>Step completed: start container</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="747"/>
+        <location filename="../core/controllers/serverController.cpp" line="676"/>
         <source>Configuring container...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="750"/>
+        <location filename="../core/controllers/serverController.cpp" line="679"/>
         <source>Configure container failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="753"/>
+        <location filename="../core/controllers/serverController.cpp" line="682"/>
         <source>Removing incomplete container to keep the server clean...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="758"/>
+        <location filename="../core/controllers/serverController.cpp" line="687"/>
         <source>Cancelled after: configure container</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="761"/>
+        <location filename="../core/controllers/serverController.cpp" line="690"/>
         <source>Step completed: configure container</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="946"/>
+        <location filename="../core/controllers/serverController.cpp" line="875"/>
         <source>Setting up firewall...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="948"/>
+        <location filename="../core/controllers/serverController.cpp" line="877"/>
         <source>Step completed: firewall setup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="950"/>
+        <location filename="../core/controllers/serverController.cpp" line="879"/>
         <source>Running startup script...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1069"/>
+        <location filename="../core/controllers/serverController.cpp" line="998"/>
         <source>Running Docker install script on server...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1099"/>
+        <location filename="../core/controllers/serverController.cpp" line="1028"/>
         <source>Running host preparation script for %1...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1119"/>
+        <location filename="../core/controllers/serverController.cpp" line="1048"/>
         <source>Uploading Dockerfile for %1 to %2 (%3 bytes, sha256 %4...)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1132"/>
+        <location filename="../core/controllers/serverController.cpp" line="1061"/>
         <source>Dockerfile upload failed for %1: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1136"/>
+        <location filename="../core/controllers/serverController.cpp" line="1065"/>
         <source>Dockerfile uploaded for %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1148"/>
+        <location filename="../core/controllers/serverController.cpp" line="1077"/>
         <source>Launching docker build for %1...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1194"/>
+        <location filename="../core/controllers/serverController.cpp" line="1123"/>
         <source>Container %1 is missing after start.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1203"/>
+        <location filename="../core/controllers/serverController.cpp" line="1132"/>
         <source>Container %1 is not running after start.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1217"/>
+        <location filename="../core/controllers/serverController.cpp" line="1146"/>
         <source>Recent logs for %1:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1264"/>
+        <location filename="../core/controllers/serverController.cpp" line="1193"/>
         <source>Container start output: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1279"/>
+        <location filename="../core/controllers/serverController.cpp" line="1208"/>
         <source>Prepared configure script for %1 (%2 bytes, sha256 %3...)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1325"/>
+        <location filename="../core/controllers/serverController.cpp" line="1254"/>
         <source>Uploading startup script to /opt/amnezia/start.sh in %1 (%2 bytes, sha256 %3...)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1332"/>
+        <location filename="../core/controllers/serverController.cpp" line="1261"/>
         <source>Startup script upload failed for %1: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1336"/>
+        <location filename="../core/controllers/serverController.cpp" line="1265"/>
         <source>Startup script uploaded for %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1337"/>
+        <location filename="../core/controllers/serverController.cpp" line="1266"/>
         <source>Launching startup script in %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1579"/>
+        <location filename="../core/controllers/serverController.cpp" line="1524"/>
         <source>Detecting server environment...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1593"/>
+        <location filename="../core/controllers/serverController.cpp" line="1538"/>
         <source>Server preflight returned no output.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1598"/>
+        <location filename="../core/controllers/serverController.cpp" line="1543"/>
         <source>Server probe: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1608"/>
+        <location filename="../core/controllers/serverController.cpp" line="1553"/>
         <source>Cancel requested, interrupting current SSH operation...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1870"/>
+        <location filename="../core/controllers/serverController.cpp" line="1675"/>
+        <source>%1 is already installed, skipping the port check</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../core/controllers/serverController.cpp" line="1841"/>
         <source>Package manager probe timed out. The remote command stopped responding.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1884"/>
+        <location filename="../core/controllers/serverController.cpp" line="1855"/>
         <source>Package manager is busy (attempt %1/30), waiting 10s... Output: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1896"/>
+        <location filename="../core/controllers/serverController.cpp" line="1867"/>
         <source>Package manager is still busy after 30 attempts, giving up.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7208,12 +7227,12 @@ For more detailed information, you can
 <context>
     <name>ServerMonitorController</name>
     <message>
-        <location filename="../ui/controllers/serverMonitorController.cpp" line="104"/>
+        <location filename="../ui/controllers/serverMonitorController.cpp" line="109"/>
         <source>No server selected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverMonitorController.cpp" line="138"/>
+        <location filename="../ui/controllers/serverMonitorController.cpp" line="143"/>
         <source>SSH connection failed</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7221,62 +7240,62 @@ For more detailed information, you can
 <context>
     <name>ServerTerminalController</name>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="96"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="97"/>
         <source>BLOCKED: this command is potentially destructive.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="97"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="98"/>
         <source>If you really need it, connect via SSH directly.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="108"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="109"/>
         <source>XRay Logs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="122"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="123"/>
         <source>No XRay/SSXray container found on server</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="127"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="128"/>
         <source>Docker Containers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="132"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="133"/>
         <source>Docker not available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="137"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="138"/>
         <source>System Errors (last 24h)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="143"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="144"/>
         <source>No system error logs available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="148"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="149"/>
         <source>SSH Auth Log (last 50)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="153"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="154"/>
         <source>No SSH auth logs found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="165"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="166"/>
         <source>Error: no server selected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/serverTerminalController.cpp" line="207"/>
+        <location filename="../ui/controllers/serverTerminalController.cpp" line="211"/>
         <source>Error: SSH command failed</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7565,12 +7584,12 @@ For more detailed information, you can
 <context>
     <name>VpnConnection</name>
     <message>
-        <location filename="../vpnconnection.cpp" line="566"/>
+        <location filename="../vpnconnection.cpp" line="578"/>
         <source>Site split tunneling works only with XRay; full VPN is used for this protocol</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../vpnconnection.cpp" line="921"/>
+        <location filename="../vpnconnection.cpp" line="933"/>
         <source>Mbps</source>
         <translation>Mbps</translation>
     </message>
@@ -7578,44 +7597,52 @@ For more detailed information, you can
 <context>
     <name>VpnProtocol</name>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="139"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="194"/>
         <source>Unknown</source>
         <translation>အမည်မသိ</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="140"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="195"/>
         <source>Disconnected</source>
         <translation>ဖြုတ်လိုက်ပါပြီ</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="141"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="196"/>
         <source>Preparing</source>
         <translation>ပြင်ဆင်နေပါသည်</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="142"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="197"/>
         <source>Connecting...</source>
         <translation>ချိတ်ဆက်နေပါပြီ...</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="143"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="198"/>
         <source>Connected</source>
         <translation>ချိတ်ဆက်ပြီးသွားပါပြီ</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="144"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="199"/>
         <source>Disconnecting...</source>
         <translation>အဆက်အသွယ်ဖြတ်နေပါသည်...</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="145"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="200"/>
         <source>Reconnecting...</source>
         <translation>ပြန်လည်ချိတ်ဆက်နေပါသည်...</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="146"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="201"/>
         <source>Error</source>
         <translation>မှားယွင်းမှု</translation>
+    </message>
+</context>
+<context>
+    <name>WireguardConfigurator</name>
+    <message>
+        <location filename="../configurators/wireguard_configurator.cpp" line="208"/>
+        <source>This AmneziaWG container is too old for AmneziaWG 3 — its amneziawg tools cannot read the header protection key. Reinstall AmneziaWG on this server to get it: the container will be rebuilt from a current image. Falling back to generation 2 for now.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7637,32 +7664,32 @@ For more detailed information, you can
         <translation type="vanished">ဆင်ဆာဖြတ်တောက်ခြင်းကို ကျော်ဖြတ်ချင်ပါသည်. ဤရွေးချယ်မှုကို ကိစ္စအများစုအတွက် အကြံပြုထားသည်.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="414"/>
+        <location filename="../containers/containers_defs.cpp" line="420"/>
         <source>Recommended</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="415"/>
+        <location filename="../containers/containers_defs.cpp" line="421"/>
         <source>Alternative</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="416"/>
+        <location filename="../containers/containers_defs.cpp" line="422"/>
         <source>Fastest</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="424"/>
+        <location filename="../containers/containers_defs.cpp" line="430"/>
         <source>OpenVPN over Cloak will be installed. This is the most field-proven camouflage option in this fork: slower, but resistant to active probing and DPI blocking.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="426"/>
+        <location filename="../containers/containers_defs.cpp" line="432"/>
         <source>XRay VLESS + REALITY + XHTTP will be installed with randomized path and traffic padding. Use it when the server path is updated for the current XRay configuration.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="428"/>
+        <location filename="../containers/containers_defs.cpp" line="434"/>
         <source>Hysteria 2 will be installed. QUIC/UDP transport with HTTPS masquerading — fastest option on stable networks that allow outbound UDP.</source>
         <translation type="unfinished"></translation>
     </message>

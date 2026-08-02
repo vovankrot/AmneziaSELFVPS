@@ -260,6 +260,24 @@ void LocalSocketController::activate(const QJsonObject &rawConfig) {
     json.insert(amnezia::config_key::specialJunk3, wgConfig.value(amnezia::config_key::specialJunk3));
     json.insert(amnezia::config_key::specialJunk4, wgConfig.value(amnezia::config_key::specialJunk4));
     json.insert(amnezia::config_key::specialJunk5, wgConfig.value(amnezia::config_key::specialJunk5));
+
+    // AmneziaWG 3 fields. wgConfig carries these as top-level values (see
+    // AwgConfigurator::createConfig), but until now nothing copied them into
+    // the JSON actually sent to the daemon over the local pipe -- the daemon
+    // parsed them correctly (daemon.cpp's kAwg3Fields), it just never received
+    // them, so header protection silently never reached the wire. by vovankrot
+    for (const char *awg3Key : { amnezia::config_key::headerProtectionKey,
+                                 amnezia::config_key::contentPaddingAddition,
+                                 amnezia::config_key::rekeyAfterTime,
+                                 amnezia::config_key::rekeyTimeout,
+                                 amnezia::config_key::rejectAfterTime,
+                                 amnezia::config_key::keepaliveTimeout,
+                                 amnezia::config_key::maxHandshakeAttempts }) {
+      const QJsonValue value = wgConfig.value(QLatin1String(awg3Key));
+      if (!value.isUndefined() && !value.toString().isEmpty()) {
+        json.insert(QLatin1String(awg3Key), value);
+      }
+    }
   } else if (!wgConfig.value(amnezia::config_key::junkPacketCount).isUndefined()
              && !wgConfig.value(amnezia::config_key::junkPacketMinSize).isUndefined()
              && !wgConfig.value(amnezia::config_key::junkPacketMaxSize).isUndefined()

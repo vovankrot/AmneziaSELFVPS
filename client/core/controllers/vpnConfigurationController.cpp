@@ -1,7 +1,5 @@
 #include "vpnConfigurationController.h"
 
-#include <QThread>
-
 #include "configurators/awg_configurator.h"
 #include "configurators/cloak_configurator.h"
 #include "configurators/openvpn_configurator.h"
@@ -49,23 +47,7 @@ ErrorCode VpnConfigurationsController::createProtocolConfigForContainer(const Se
         auto configurator = createConfigurator(protocol);
         QString protocolConfigString = configurator->createConfig(credentials, container, containerConfig, errorCode);
         if (errorCode != ErrorCode::NoError) {
-            qWarning() << "DEBUG createProtocolConfigForContainer:" << ProtocolProps::protoToString(protocol)
-                       << "createConfig FAILED, error" << static_cast<int>(errorCode)
-                       << "thread" << QThread::currentThread();
             return errorCode;
-        }
-
-        // TEMP diagnostic: which call path produced this last_config, and did it
-        // come out with header protection or without. Two independent callers can
-        // reach this point for the same AWG container -- the main install flow and
-        // InstallController's lazy background QtConcurrent validator, each with its
-        // own ServerController/SSH session -- and whichever one's result lands here
-        // LAST silently becomes the permanent last_config. by vovankrot
-        if (ContainerProps::isAwgContainer(container)) {
-            const bool hasHeaderProtection =
-                    protocolConfigString.contains(QLatin1String(config_key::headerProtectionKey));
-            qWarning() << "DEBUG createProtocolConfigForContainer: AWG last_config written, thread"
-                       << QThread::currentThread() << "headerProtection=" << hasHeaderProtection;
         }
 
         protocolConfig.insert(config_key::last_config, protocolConfigString);

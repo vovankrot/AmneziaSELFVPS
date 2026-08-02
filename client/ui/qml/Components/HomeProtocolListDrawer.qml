@@ -101,19 +101,27 @@ DrawerType2 {
                         // above, so re-establish it -- otherwise the dot stays wherever the
                         // user last tapped even if the switch never lands. by vovankrot
                         onClicked: {
+                            // Hold onto the drawer and the tapped value first. switchFunction
+                            // repopulates the protocol model, which destroys this delegate --
+                            // any `root` reference after that call resolves against a dead
+                            // context and throws "root is not defined". Close before
+                            // switching, and drive the switch through the captured handle.
+                            // by vovankrot
+                            const drawer = root
                             const tapped = dockerContainer
+
                             checked = Qt.binding(function() {
-                                return dockerContainer === root.currentContainer
+                                return dockerContainer === drawer.currentContainer
                             })
 
-                            if (tapped === root.currentContainer) {
+                            if (tapped === drawer.currentContainer) {
                                 return
                             }
 
-                            if (root.switchFunction) {
-                                root.switchFunction(tapped)
+                            drawer.closeTriggered()
+                            if (drawer.switchFunction) {
+                                drawer.switchFunction(tapped)
                             }
-                            root.closeTriggered()
                         }
 
                         Keys.onEnterPressed: this.clicked()
