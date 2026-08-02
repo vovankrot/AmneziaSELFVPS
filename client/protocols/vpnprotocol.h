@@ -79,6 +79,12 @@ signals:
     // gets rebuilt without user intervention. by vovankrot
     void reconnectRequested();
 
+    // The tunnel reached Connected but never carried a single received byte.
+    // Deliberately NOT wired to a reconnect: the usual cause is a config that no
+    // longer matches the server (port changed, obfuscation added), and retrying
+    // forever hides that instead of surfacing it. by vovankrot
+    void tunnelCarriesNoTraffic();
+
 public slots:
     virtual void onTimeout(); // todo: remove?
 
@@ -98,10 +104,22 @@ protected:
     QJsonObject m_rawConfig;
 
 private:
+    void startSilenceWatchdog();
+    void stopSilenceWatchdog();
+
     QTimer* m_timeoutTimer;
     ErrorCode m_lastError;
     quint64 m_receivedBytes;
     quint64 m_sentBytes;
+
+    // "Connected but nothing comes back" watchdog. Armed when the protocol reports
+    // Connected, disarmed by the first received byte. Catches the whole class of
+    // failures where the tunnel builds fine and then goes nowhere -- a stale client
+    // config pointing at a port the server no longer listens on being the one that
+    // cost the most time to find. by vovankrot
+    QTimer* m_silenceTimer = nullptr;
+    quint64 m_bytesAtConnect = 0;
+    bool m_silenceReported = false;
 };
 
 #endif // VPNPROTOCOL_H

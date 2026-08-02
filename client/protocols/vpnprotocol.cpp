@@ -94,9 +94,52 @@ void VpnProtocol::setConnectionState(Vpn::ConnectionState state)
         m_sentBytes = 0;
     }
 
+    if (m_connectionState == Vpn::ConnectionState::Connected) {
+        startSilenceWatchdog();
+    } else {
+        stopSilenceWatchdog();
+    }
+
     qDebug().noquote() << QString("Connection state: '%1'").arg(textConnectionState());
 
     emit connectionStateChanged(m_connectionState);
+}
+
+void VpnProtocol::startSilenceWatchdog()
+{
+    // Long enough that a genuinely idle-but-healthy tunnel is not accused: even with
+    // no user activity, DNS and keepalives normally bring something back well inside
+    // this window. by vovankrot
+    constexpr int kSilenceGraceMs = 25000;
+
+    m_bytesAtConnect = m_receivedBytes;
+    m_silenceReported = false;
+
+    if (!m_silenceTimer) {
+        m_silenceTimer = new QTimer(this);
+        m_silenceTimer->setSingleShot(true);
+        connect(m_silenceTimer, &QTimer::timeout, this, [this]() {
+            if (m_connectionState != Vpn::ConnectionState::Connected || m_silenceReported) {
+                return;
+            }
+            if (m_receivedBytes > m_bytesAtConnect) {
+                return;
+            }
+            m_silenceReported = true;
+            qWarning() << "Tunnel reported Connected but received no data at all --"
+                       << "the client config likely no longer matches the server";
+            emit tunnelCarriesNoTraffic();
+        });
+    }
+    m_silenceTimer->start(kSilenceGraceMs);
+}
+
+void VpnProtocol::stopSilenceWatchdog()
+{
+    if (m_silenceTimer) {
+        m_silenceTimer->stop();
+    }
+    m_silenceReported = false;
 }
 
 QString VpnProtocol::vpnGateway() const

@@ -354,51 +354,56 @@
 <context>
     <name>ConnectionController</name>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="105"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="33"/>
+        <source>Connected, but no data is coming back. The saved configuration for this server is probably out of date — re-import it from the server.</source>
+        <translation>Подключено, но данные не идут. Скорее всего, сохранённая конфигурация этого сервера устарела — импортируйте её с сервера заново.</translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/connectionController.cpp" line="112"/>
         <source>Protocol changed, reconnecting...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="112"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="119"/>
         <source>Protocol changed</source>
         <translation>Протокол изменён</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="138"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="145"/>
         <source>Server changed, reconnecting...</source>
         <translation>Сервер изменён, переподключение...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="145"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="152"/>
         <source>Server changed</source>
         <translation>Сервер изменён</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="167"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="174"/>
         <source>Connecting...</source>
         <translation>Подключение...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="168"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="176"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="193"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="209"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="175"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="183"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="200"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="216"/>
         <source>Disconnect</source>
         <translation type="unfinished">Отключиться</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="175"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="182"/>
         <source>Connected</source>
         <translation>Подключено</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="214"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="215"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="221"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="222"/>
         <source>Preparing...</source>
         <translation>Подготовка...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="249"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="256"/>
         <source>Settings updated successfully, reconnecting...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -407,44 +412,44 @@
         <translation type="vanished">Настройки успешно обновлены, переподключение...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="252"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="259"/>
         <source>Settings updated successfully</source>
         <translation>Настройки успешно обновлены</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="320"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="327"/>
         <source>Trying fallback connection...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="368"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="375"/>
         <source>Switching to %1...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="382"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="389"/>
         <source>Switching to server %1...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="192"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="199"/>
         <source>Reconnecting...</source>
         <translation>Переподключение...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.h" line="86"/>
         <location filename="../ui/controllers/connectionController.h" line="87"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="198"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="199"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="220"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="221"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="236"/>
-        <location filename="../ui/controllers/connectionController.cpp" line="237"/>
+        <location filename="../ui/controllers/connectionController.h" line="88"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="205"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="206"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="227"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="228"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="243"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="244"/>
         <source>Connect</source>
         <translation>Подключиться</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/connectionController.cpp" line="208"/>
+        <location filename="../ui/controllers/connectionController.cpp" line="215"/>
         <source>Disconnecting...</source>
         <translation>Отключение...</translation>
     </message>
@@ -679,86 +684,86 @@ Can&apos;t be disabled for current server</source>
 <context>
     <name>InstallController</name>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="336"/>
+        <location filename="../ui/controllers/installController.cpp" line="362"/>
         <source>Checking installed containers...</source>
         <translation>Проверка установленных контейнеров...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="340"/>
+        <location filename="../ui/controllers/installController.cpp" line="366"/>
         <source>Error checking containers: %1</source>
         <translation>Ошибка при проверке контейнеров: %1</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="351"/>
+        <location filename="../ui/controllers/installController.cpp" line="377"/>
         <source>Setup failed: %1</source>
         <translation>Ошибка настройки: %1</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="357"/>
+        <location filename="../ui/controllers/installController.cpp" line="383"/>
         <source>%1 installed successfully. </source>
         <translation>%1 успешно установлен. </translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="359"/>
+        <location filename="../ui/controllers/installController.cpp" line="385"/>
         <source>Container already exists on server.</source>
         <translation>Контейнер уже существует на сервере.</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="360"/>
+        <location filename="../ui/controllers/installController.cpp" line="386"/>
         <source>%1 is already installed on the server. </source>
         <translation>%1 уже установлен на сервер. </translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="365"/>
+        <location filename="../ui/controllers/installController.cpp" line="391"/>
         <source>Creating protocol configurations...</source>
         <translation>Создание конфигураций протоколов...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="373"/>
+        <location filename="../ui/controllers/installController.cpp" line="399"/>
         <source>Building local profile for %1...</source>
         <translation>Сборка локального профиля для %1...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="377"/>
+        <location filename="../ui/controllers/installController.cpp" line="403"/>
         <source>Config creation failed for %1: %2</source>
         <translation>Не удалось создать конфигурацию для %1: %2</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="385"/>
+        <location filename="../ui/controllers/installController.cpp" line="411"/>
         <source>Profile ready for %1.</source>
         <translation>Профиль для %1 готов.</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="419"/>
+        <location filename="../ui/controllers/installController.cpp" line="445"/>
         <source>Finalizing...</source>
         <translation>Завершение...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="434"/>
+        <location filename="../ui/controllers/installController.cpp" line="460"/>
         <source>Internal error: %1</source>
         <translation>Внутренняя ошибка: %1</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="438"/>
+        <location filename="../ui/controllers/installController.cpp" line="464"/>
         <source>Internal error (unknown)</source>
         <translation>Внутренняя ошибка (неизвестная)</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="449"/>
+        <location filename="../ui/controllers/installController.cpp" line="475"/>
         <source>
 Added containers that were already installed on the server</source>
         <translation>
 На сервере обнаружены установленные протоколы и сервисы. Все они были добавлены в приложение</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="513"/>
+        <location filename="../ui/controllers/installController.cpp" line="539"/>
         <source>
 Already installed containers were found on the server. All installed containers have been added to the application</source>
         <translation>
 На сервере обнаружены установленные протоколы и сервисы. Все они были добавлены в приложение</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="597"/>
+        <location filename="../ui/controllers/installController.cpp" line="623"/>
         <source>Server check: no credentials available, skipping</source>
         <translation>Проверка сервера: учётные данные отсутствуют, пропуск</translation>
     </message>
@@ -798,129 +803,134 @@ Already installed containers were found on the server. All installed containers 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="622"/>
+        <location filename="../ui/controllers/installController.cpp" line="211"/>
+        <source>Port %1 is too low for %2. Traffic filtering targets well-known ports; use a port above %3.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/controllers/installController.cpp" line="648"/>
         <source>Server check: no Amnezia containers found on server</source>
         <translation>Проверка сервера: контейнеры Amnezia на сервере не найдены</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="624"/>
+        <location filename="../ui/controllers/installController.cpp" line="650"/>
         <source>Server check: found %1 container(s): %2</source>
         <translation>Проверка сервера: найдено контейнеров %1: %2</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="629"/>
+        <location filename="../ui/controllers/installController.cpp" line="655"/>
         <source>Server check: failed to query containers (error %1)</source>
         <translation>Проверка сервера: не удалось запросить контейнеры (ошибка %1)</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="679"/>
-        <location filename="../ui/controllers/installController.cpp" line="983"/>
+        <location filename="../ui/controllers/installController.cpp" line="705"/>
+        <location filename="../ui/controllers/installController.cpp" line="1009"/>
         <source>Inspecting installed container: %1</source>
         <translation>Анализ установленного контейнера: %1</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="936"/>
+        <location filename="../ui/controllers/installController.cpp" line="962"/>
         <source>Failed to parse Cloak config for %1.</source>
         <translation>Не удалось разобрать конфигурацию Cloak для %1.</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="956"/>
+        <location filename="../ui/controllers/installController.cpp" line="982"/>
         <source>Failed to parse Shadowsocks config for %1.</source>
         <translation>Не удалось разобрать конфигурацию Shadowsocks для %1.</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="968"/>
+        <location filename="../ui/controllers/installController.cpp" line="994"/>
         <source>Skipped container %1: no readable config (zombie from a failed install); it will be reinstalled cleanly</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="971"/>
-        <location filename="../ui/controllers/installController.cpp" line="1017"/>
+        <location filename="../ui/controllers/installController.cpp" line="997"/>
+        <location filename="../ui/controllers/installController.cpp" line="1043"/>
         <source>Finished inspecting container: %1</source>
         <translation>Анализ контейнера завершён: %1</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1051"/>
+        <location filename="../ui/controllers/installController.cpp" line="1077"/>
         <source>Settings updated successfully</source>
         <translation>Настройки успешно обновлены</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1068"/>
+        <location filename="../ui/controllers/installController.cpp" line="1094"/>
         <source>Server &apos;%1&apos; was rebooted</source>
         <translation>Сервер &apos;%1&apos; был перезагружен</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1080"/>
+        <location filename="../ui/controllers/installController.cpp" line="1106"/>
         <source>Server &apos;%1&apos; was removed</source>
         <translation>Сервер &apos;%1&apos; был удален</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1091"/>
+        <location filename="../ui/controllers/installController.cpp" line="1117"/>
         <source>All containers from server &apos;%1&apos; have been removed</source>
         <translation>Все протоколы и сервисы были удалены с сервера &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1115"/>
+        <location filename="../ui/controllers/installController.cpp" line="1141"/>
         <source>Server &apos;%1&apos; has been fully cleaned up</source>
         <translation>Сервер &apos;%1&apos; полностью очищен</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1144"/>
+        <location filename="../ui/controllers/installController.cpp" line="1170"/>
         <source>%1 has been removed from the server &apos;%2&apos;</source>
         <translation>%1 был удален с сервера &apos;%2&apos;</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1153"/>
+        <location filename="../ui/controllers/installController.cpp" line="1179"/>
         <source>Api config removed</source>
         <translation>Конфигурация API удалена</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1175"/>
+        <location filename="../ui/controllers/installController.cpp" line="1201"/>
         <source>%1 cached profile cleared</source>
         <translation>%1 закэшированный профиль очищен</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1316"/>
+        <location filename="../ui/controllers/installController.cpp" line="1342"/>
         <source>Please login as the user</source>
         <translation>Пожалуйста, войдите в систему от имени пользователя</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1344"/>
+        <location filename="../ui/controllers/installController.cpp" line="1370"/>
         <source>Server added successfully</source>
         <translation>Сервер успешно добавлен</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1493"/>
+        <location filename="../ui/controllers/installController.cpp" line="1519"/>
         <source>Local XRay port hint is invalid (%1). Falling back to the current server config.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1504"/>
+        <location filename="../ui/controllers/installController.cpp" line="1530"/>
         <source>Local XRay site hint is invalid (%1). Falling back to the current server config.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1671"/>
+        <location filename="../ui/controllers/installController.cpp" line="1697"/>
         <source>Starting Reality DNS recovery...</source>
         <translation>Запускаем перезапуск XRay и сброс DNS на сервере...</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1786"/>
+        <location filename="../ui/controllers/installController.cpp" line="1812"/>
         <source>Reality DNS recovery completed successfully</source>
         <translation>XRay перезапущен, DNS-кэш сброшен</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1787"/>
+        <location filename="../ui/controllers/installController.cpp" line="1813"/>
         <source>Reality DNS has been recovered on the server</source>
         <translation>DNS XRay на сервере восстановлен</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1795"/>
+        <location filename="../ui/controllers/installController.cpp" line="1821"/>
         <source>Failed to recover DNS</source>
         <translation>Не удалось сбросить DNS</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1797"/>
+        <location filename="../ui/controllers/installController.cpp" line="1823"/>
         <source>Reality DNS recovery failed: %1</source>
         <translation>Не удалось восстановить DNS XRay: %1</translation>
     </message>
@@ -937,63 +947,63 @@ Already installed containers were found on the server. All installed containers 
         <translation type="vanished">Неверное доменное имя: %1</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1508"/>
+        <location filename="../ui/controllers/installController.cpp" line="1534"/>
         <source>Starting hot reconfigure...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1523"/>
+        <location filename="../ui/controllers/installController.cpp" line="1549"/>
         <source>Container is not running. Please reinstall the protocol first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1533"/>
+        <location filename="../ui/controllers/installController.cpp" line="1559"/>
         <source>Saving configuration snapshot...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1540"/>
+        <location filename="../ui/controllers/installController.cpp" line="1566"/>
         <source>Snapshot saved successfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1542"/>
+        <location filename="../ui/controllers/installController.cpp" line="1568"/>
         <source>Warning: snapshot save failed, continuing anyway</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1547"/>
+        <location filename="../ui/controllers/installController.cpp" line="1573"/>
         <source>Running hot_reconfigure_xray.sh script...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1580"/>
+        <location filename="../ui/controllers/installController.cpp" line="1606"/>
         <source>Hot reconfigure applied successfully after XRay restarted and closed the container exec session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1588"/>
+        <location filename="../ui/controllers/installController.cpp" line="1614"/>
         <source>Warning: server version metadata update failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1594"/>
+        <location filename="../ui/controllers/installController.cpp" line="1620"/>
         <source>Hot reconfigure completed successfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1595"/>
+        <location filename="../ui/controllers/installController.cpp" line="1621"/>
         <source>Server configuration updated successfully</source>
         <translation>Конфигурация сервера успешно обновлена</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1606"/>
+        <location filename="../ui/controllers/installController.cpp" line="1632"/>
         <source>Updated XRay config could not be verified on the server</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1524"/>
-        <location filename="../ui/controllers/installController.cpp" line="1610"/>
+        <location filename="../ui/controllers/installController.cpp" line="1550"/>
+        <location filename="../ui/controllers/installController.cpp" line="1636"/>
         <source>Hot reconfigure failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1002,12 +1012,12 @@ Already installed containers were found on the server. All installed containers 
         <translation type="vanished">Не удалось обновить конфигурацию сервера</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1650"/>
+        <location filename="../ui/controllers/installController.cpp" line="1676"/>
         <source>Configuration restored from snapshot</source>
         <translation>Конфигурация восстановлена из снимка</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1652"/>
+        <location filename="../ui/controllers/installController.cpp" line="1678"/>
         <source>Failed to restore snapshot</source>
         <translation>Не удалось восстановить снимок</translation>
     </message>
@@ -1297,6 +1307,7 @@ If some apps or sites should stay outside the VPN, open split tunneling settings
         <translation>Москва</translation>
     </message>
     <message>
+        <location filename="../ui/qml/Pages2/PageHome.qml" line="899"/>
         <source>Auto-failover</source>
         <translation>Автопереключение</translation>
     </message>
@@ -6813,17 +6824,17 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
         <translation>Прокси-сервер SOCKS5</translation>
     </message>
     <message>
-        <location filename="../protocols/protocols_defs.cpp" line="256"/>
+        <location filename="../protocols/protocols_defs.cpp" line="263"/>
         <source> (version 2)</source>
         <translation> (версия 2)</translation>
     </message>
     <message>
-        <location filename="../protocols/protocols_defs.cpp" line="255"/>
+        <location filename="../protocols/protocols_defs.cpp" line="262"/>
         <source> (version 3)</source>
         <translation> (версия 3)</translation>
     </message>
     <message>
-        <location filename="../protocols/protocols_defs.cpp" line="257"/>
+        <location filename="../protocols/protocols_defs.cpp" line="264"/>
         <source> (version 1.5)</source>
         <translation> (версия 1.5)</translation>
     </message>
@@ -6998,366 +7009,359 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
         <translation>SSH-подключение: %1 (аутентификация по паролю, секрет скрыт)</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="129"/>
-        <location filename="../core/controllers/serverController.cpp" line="212"/>
+        <location filename="../core/controllers/serverController.cpp" line="141"/>
         <source>SSH connection failed: %1</source>
         <translation>Ошибка SSH-подключения: %1</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="179"/>
-        <source>Remote command exited with code %1.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../core/controllers/serverController.cpp" line="182"/>
-        <source>Remote command timed out while waiting for server response.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../core/controllers/serverController.cpp" line="184"/>
         <source>Command failed: %1</source>
-        <translation>Выполнение команды завершилось ошибкой: %1</translation>
+        <translation type="vanished">Выполнение команды завершилось ошибкой: %1</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="229"/>
+        <location filename="../core/controllers/serverController.cpp" line="158"/>
         <source>Failed to upload script to host: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="270"/>
+        <location filename="../core/controllers/serverController.cpp" line="199"/>
         <source>Uploading container script to %1 in %2 (%3 bytes, sha256 %4...)</source>
         <translation>Загрузка скрипта контейнера в %1 для %2 (%3 байт, sha256 %4...)</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="277"/>
+        <location filename="../core/controllers/serverController.cpp" line="206"/>
         <source>Container script upload failed for %1 in %2: %3</source>
         <translation>Не удалось загрузить скрипт контейнера в %1 для %2: %3</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="282"/>
+        <location filename="../core/controllers/serverController.cpp" line="211"/>
         <source>Container script uploaded to %1 in %2.</source>
         <translation>Скрипт контейнера загружен в %1 для %2.</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="300"/>
+        <location filename="../core/controllers/serverController.cpp" line="229"/>
         <source>Launching container script in %1: %2</source>
         <translation>Запуск скрипта контейнера в %1: %2</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="303"/>
+        <location filename="../core/controllers/serverController.cpp" line="232"/>
         <source>Container script failed in %1: %2</source>
         <translation>Ошибка скрипта контейнера в %1: %2</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="384"/>
+        <location filename="../core/controllers/serverController.cpp" line="313"/>
         <source>Reading %1 from %2...</source>
         <translation>Чтение %1 из %2...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="406"/>
-        <location filename="../core/controllers/serverController.cpp" line="415"/>
-        <location filename="../core/controllers/serverController.cpp" line="427"/>
+        <location filename="../core/controllers/serverController.cpp" line="335"/>
+        <location filename="../core/controllers/serverController.cpp" line="344"/>
+        <location filename="../core/controllers/serverController.cpp" line="356"/>
         <source>Read failed for %1 in %2: %3</source>
         <translation>Не удалось прочитать %1 из %2: %3</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="432"/>
+        <location filename="../core/controllers/serverController.cpp" line="361"/>
         <source>Read warning for %1 in %2: %3</source>
         <translation>Предупреждение при чтении %1 из %2: %3</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="437"/>
+        <location filename="../core/controllers/serverController.cpp" line="366"/>
         <source>Read completed for %1 in %2 (empty file).</source>
         <translation>Чтение %1 из %2 завершено (пустой файл).</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="439"/>
+        <location filename="../core/controllers/serverController.cpp" line="368"/>
         <source>Read completed for %1 in %2.</source>
         <translation>Чтение %1 из %2 завершено.</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="527"/>
+        <location filename="../core/controllers/serverController.cpp" line="456"/>
         <source>Server preflight failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="532"/>
+        <location filename="../core/controllers/serverController.cpp" line="461"/>
         <source>Cancelled before sudo check</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="535"/>
+        <location filename="../core/controllers/serverController.cpp" line="464"/>
         <source>Checking sudo access...</source>
         <translation>Проверка доступа sudo...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="538"/>
+        <location filename="../core/controllers/serverController.cpp" line="467"/>
         <source>Sudo check failed: %1</source>
         <translation>Проверка sudo не удалась: %1</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="541"/>
+        <location filename="../core/controllers/serverController.cpp" line="470"/>
         <source>Sudo check passed.</source>
         <translation>Проверка sudo пройдена.</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="544"/>
+        <location filename="../core/controllers/serverController.cpp" line="473"/>
         <source>Cancelled before package manager check</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="547"/>
+        <location filename="../core/controllers/serverController.cpp" line="476"/>
         <source>Checking if package manager is busy...</source>
         <translation>Проверка, занят ли менеджер пакетов...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="550"/>
+        <location filename="../core/controllers/serverController.cpp" line="479"/>
         <source>Package manager check failed: %1</source>
         <translation>Не удалось проверить менеджер пакетов: %1</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="553"/>
+        <location filename="../core/controllers/serverController.cpp" line="482"/>
         <source>Package manager is free.</source>
         <translation>Менеджер пакетов свободен.</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="555"/>
+        <location filename="../core/controllers/serverController.cpp" line="484"/>
         <source>Installing Docker...</source>
         <translation>Установка Docker...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="558"/>
+        <location filename="../core/controllers/serverController.cpp" line="487"/>
         <source>Docker install failed: %1</source>
         <translation>Не удалось установить Docker: %1</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="562"/>
+        <location filename="../core/controllers/serverController.cpp" line="491"/>
         <source>Cancelled after: install Docker</source>
         <translation>Отменено после шага: установка Docker</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="565"/>
+        <location filename="../core/controllers/serverController.cpp" line="494"/>
         <source>Step completed: install Docker</source>
         <translation>Шаг завершён: установка Docker</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="568"/>
+        <location filename="../core/controllers/serverController.cpp" line="497"/>
         <source>Checking server port availability...</source>
         <translation>Проверка доступности порта на сервере...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="571"/>
+        <location filename="../core/controllers/serverController.cpp" line="500"/>
         <source>Port check failed: %1</source>
         <translation>Проверка порта не удалась: %1</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="576"/>
+        <location filename="../core/controllers/serverController.cpp" line="505"/>
         <source>Preparing host...</source>
         <translation>Подготовка хоста...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="579"/>
+        <location filename="../core/controllers/serverController.cpp" line="508"/>
         <source>Prepare host failed: %1</source>
         <translation>Подготовка хоста не удалась: %1</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="583"/>
+        <location filename="../core/controllers/serverController.cpp" line="512"/>
         <source>Cancelled after: prepare host</source>
         <translation>Отменено после шага: подготовка хоста</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="586"/>
+        <location filename="../core/controllers/serverController.cpp" line="515"/>
         <source>Step completed: prepare host</source>
         <translation>Шаг завершён: подготовка хоста</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="703"/>
+        <location filename="../core/controllers/serverController.cpp" line="632"/>
         <source>Removing old container...</source>
         <translation>Удаление старого контейнера...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="706"/>
+        <location filename="../core/controllers/serverController.cpp" line="635"/>
         <source>Cancelled after: remove container</source>
         <translation>Отменено после шага: удаление контейнера</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="709"/>
+        <location filename="../core/controllers/serverController.cpp" line="638"/>
         <source>Step completed: remove old container</source>
         <translation>Шаг завершён: удаление старого контейнера</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="711"/>
+        <location filename="../core/controllers/serverController.cpp" line="640"/>
         <source>Building container...</source>
         <translation>Сборка контейнера...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="714"/>
+        <location filename="../core/controllers/serverController.cpp" line="643"/>
         <source>Build container failed: %1</source>
         <translation>Сборка контейнера не удалась: %1</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="718"/>
+        <location filename="../core/controllers/serverController.cpp" line="647"/>
         <source>Cancelled after: build container</source>
         <translation>Отменено после шага: сборка контейнера</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="721"/>
+        <location filename="../core/controllers/serverController.cpp" line="650"/>
         <source>Step completed: build container</source>
         <translation>Шаг завершён: сборка контейнера</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="723"/>
+        <location filename="../core/controllers/serverController.cpp" line="652"/>
         <source>Starting container...</source>
         <translation>Запуск контейнера...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="726"/>
+        <location filename="../core/controllers/serverController.cpp" line="655"/>
         <source>Start container failed: %1</source>
         <translation>Запуск контейнера не удался: %1</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="730"/>
+        <location filename="../core/controllers/serverController.cpp" line="659"/>
         <source>Cancelled after: start container</source>
         <translation>Отменено после шага: запуск контейнера</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="733"/>
+        <location filename="../core/controllers/serverController.cpp" line="662"/>
         <source>Step completed: start container</source>
         <translation>Шаг завершён: запуск контейнера</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="747"/>
+        <location filename="../core/controllers/serverController.cpp" line="676"/>
         <source>Configuring container...</source>
         <translation>Настройка контейнера...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="750"/>
+        <location filename="../core/controllers/serverController.cpp" line="679"/>
         <source>Configure container failed: %1</source>
         <translation>Настройка контейнера не удалась: %1</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="753"/>
+        <location filename="../core/controllers/serverController.cpp" line="682"/>
         <source>Removing incomplete container to keep the server clean...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="758"/>
+        <location filename="../core/controllers/serverController.cpp" line="687"/>
         <source>Cancelled after: configure container</source>
         <translation>Отменено после шага: настройка контейнера</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="761"/>
+        <location filename="../core/controllers/serverController.cpp" line="690"/>
         <source>Step completed: configure container</source>
         <translation>Шаг завершён: настройка контейнера</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="946"/>
+        <location filename="../core/controllers/serverController.cpp" line="875"/>
         <source>Setting up firewall...</source>
         <translation>Настройка брандмауэра...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="948"/>
+        <location filename="../core/controllers/serverController.cpp" line="877"/>
         <source>Step completed: firewall setup</source>
         <translation>Шаг завершён: настройка брандмауэра</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="950"/>
+        <location filename="../core/controllers/serverController.cpp" line="879"/>
         <source>Running startup script...</source>
         <translation>Запуск стартового скрипта...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1069"/>
+        <location filename="../core/controllers/serverController.cpp" line="998"/>
         <source>Running Docker install script on server...</source>
         <translation>Запуск скрипта установки Docker на сервере...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1099"/>
+        <location filename="../core/controllers/serverController.cpp" line="1028"/>
         <source>Running host preparation script for %1...</source>
         <translation>Запуск скрипта подготовки хоста для %1...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1119"/>
+        <location filename="../core/controllers/serverController.cpp" line="1048"/>
         <source>Uploading Dockerfile for %1 to %2 (%3 bytes, sha256 %4...)</source>
         <translation>Загрузка Dockerfile для %1 в %2 (%3 байт, sha256 %4...)</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1132"/>
+        <location filename="../core/controllers/serverController.cpp" line="1061"/>
         <source>Dockerfile upload failed for %1: %2</source>
         <translation>Не удалось загрузить Dockerfile для %1: %2</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1136"/>
+        <location filename="../core/controllers/serverController.cpp" line="1065"/>
         <source>Dockerfile uploaded for %1.</source>
         <translation>Dockerfile для %1 загружен.</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1148"/>
+        <location filename="../core/controllers/serverController.cpp" line="1077"/>
         <source>Launching docker build for %1...</source>
         <translation>Запуск docker build для %1...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1194"/>
+        <location filename="../core/controllers/serverController.cpp" line="1123"/>
         <source>Container %1 is missing after start.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1203"/>
+        <location filename="../core/controllers/serverController.cpp" line="1132"/>
         <source>Container %1 is not running after start.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1217"/>
+        <location filename="../core/controllers/serverController.cpp" line="1146"/>
         <source>Recent logs for %1:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1264"/>
+        <location filename="../core/controllers/serverController.cpp" line="1193"/>
         <source>Container start output: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1279"/>
+        <location filename="../core/controllers/serverController.cpp" line="1208"/>
         <source>Prepared configure script for %1 (%2 bytes, sha256 %3...)</source>
         <translation>Подготовлен скрипт настройки для %1 (%2 байт, sha256 %3...)</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1325"/>
+        <location filename="../core/controllers/serverController.cpp" line="1254"/>
         <source>Uploading startup script to /opt/amnezia/start.sh in %1 (%2 bytes, sha256 %3...)</source>
         <translation>Загрузка стартового скрипта в /opt/amnezia/start.sh для %1 (%2 байт, sha256 %3...)</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1332"/>
+        <location filename="../core/controllers/serverController.cpp" line="1261"/>
         <source>Startup script upload failed for %1: %2</source>
         <translation>Не удалось загрузить стартовый скрипт для %1: %2</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1336"/>
+        <location filename="../core/controllers/serverController.cpp" line="1265"/>
         <source>Startup script uploaded for %1.</source>
         <translation>Стартовый скрипт для %1 загружен.</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1337"/>
+        <location filename="../core/controllers/serverController.cpp" line="1266"/>
         <source>Launching startup script in %1.</source>
         <translation>Запуск стартового скрипта в %1.</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1595"/>
+        <location filename="../core/controllers/serverController.cpp" line="1524"/>
         <source>Detecting server environment...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1609"/>
+        <location filename="../core/controllers/serverController.cpp" line="1538"/>
         <source>Server preflight returned no output.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1614"/>
+        <location filename="../core/controllers/serverController.cpp" line="1543"/>
         <source>Server probe: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1624"/>
+        <location filename="../core/controllers/serverController.cpp" line="1553"/>
         <source>Cancel requested, interrupting current SSH operation...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../core/controllers/serverController.cpp" line="1675"/>
+        <source>%1 is already installed, skipping the port check</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7365,17 +7369,17 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
         <translation type="vanished">Запрошена отмена, остановка на ближайшей контрольной точке...</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1886"/>
+        <location filename="../core/controllers/serverController.cpp" line="1841"/>
         <source>Package manager probe timed out. The remote command stopped responding.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1900"/>
+        <location filename="../core/controllers/serverController.cpp" line="1855"/>
         <source>Package manager is busy (attempt %1/30), waiting 10s... Output: %2</source>
         <translation>Менеджер пакетов занят (попытка %1/30), ожидание 10 с... Вывод: %2</translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1912"/>
+        <location filename="../core/controllers/serverController.cpp" line="1867"/>
         <source>Package manager is still busy after 30 attempts, giving up.</source>
         <translation>Менеджер пакетов всё ещё занят после 30 попыток, прекращаем ожидание.</translation>
     </message>
@@ -7713,12 +7717,12 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
 <context>
     <name>VpnConnection</name>
     <message>
-        <location filename="../vpnconnection.cpp" line="572"/>
+        <location filename="../vpnconnection.cpp" line="578"/>
         <source>Site split tunneling works only with XRay; full VPN is used for this protocol</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../vpnconnection.cpp" line="927"/>
+        <location filename="../vpnconnection.cpp" line="933"/>
         <source>Mbps</source>
         <translation>Мбит/с</translation>
     </message>
@@ -7726,42 +7730,42 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
 <context>
     <name>VpnProtocol</name>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="139"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="182"/>
         <source>Unknown</source>
         <translation>Неизвестный</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="140"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="183"/>
         <source>Disconnected</source>
         <translation>Отключено</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="141"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="184"/>
         <source>Preparing</source>
         <translation>Подготовка</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="142"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="185"/>
         <source>Connecting...</source>
         <translation>Подключение...</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="143"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="186"/>
         <source>Connected</source>
         <translation>Подключено</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="144"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="187"/>
         <source>Disconnecting...</source>
         <translation>Отключение...</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="145"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="188"/>
         <source>Reconnecting...</source>
         <translation>Переподключение...</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="146"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="189"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>

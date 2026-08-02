@@ -536,6 +536,12 @@ void VpnConnection::createProtocolConnections()
     // no traffic through the SOCKS inbound). QueuedConnection so the emitting
     // slot fully returns before we start tearing the protocol down. by vovankrot
     connect(m_vpnProtocol.data(), &VpnProtocol::reconnectRequested, this, &VpnConnection::reconnectToVpn, Qt::QueuedConnection);
+    // Surface a silent tunnel rather than reconnecting into it. The usual cause is a
+    // client config that drifted from the server -- a changed port, obfuscation added
+    // later -- and no amount of retrying fixes that. Tell the user what to do instead.
+    // by vovankrot
+    connect(m_vpnProtocol.data(), &VpnProtocol::tunnelCarriesNoTraffic, this,
+            &VpnConnection::noTrafficThroughTunnel, Qt::QueuedConnection);
 
 #ifdef AMNEZIA_DESKTOP
     IpcClient::withInterface([this](QSharedPointer<IpcInterfaceReplica> rep) {

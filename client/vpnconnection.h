@@ -56,6 +56,8 @@ signals:
     void connectionStateChanged(Vpn::ConnectionState state);
     void vpnProtocolError(amnezia::ErrorCode error);
     void siteSplitTunnelingWarning(const QString &message);
+    // Connected, but not a single byte came back. See VpnProtocol's silence watchdog.
+    void noTrafficThroughTunnel();
 
     void serviceIsNotReady();
 

@@ -57,6 +57,7 @@ signals:
 
     void connectionErrorOccurred(ErrorCode errorCode);
     void splitTunnelingUnsupported(const QString &message);
+    void noTrafficThroughTunnel(const QString &message);
     void reconnectWithUpdatedContainer(const QString &message);
 
     void connectButtonClicked();

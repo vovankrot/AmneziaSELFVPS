@@ -26,6 +26,13 @@ ConnectionController::ConnectionController(const QSharedPointer<ServersModel> &s
 {
     connect(m_vpnConnection.get(), &VpnConnection::connectionStateChanged, this, &ConnectionController::onConnectionStateChanged);
     connect(m_vpnConnection.get(), &VpnConnection::siteSplitTunnelingWarning, this, &ConnectionController::splitTunnelingUnsupported);
+    // Connected but nothing came back. Name the likely cause and the fix, because the
+    // symptom on its own ("connected, nothing opens") sends people looking at their
+    // network, their DNS, anywhere but the config. by vovankrot
+    connect(m_vpnConnection.get(), &VpnConnection::noTrafficThroughTunnel, this, [this]() {
+        emit noTrafficThroughTunnel(tr("Connected, but no data is coming back. The saved configuration for this "
+                                       "server is probably out of date — re-import it from the server."));
+    });
     connect(this, &ConnectionController::connectToVpn, m_vpnConnection.get(), &VpnConnection::connectToVpn, Qt::QueuedConnection);
     connect(this, &ConnectionController::disconnectFromVpn, m_vpnConnection.get(), &VpnConnection::disconnectFromVpn, Qt::QueuedConnection);
 

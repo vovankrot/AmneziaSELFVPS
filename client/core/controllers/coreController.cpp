@@ -347,6 +347,9 @@ void CoreController::initErrorMessagesHandler()
     connect(m_connectionController.get(), &ConnectionController::splitTunnelingUnsupported, m_pageController.get(),
             &PageController::showNotificationMessage);
 
+    connect(m_connectionController.get(), &ConnectionController::noTrafficThroughTunnel, m_pageController.get(),
+            &PageController::showNotificationMessage);
+
     connect(m_apiConfigsController.get(), &ApiConfigsController::errorOccurred, m_pageController.get(),
             qOverload<ErrorCode>(&PageController::showErrorMessage));
 }
