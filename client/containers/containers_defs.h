@@ -32,7 +32,14 @@ namespace amnezia
             TorWebSite,
             Dns,
             Sftp,
-            Socks5Proxy
+            Socks5Proxy,
+
+            // Second, independently installable XRay variant: official Amnezia's
+            // TCP+REALITY+XTLS-Vision, alongside (not replacing) this fork's default
+            // mKCP+salamander Xray container. Appended at the end, not inserted next
+            // to Xray/SSXray, so existing installs' persisted DockerContainer values
+            // (serialized as raw ints in places) don't shift. by vovankrot
+            XrayReality
         };
         Q_ENUM_NS(DockerContainer)
     } // namespace ContainerEnumNS

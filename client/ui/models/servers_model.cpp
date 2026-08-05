@@ -630,8 +630,10 @@ const QString ServersModel::getDefaultServerObfuscationName()
     const QString cfg = haystack.toLower();
 
     // XRay: our fork masks mKCP with FinalMask salamander; reality stays in the code
-    // for a clean IP. Detect whichever is really present.
-    if (defaultContainer == DockerContainer::Xray) {
+    // for a clean IP -- now also a separately installable container
+    // (DockerContainer::XrayReality), not just something the mKCP container's config
+    // could theoretically contain. Detect whichever is really present.
+    if (defaultContainer == DockerContainer::Xray || defaultContainer == DockerContainer::XrayReality) {
         if (cfg.contains("salamander")) {
             return QStringLiteral("Salamander (mKCP)");
         }

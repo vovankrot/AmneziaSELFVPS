@@ -13,6 +13,7 @@
 #include <QSharedPointer>
 #include <QString>
 #include <QStringList>
+#include <QThread>
 #include <QTimer>
 
 #include <configurators/cloak_configurator.h>
@@ -111,7 +112,41 @@ bool xraySiteSplitTunnelingHandledInCore(bool splitTunnelingEnabled, const QStri
     // looped back and nothing opened.  Those protocols must not expose
     // site-based split tunneling until a different architecture exists.
     if (!splitTunnelingEnabled) return false;
+#ifdef Q_OS_ANDROID
+    // Xray::sockCallback()'s IP_UNICAST_IF trick lives in this file's desktop-only
+    // C++ XRay integration and never runs on Android -- there XRay is the bundled
+    // libxray.aar invoked over JNI, with no hook to bind a specific outbound socket
+    // to the physical NIC. A geoip:ru -> direct rule inside XRay's own router still
+    // loops back through the VpnService TUN, so "direct" traffic isn't actually
+    // direct. Report false here so the caller falls back to the CIDR-exclude path
+    // (bypassRuSitesGeo) instead -- Protocol.kt on Android applies it via
+    // VpnService.Builder route exclusion, which works for any protocol. by vovankrot
+    return false;
+#else
     return siteSplitTunnelingSupportedForProtocolName(protocolName);
+#endif
+}
+
+// Wraps a freshly-constructed VpnProtocol so replacing m_vpnProtocol destroys the
+// OLD one via deleteLater() instead of an immediate delete. reconnectToVpn() can
+// run m_vpnProtocol.reset() on the very protocol whose own health-check timer
+// (XrayProtocol::m_healthTimer) just asked for the reconnect via a queued
+// reconnectRequested() signal -- confirmed by an Access-Violation crash dump
+// (Qt6Core!QCoreApplicationPrivate::sendThroughObjectEventFilters, dispatched
+// from VpnConnection's own worker thread while delivering a QTimerEvent).
+// Windows can already have that timer's WM_TIMER pulled off the queue by the
+// time the synchronous delete runs, so dispatching it afterwards hits freed
+// memory. deleteLater() pushes the actual destruction behind everything already
+// queued on this thread -- including that stale timer event, which by then just
+// finds a live (if already stopped) object and returns harmlessly instead of
+// crashing. by vovankrot
+QSharedPointer<VpnProtocol> makeVpnProtocolPtr(VpnProtocol *protocol)
+{
+    return QSharedPointer<VpnProtocol>(protocol, [](VpnProtocol *p) {
+        if (p) {
+            p->deleteLater();
+        }
+    });
 }
 
 struct XraySplitTunnelPatterns
@@ -499,7 +534,7 @@ void VpnConnection::connectToVpn(int serverIndex, const ServerCredentials &crede
     appendXrayRoutingConfig();
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS) && !defined(MACOS_NE)
-    m_vpnProtocol.reset(VpnProtocol::factory(container, m_vpnConfiguration));
+    m_vpnProtocol = makeVpnProtocolPtr(VpnProtocol::factory(container, m_vpnConfiguration));
     if (!m_vpnProtocol) {
         setConnectionState(Vpn::ConnectionState::Error);
         return;
@@ -509,7 +544,7 @@ void VpnConnection::connectToVpn(int serverIndex, const ServerCredentials &crede
     androidVpnProtocol = createDefaultAndroidVpnProtocol();
     createAndroidConnections();
 
-    m_vpnProtocol.reset(androidVpnProtocol);
+    m_vpnProtocol = makeVpnProtocolPtr(androidVpnProtocol);
 #elif defined Q_OS_IOS || defined(MACOS_NE)
     Proto proto = ContainerProps::defaultProtocol(container);
     IosController::Instance()->connectVpn(proto, m_vpnConfiguration);
@@ -907,7 +942,7 @@ void VpnConnection::restoreConnection()
 {
     createAndroidConnections();
 
-    m_vpnProtocol.reset(androidVpnProtocol);
+    m_vpnProtocol = makeVpnProtocolPtr(androidVpnProtocol);
 
     createProtocolConnections();
 }
@@ -943,7 +978,8 @@ void VpnConnection::reconnectToVpn() {
         return;
     }
 
-    qDebug() << "Reconnect triggered. Rebuilding config and reconnecting to the server";
+    qDebug() << "Reconnect triggered. Rebuilding config and reconnecting to the server, old m_vpnProtocol="
+              << static_cast<void *>(m_vpnProtocol.data()) << "thread=" << QThread::currentThread();
 
     setConnectionState(Vpn::ConnectionState::Reconnecting);
 
@@ -952,6 +988,7 @@ void VpnConnection::reconnectToVpn() {
     disconnect(m_vpnProtocol.data(), &VpnProtocol::reconnectRequested, this, &VpnConnection::reconnectToVpn);
     m_vpnProtocol->stop();
     m_vpnProtocol.reset();
+    qDebug() << "Reconnect: old protocol reset() returned (destruction deferred via deleteLater if applicable)";
 
     // Rebuild configuration from base (split tunneling + XRay routing may have changed)
     m_vpnConfiguration = m_vpnConfigurationBase;
@@ -963,7 +1000,7 @@ void VpnConnection::reconnectToVpn() {
 
     // Recreate protocol with fresh config
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS) && !defined(MACOS_NE)
-    m_vpnProtocol.reset(VpnProtocol::factory(m_container, m_vpnConfiguration));
+    m_vpnProtocol = makeVpnProtocolPtr(VpnProtocol::factory(m_container, m_vpnConfiguration));
     if (!m_vpnProtocol) {
         setConnectionState(Vpn::ConnectionState::Error);
         return;

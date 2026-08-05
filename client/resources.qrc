@@ -119,6 +119,11 @@
         <file>server_scripts/xray/run_container.sh</file>
         <file>server_scripts/xray/start.sh</file>
         <file>server_scripts/xray/template.json</file>
+        <file>server_scripts/xray_reality/configure_container.sh</file>
+        <file>server_scripts/xray_reality/Dockerfile</file>
+        <file>server_scripts/xray_reality/run_container.sh</file>
+        <file>server_scripts/xray_reality/start.sh</file>
+        <file>server_scripts/xray_reality/template.json</file>
         <file>server_scripts/ssxray/configure_container.sh</file>
         <file>server_scripts/ssxray/Dockerfile</file>
         <file>server_scripts/ssxray/run_container.sh</file>

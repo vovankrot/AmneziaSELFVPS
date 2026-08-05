@@ -23,6 +23,7 @@ import android.os.Looper
 import android.os.Message
 import android.os.Messenger
 import android.os.ParcelFileDescriptor
+import android.os.PowerManager
 import android.os.SystemClock
 import android.provider.OpenableColumns
 import android.provider.Settings
@@ -75,6 +76,7 @@ private const val OPEN_FILE_ACTION_CODE = 3
 private const val CHECK_NOTIFICATION_PERMISSION_ACTION_CODE = 4
 
 private const val PREFS_NOTIFICATION_PERMISSION_ASKED = "NOTIFICATION_PERMISSION_ASKED"
+private const val PREFS_BATTERY_OPTIMIZATION_ASKED = "BATTERY_OPTIMIZATION_ASKED"
 private const val OPEN_FILE_AFTER_RESUME_DELAY_MS = 400L
 private const val KEY_PENDING_OPEN_FILE_URI = "pending_open_file_uri"
 
@@ -205,6 +207,67 @@ class AmneziaActivity : QtActivity() {
         registerBroadcastReceivers()
         intent?.let(::processIntent)
         runBlocking { vpnProto = proto.await() }
+        checkBatteryOptimization()
+    }
+
+    // Confirmed on-device: aggressive per-app battery/background restrictions (MIUI's
+    // "Battery saver" -> "No restrictions" toggle in this case) can freeze the app in
+    // the background hard enough that the connection drops and the UI comes back as a
+    // black screen that only a full restart clears -- independent of whether the app
+    // already holds the standard Doze/App-Standby exemption. Ask once, up front, so
+    // the user does not have to hunt this down themselves after the fact. by vovankrot
+    private fun checkBatteryOptimization() {
+        val powerManager = getSystemService(POWER_SERVICE) as? PowerManager ?: return
+        if (powerManager.isIgnoringBatteryOptimizations(packageName)) return
+        if (Prefs.load<Boolean>(PREFS_BATTERY_OPTIMIZATION_ASKED)) return
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.batteryOptimizationDialogTitle)
+            .setMessage(R.string.batteryOptimizationDialogMessage)
+            .setNegativeButton(R.string.cancel) { _, _ ->
+                Prefs.save(PREFS_BATTERY_OPTIMIZATION_ASKED, true)
+            }
+            .setPositiveButton(R.string.openBatterySettings) { _, _ ->
+                Prefs.save(PREFS_BATTERY_OPTIMIZATION_ASKED, true)
+                openBatteryOptimizationSettings()
+            }
+            .show()
+    }
+
+    private fun openBatteryOptimizationSettings() {
+        // MIUI's own per-app "Battery saver" screen is a separate thing from the
+        // standard AOSP Doze exemption -- a MIUI phone can already be exempt from
+        // stock battery optimization and still get frozen in the background by this
+        // MIUI-specific setting, which is exactly what happened here. The activity
+        // below is undocumented and has moved across MIUI versions before, so it is
+        // wrapped and falls back to the standard system dialog (still useful on
+        // non-MIUI phones, and on MIUI versions where the specific screen changed).
+        // by vovankrot
+        if (Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true)) {
+            try {
+                startActivity(Intent().apply {
+                    component = ComponentName(
+                        "com.miui.powerkeeper",
+                        "com.miui.powerkeeper.ui.HiddenAppsConfigActivity"
+                    )
+                    putExtra("package_name", packageName)
+                    putExtra("package_label", "AmneziaVPN")
+                })
+                return
+            } catch (e: Exception) {
+                Log.w(TAG, "openBatteryOptimizationSettings: MIUI-specific screen unavailable: $e")
+            }
+        }
+
+        try {
+            startActivity(Intent(
+                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                Uri.parse("package:$packageName")
+            ))
+        } catch (e: Exception) {
+            Log.w(TAG, "openBatteryOptimizationSettings: falling back to app details: $e")
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -299,7 +362,13 @@ class AmneziaActivity : QtActivity() {
         if (!hasFocus) {
             // Cancel pending operations if window loses focus
             resumeHandler.removeCallbacksAndMessages(null)
-        } else if (isActivityResumed && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        } else if (isActivityResumed) {
+            // Nudge Qt's render thread into repainting after the EGL surface gets torn
+            // down and recreated (e.g. resuming from the recents list while the VPN
+            // service is running). sendTouch()/invalidate() are plain View APIs with
+            // no version floor -- this used to be gated to API 34+ alongside the
+            // edge-to-edge setup it shipped next to, but the black-screen-on-resume
+            // bug it works around reproduces on API 28-33 too. by vovankrot
             window.decorView.apply {
                 invalidate()
                 resumeHandler.postDelayed({
@@ -391,30 +460,33 @@ class AmneziaActivity : QtActivity() {
             }, OPEN_FILE_AFTER_RESUME_DELAY_MS)
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            window.decorView.apply {
-                invalidate()
+        // Nudge Qt's render thread into repainting after the EGL surface gets torn down
+        // and recreated on resume. sendTouch()/invalidate() are plain View APIs with no
+        // version floor -- this used to be gated to API 34+ alongside the edge-to-edge
+        // setup it shipped next to, but the black-screen-on-resume bug it works around
+        // reproduces on API 28-33 too. by vovankrot
+        window.decorView.apply {
+            invalidate()
 
-                resumeHandler.postDelayed({
-                    // Check if activity is still resumed and has focus before executing
-                    if (isActivityResumed && hasWindowFocus && !isFinishing && !isDestroyed) {
-                        sendTouch(1f, 1f)
-                    }
-                }, 100)
+            resumeHandler.postDelayed({
+                // Check if activity is still resumed and has focus before executing
+                if (isActivityResumed && hasWindowFocus && !isFinishing && !isDestroyed) {
+                    sendTouch(1f, 1f)
+                }
+            }, 100)
 
-                resumeHandler.postDelayed({
-                    if (isActivityResumed && hasWindowFocus && !isFinishing && !isDestroyed) {
-                        sendTouch(2f, 2f)
-                    }
-                }, 200)
+            resumeHandler.postDelayed({
+                if (isActivityResumed && hasWindowFocus && !isFinishing && !isDestroyed) {
+                    sendTouch(2f, 2f)
+                }
+            }, 200)
 
-                resumeHandler.postDelayed({
-                    if (isActivityResumed && hasWindowFocus && !isFinishing && !isDestroyed) {
-                        requestLayout()
-                        invalidate()
-                    }
-                }, 250)
-            }
+            resumeHandler.postDelayed({
+                if (isActivityResumed && hasWindowFocus && !isFinishing && !isDestroyed) {
+                    requestLayout()
+                    invalidate()
+                }
+            }, 250)
         }
     }
 

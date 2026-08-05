@@ -25,4 +25,8 @@
     <string name="openNotificationSettings">Открыть настройки уведомлений</string>
 
     <string name="tvNoFileBrowser">Пожалуйста, установите приложение для просмотра файлов</string>
+
+    <string name="batteryOptimizationDialogTitle">Ограничения в фоне</string>
+    <string name="batteryOptimizationDialogMessage">Экономия батареи на вашем телефоне может замораживать AmneziaVPN в фоне — это рвёт соединение или оставляет чёрный экран при возврате в приложение. Разрешите AmneziaVPN работать без ограничений, чтобы этого не было.</string>
+    <string name="openBatterySettings">Открыть настройки</string>
 </resources>

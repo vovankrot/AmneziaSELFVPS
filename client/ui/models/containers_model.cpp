@@ -25,6 +25,7 @@ bool isCuratedInstallableVpn(amnezia::DockerContainer container)
     switch (container) {
     case amnezia::DockerContainer::Awg2:
     case amnezia::DockerContainer::Xray:
+    case amnezia::DockerContainer::XrayReality:
     case amnezia::DockerContainer::SSXray:
     case amnezia::DockerContainer::Hysteria2:
         return true;

@@ -49,11 +49,14 @@ XrayProtocol::XrayProtocol(const QJsonObject &configuration, QObject *parent) : 
         xrayConfiguration = configuration.value(ProtocolProps::key_proto_config_data(Proto::SSXray)).toObject();
     }
     m_xrayConfig = xrayConfiguration;
+    qDebug() << "XrayProtocol::XrayProtocol() this=" << static_cast<void *>(this)
+              << "thread=" << QThread::currentThread();
 }
 
 XrayProtocol::~XrayProtocol()
 {
-    qDebug() << "XrayProtocol::~XrayProtocol()";
+    qDebug() << "XrayProtocol::~XrayProtocol() this=" << static_cast<void *>(this)
+              << "thread=" << QThread::currentThread();
     XrayProtocol::stop();
 }
 
@@ -178,11 +181,13 @@ void XrayProtocol::stop()
     // the daemon in a wedged state on 2026-07-26 (16:45-16:53 window). Single-stop
     // semantics; start() resets m_stopping. by vovankrot
     if (m_stopping) {
-        qDebug() << "XrayProtocol::stop() already ran, skipping duplicate";
+        qDebug() << "XrayProtocol::stop() already ran, skipping duplicate, this=" << static_cast<void *>(this);
         return;
     }
 
-    qDebug() << "XrayProtocol::stop()";
+    qDebug() << "XrayProtocol::stop() this=" << static_cast<void *>(this)
+              << "m_healthTimer=" << static_cast<void *>(m_healthTimer)
+              << "thread=" << QThread::currentThread();
     m_stopping = true;
     cancelHealthCheck();
 
@@ -643,11 +648,15 @@ constexpr int kHealthCheckFailuresBeforeReset = 3;
 
 void XrayProtocol::scheduleHealthCheck()
 {
+    qDebug() << "XrayProtocol::scheduleHealthCheck() this=" << static_cast<void *>(this)
+              << "m_healthTimer=" << static_cast<void *>(m_healthTimer);
     m_healthCheckFailures = 0;
     if (!m_healthTimer) {
         m_healthTimer = new QTimer(this);
         m_healthTimer->setSingleShot(false);
         connect(m_healthTimer, &QTimer::timeout, this, &XrayProtocol::runHealthCheck);
+        qDebug() << "XrayProtocol::scheduleHealthCheck() created m_healthTimer="
+                  << static_cast<void *>(m_healthTimer) << "for" << static_cast<void *>(this);
     }
     m_healthTimer->stop();
     // Fire the FIRST check after the short delay, then let interval mode take over.
@@ -665,6 +674,9 @@ void XrayProtocol::scheduleHealthCheck()
 
 void XrayProtocol::cancelHealthCheck()
 {
+    qDebug() << "XrayProtocol::cancelHealthCheck() this=" << static_cast<void *>(this)
+              << "m_healthTimer=" << static_cast<void *>(m_healthTimer)
+              << "active=" << (m_healthTimer && m_healthTimer->isActive());
     if (m_healthTimer) {
         m_healthTimer->stop();
     }
@@ -673,6 +685,9 @@ void XrayProtocol::cancelHealthCheck()
 
 void XrayProtocol::runHealthCheck()
 {
+    qDebug() << "XrayProtocol::runHealthCheck() this=" << static_cast<void *>(this)
+              << "m_stopping=" << m_stopping << "state=" << static_cast<int>(connectionState())
+              << "thread=" << QThread::currentThread();
     if (m_stopping || connectionState() != Vpn::ConnectionState::Connected) {
         cancelHealthCheck();
         return;

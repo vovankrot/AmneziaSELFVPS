@@ -12,6 +12,7 @@ QString amnezia::scriptFolder(amnezia::DockerContainer container)
     case DockerContainer::Awg2: return QLatin1String("awg");
     case DockerContainer::Awg: return QLatin1String("awg_legacy");
     case DockerContainer::Xray: return QLatin1String("xray");
+    case DockerContainer::XrayReality: return QLatin1String("xray_reality");
     case DockerContainer::SSXray: return QLatin1String("ssxray");
     case DockerContainer::Hysteria2: return QLatin1String("hysteria2");
     case DockerContainer::AnyTls: return QLatin1String("anytls");

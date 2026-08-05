@@ -596,86 +596,86 @@ Can&apos;t be disabled for current server</source>
 <context>
     <name>InstallController</name>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="362"/>
+        <location filename="../ui/controllers/installController.cpp" line="363"/>
         <source>Checking installed containers...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="366"/>
+        <location filename="../ui/controllers/installController.cpp" line="367"/>
         <source>Error checking containers: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="377"/>
+        <location filename="../ui/controllers/installController.cpp" line="378"/>
         <source>Setup failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="383"/>
+        <location filename="../ui/controllers/installController.cpp" line="384"/>
         <source>%1 installed successfully. </source>
         <translation>%1 کامیابی سےنصب. </translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="385"/>
+        <location filename="../ui/controllers/installController.cpp" line="386"/>
         <source>Container already exists on server.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="386"/>
+        <location filename="../ui/controllers/installController.cpp" line="387"/>
         <source>%1 is already installed on the server. </source>
         <translation>%1 پہلے ہی سرور پر انسٹال ہے. </translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="391"/>
+        <location filename="../ui/controllers/installController.cpp" line="392"/>
         <source>Creating protocol configurations...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="399"/>
+        <location filename="../ui/controllers/installController.cpp" line="400"/>
         <source>Building local profile for %1...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="403"/>
+        <location filename="../ui/controllers/installController.cpp" line="404"/>
         <source>Config creation failed for %1: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="411"/>
+        <location filename="../ui/controllers/installController.cpp" line="412"/>
         <source>Profile ready for %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="445"/>
+        <location filename="../ui/controllers/installController.cpp" line="446"/>
         <source>Finalizing...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="460"/>
+        <location filename="../ui/controllers/installController.cpp" line="461"/>
         <source>Internal error: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="464"/>
+        <location filename="../ui/controllers/installController.cpp" line="465"/>
         <source>Internal error (unknown)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="475"/>
+        <location filename="../ui/controllers/installController.cpp" line="476"/>
         <source>
 Added containers that were already installed on the server</source>
         <translation>
 وہ کنٹینرز شامل کیے گئے جو پہلے سے سرور پر نصب تھے</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="539"/>
+        <location filename="../ui/controllers/installController.cpp" line="540"/>
         <source>
 Already installed containers were found on the server. All installed containers have been added to the application</source>
         <translation>
 سرور پر پہلے سے نصب کنٹینرز پائے گئے۔ تمام نصب کنٹینرز کو ایپلی کیشن میں شامل کر دیا گیا ہے</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="623"/>
+        <location filename="../ui/controllers/installController.cpp" line="624"/>
         <source>Server check: no credentials available, skipping</source>
         <translation type="unfinished"></translation>
     </message>
@@ -715,205 +715,205 @@ Already installed containers were found on the server. All installed containers 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="211"/>
+        <location filename="../ui/controllers/installController.cpp" line="212"/>
         <source>Port %1 is too low for %2. Traffic filtering targets well-known ports; use a port above %3.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="648"/>
+        <location filename="../ui/controllers/installController.cpp" line="649"/>
         <source>Server check: no Amnezia containers found on server</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="650"/>
+        <location filename="../ui/controllers/installController.cpp" line="651"/>
         <source>Server check: found %1 container(s): %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="655"/>
+        <location filename="../ui/controllers/installController.cpp" line="656"/>
         <source>Server check: failed to query containers (error %1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="705"/>
-        <location filename="../ui/controllers/installController.cpp" line="1009"/>
+        <location filename="../ui/controllers/installController.cpp" line="706"/>
+        <location filename="../ui/controllers/installController.cpp" line="1010"/>
         <source>Inspecting installed container: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="962"/>
+        <location filename="../ui/controllers/installController.cpp" line="963"/>
         <source>Failed to parse Cloak config for %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="982"/>
+        <location filename="../ui/controllers/installController.cpp" line="983"/>
         <source>Failed to parse Shadowsocks config for %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="994"/>
+        <location filename="../ui/controllers/installController.cpp" line="995"/>
         <source>Skipped container %1: no readable config (zombie from a failed install); it will be reinstalled cleanly</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="997"/>
-        <location filename="../ui/controllers/installController.cpp" line="1043"/>
+        <location filename="../ui/controllers/installController.cpp" line="998"/>
+        <location filename="../ui/controllers/installController.cpp" line="1044"/>
         <source>Finished inspecting container: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1077"/>
+        <location filename="../ui/controllers/installController.cpp" line="1078"/>
         <source>Settings updated successfully</source>
         <translation>ترتیب کامیابی کے ساتھ اپ ڈیٹ ہو گئی</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1094"/>
+        <location filename="../ui/controllers/installController.cpp" line="1095"/>
         <source>Server &apos;%1&apos; was rebooted</source>
         <translation>سرور %1 دوبارہ چالو کیا گیا تھا</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1106"/>
+        <location filename="../ui/controllers/installController.cpp" line="1107"/>
         <source>Server &apos;%1&apos; was removed</source>
         <translation>سرور %1 ہٹا دیا گیا تھا</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1117"/>
+        <location filename="../ui/controllers/installController.cpp" line="1118"/>
         <source>All containers from server &apos;%1&apos; have been removed</source>
         <translation>سرور &apos;%1&apos; سے تمام کنٹینرز ہٹا دیے گئے ہیں</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1141"/>
+        <location filename="../ui/controllers/installController.cpp" line="1142"/>
         <source>Server &apos;%1&apos; has been fully cleaned up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1170"/>
+        <location filename="../ui/controllers/installController.cpp" line="1171"/>
         <source>%1 has been removed from the server &apos;%2&apos;</source>
         <translation>سرور &apos;%2&apos; سے %1 ہٹا دیا گیا ہے</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1179"/>
+        <location filename="../ui/controllers/installController.cpp" line="1180"/>
         <source>Api config removed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1201"/>
+        <location filename="../ui/controllers/installController.cpp" line="1202"/>
         <source>%1 cached profile cleared</source>
         <translation>%1 کیش کردہ پروفائل ختم کر دی گئی</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1342"/>
+        <location filename="../ui/controllers/installController.cpp" line="1343"/>
         <source>Please login as the user</source>
         <translation>براہ کرم صارف کے طور پر لاگ ان کریں</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1370"/>
+        <location filename="../ui/controllers/installController.cpp" line="1371"/>
         <source>Server added successfully</source>
         <translation>سرور کامیابی سے شامل کیا گیا</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1519"/>
+        <location filename="../ui/controllers/installController.cpp" line="1520"/>
         <source>Local XRay port hint is invalid (%1). Falling back to the current server config.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1530"/>
+        <location filename="../ui/controllers/installController.cpp" line="1531"/>
         <source>Local XRay site hint is invalid (%1). Falling back to the current server config.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1534"/>
+        <location filename="../ui/controllers/installController.cpp" line="1535"/>
         <source>Starting hot reconfigure...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1549"/>
+        <location filename="../ui/controllers/installController.cpp" line="1550"/>
         <source>Container is not running. Please reinstall the protocol first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1559"/>
+        <location filename="../ui/controllers/installController.cpp" line="1560"/>
         <source>Saving configuration snapshot...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1566"/>
+        <location filename="../ui/controllers/installController.cpp" line="1567"/>
         <source>Snapshot saved successfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1568"/>
+        <location filename="../ui/controllers/installController.cpp" line="1569"/>
         <source>Warning: snapshot save failed, continuing anyway</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1573"/>
+        <location filename="../ui/controllers/installController.cpp" line="1574"/>
         <source>Running hot_reconfigure_xray.sh script...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1606"/>
+        <location filename="../ui/controllers/installController.cpp" line="1607"/>
         <source>Hot reconfigure applied successfully after XRay restarted and closed the container exec session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1614"/>
+        <location filename="../ui/controllers/installController.cpp" line="1615"/>
         <source>Warning: server version metadata update failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1620"/>
+        <location filename="../ui/controllers/installController.cpp" line="1621"/>
         <source>Hot reconfigure completed successfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1621"/>
+        <location filename="../ui/controllers/installController.cpp" line="1622"/>
         <source>Server configuration updated successfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1632"/>
+        <location filename="../ui/controllers/installController.cpp" line="1633"/>
         <source>Updated XRay config could not be verified on the server</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1697"/>
+        <location filename="../ui/controllers/installController.cpp" line="1698"/>
         <source>Starting Reality DNS recovery...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1812"/>
+        <location filename="../ui/controllers/installController.cpp" line="1813"/>
         <source>Reality DNS recovery completed successfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1813"/>
+        <location filename="../ui/controllers/installController.cpp" line="1814"/>
         <source>Reality DNS has been recovered on the server</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1821"/>
+        <location filename="../ui/controllers/installController.cpp" line="1822"/>
         <source>Failed to recover DNS</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1823"/>
+        <location filename="../ui/controllers/installController.cpp" line="1824"/>
         <source>Reality DNS recovery failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1550"/>
-        <location filename="../ui/controllers/installController.cpp" line="1636"/>
+        <location filename="../ui/controllers/installController.cpp" line="1551"/>
+        <location filename="../ui/controllers/installController.cpp" line="1637"/>
         <source>Hot reconfigure failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1676"/>
+        <location filename="../ui/controllers/installController.cpp" line="1677"/>
         <source>Configuration restored from snapshot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/controllers/installController.cpp" line="1678"/>
+        <location filename="../ui/controllers/installController.cpp" line="1679"/>
         <source>Failed to restore snapshot</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5821,8 +5821,8 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
     </message>
     <message>
         <location filename="../protocols/protocols_defs.cpp" line="84"/>
-        <location filename="../containers/containers_defs.cpp" line="125"/>
-        <location filename="../containers/containers_defs.cpp" line="258"/>
+        <location filename="../containers/containers_defs.cpp" line="128"/>
+        <location filename="../containers/containers_defs.cpp" line="277"/>
         <source>SOCKS5 proxy server</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6187,73 +6187,68 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <translation>داخلی خامی</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="117"/>
+        <location filename="../containers/containers_defs.cpp" line="119"/>
         <source>IPsec</source>
         <translation>آئی پی ایس سی</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="122"/>
-        <location filename="../containers/containers_defs.cpp" line="251"/>
+        <location filename="../containers/containers_defs.cpp" line="125"/>
+        <location filename="../containers/containers_defs.cpp" line="270"/>
         <source>Website in Tor network</source>
         <translation>ٹور نیٹ ورک میں ویب سائٹ</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="123"/>
+        <location filename="../containers/containers_defs.cpp" line="126"/>
         <source>AmneziaDNS</source>
         <translation>ایمنیزیا ڈی این ایس</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="124"/>
+        <location filename="../containers/containers_defs.cpp" line="127"/>
         <source>SFTP file sharing service</source>
         <translation>SFTP فائل شیئرنگ سروس</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="131"/>
+        <location filename="../containers/containers_defs.cpp" line="134"/>
         <source>OpenVPN is the most popular VPN protocol, with flexible configuration options. It uses its own security protocol with SSL/TLS for key exchange.</source>
         <translation>اوپن وی پی این لچکدار ترتیب کے اختیارات کے ساتھ سب سے زیادہ مقبول VPN پروٹوکول ہے۔ یہ کلیدی تبادلے کے لیے SSL/TLS کے ساتھ اپنا سیکیورٹی پروٹوکول استعمال کرتا ہے۔</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="134"/>
+        <location filename="../containers/containers_defs.cpp" line="137"/>
         <source>Shadowsocks masks VPN traffic, making it resemble normal web traffic, but it may still be detected by certain analysis systems.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="136"/>
+        <location filename="../containers/containers_defs.cpp" line="139"/>
         <source>OpenVPN over Cloak - OpenVPN with VPN masquerading as web traffic and protection against active-probing detection. It is very resistant to detection, but offers low speed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="139"/>
+        <location filename="../containers/containers_defs.cpp" line="142"/>
         <source>WireGuard - popular VPN protocol with high performance, high speed and low power consumption.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="142"/>
+        <location filename="../containers/containers_defs.cpp" line="145"/>
         <source>AmneziaWG is a special protocol from Amnezia based on WireGuard. It provides high connection speed and ensures stable operation even in the most challenging network conditions.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="145"/>
+        <location filename="../containers/containers_defs.cpp" line="148"/>
         <source>AmneziaWG is a modified WireGuard-based protocol with traffic obfuscation. It can perform well in some networks, but real-world resistance to blocking depends on the current DPI/TSPU profile.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="148"/>
-        <source>XRay with REALITY and XHTTP masks VPN traffic as HTTPS-like web traffic. This fork installs it with randomized path and traffic padding, but effectiveness depends on the server using the current XRay configuration.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../containers/containers_defs.cpp" line="164"/>
+        <location filename="../containers/containers_defs.cpp" line="172"/>
         <source>Hysteria 2 — QUIC/UDP-based VPN with HTTPS masquerading and Brutal congestion control. Very fast on lossy networks; UDP-only.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="167"/>
+        <location filename="../containers/containers_defs.cpp" line="175"/>
         <source>AnyTLS — TLS-in-TLS proxy with multiplexing. Looks like ordinary HTTPS traffic, TCP-based.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="217"/>
+        <location filename="../containers/containers_defs.cpp" line="225"/>
         <source>AmneziaWG is a modern VPN protocol based on WireGuard, combining simplified architecture with high performance across all devices. It adds obfuscation on top of WireGuard, but practical resistance to blocking depends on the current network environment and DPI/TSPU rules.
 
 Use it when you specifically need a WireGuard-like path and have validated it on the target network.
@@ -6267,20 +6262,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="228"/>
-        <source>REALITY is an innovative protocol developed by the creators of XRay, designed specifically to combat high levels of internet censorship. REALITY identifies censorship systems during the TLS handshake, redirecting suspicious traffic seamlessly to legitimate websites like google.com while providing genuine TLS certificates. In this fork, fresh installation pairs REALITY with XHTTP, randomized path and padding bytes so traffic looks closer to regular HTTPS.
-Unlike older protocols such as VMess, VLESS, and XTLS-Vision, REALITY incorporates an advanced built-in &quot;friend-or-foe&quot; detection mechanism, effectively protecting against DPI and other traffic analysis methods.
-
-Features:
-* Resistant to active probing and DPI detection
-* Requires current server-side XRay configuration
-* Highly effective in heavily censored regions when the server path is up to date
-* Minimal battery consumption on devices
-* Operates over REALITY + XHTTP on port 443</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../containers/containers_defs.cpp" line="267"/>
+        <location filename="../containers/containers_defs.cpp" line="286"/>
         <source>Hysteria 2 is a modern censorship-resistant proxy built on QUIC.
 It runs over UDP and uses HTTPS masquerading: unauthenticated clients see a real-looking website.
 
@@ -6292,7 +6274,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="275"/>
+        <location filename="../containers/containers_defs.cpp" line="294"/>
         <source>AnyTLS is a TLS-in-TLS multiplexed proxy.
 It looks like ordinary HTTPS traffic to DPI, and uses TCP — so it works on UDP-blocked networks.
 
@@ -6303,17 +6285,27 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="162"/>
+        <location filename="../containers/containers_defs.cpp" line="170"/>
         <source>Shadowsocks proxy via XRay core. Lightweight, fast, and resistant to DPI detection.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="114"/>
+        <location filename="../containers/containers_defs.cpp" line="116"/>
         <source>AmneziaWG (legacy)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="174"/>
+        <location filename="../containers/containers_defs.cpp" line="151"/>
+        <source>XRay over mKCP with salamander obfuscation. UDP transport that masks traffic as random noise rather than mimicking HTTPS -- survives DPI that clamps REALITY&apos;s TLS handshake on a flagged server IP, at the cost of a lower throughput ceiling than a plain TCP connection.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../containers/containers_defs.cpp" line="155"/>
+        <source>XRay with REALITY and XTLS-Vision -- the official Amnezia transport. Real TLS handshake against a genuine site (e.g. a major CDN), so it looks like ordinary HTTPS and is fast on a clean connection. Gets clamped by DPI that has already flagged the server&apos;s IP; use the mKCP variant there instead.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../containers/containers_defs.cpp" line="182"/>
         <source>OpenVPN is one of the most popular and reliable VPN protocols. It uses SSL/TLS encryption, supports a wide variety of devices and operating systems, and is continuously improved by the community due to its open-source nature. It provides a good balance between speed and security but is easily recognized by DPI systems, making it susceptible to blocking.
 
 Features:
@@ -6324,7 +6316,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="185"/>
+        <location filename="../containers/containers_defs.cpp" line="193"/>
         <source>Shadowsocks is based on the SOCKS5 protocol and encrypts connections using AEAD cipher. Although designed to be discreet, it doesn&apos;t mimic a standard HTTPS connection and can be detected by some DPI systems. Due to limited support in Amnezia, we recommend using the AmneziaWG protocol.
 
 Features:
@@ -6336,7 +6328,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="194"/>
+        <location filename="../containers/containers_defs.cpp" line="202"/>
         <source>This combination includes the OpenVPN protocol and the Cloak plugin, specifically designed to protect against blocking.
 
 OpenVPN securely encrypts all internet traffic between your device and the server.
@@ -6354,7 +6346,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="207"/>
+        <location filename="../containers/containers_defs.cpp" line="215"/>
         <source>WireGuard is a modern, streamlined VPN protocol offering stable connectivity and excellent performance across all devices. It uses fixed encryption settings, delivering lower latency and higher data transfer speeds compared to OpenVPN. However, WireGuard is easily identifiable by DPI systems due to its distinctive packet signatures, making it susceptible to blocking.
 
 Features:
@@ -6366,7 +6358,31 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="241"/>
+        <location filename="../containers/containers_defs.cpp" line="236"/>
+        <source>XRay running VLESS over mKCP with salamander masking, this fork&apos;s default XRay variant. Every packet is XORed into pseudo-random noise instead of imitating a known protocol, which is what keeps it working on a server IP that DPI has already flagged -- REALITY&apos;s genuine TLS handshake gets clamped on such an IP regardless of the site it mimics, while noise has nothing for DPI to fingerprint.
+
+Features:
+* Resistant to DPI even on a flagged server IP
+* UDP transport with a configurable throughput ceiling (Advanced XRay settings)
+* Minimal battery consumption on devices
+* Operates over mKCP (UDP)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../containers/containers_defs.cpp" line="247"/>
+        <source>REALITY is a protocol developed by the creators of XRay, designed specifically to combat high levels of internet censorship. It performs a genuine TLS handshake against a real site (e.g. a major CDN) and forwards anyone who isn&apos;t the real client to that site unmodified, so probing it just finds an ordinary website with a valid certificate. Paired with XTLS-Vision, this is the official Amnezia transport and this fork&apos;s second, independently installable XRay variant -- installing it does not touch or remove the mKCP XRay container.
+
+Unlike older protocols such as VMess and plain VLESS, REALITY needs no self-signed certificate DPI could fingerprint, since the certificate it presents is the real site&apos;s own.
+
+Features:
+* Real TLS handshake -- looks like ordinary HTTPS to DPI
+* Faster than mKCP on a clean (unflagged) server IP
+* Gets clamped by DPI that has already flagged the server&apos;s IP -- use the mKCP variant there
+* Operates over TCP + REALITY + XTLS-Vision on port 443</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../containers/containers_defs.cpp" line="260"/>
         <source>IKEv2, combined with IPSec encryption, is a modern and reliable VPN protocol. It reconnects quickly when switching networks or devices, making it ideal for dynamic network environments. While it provides good security and speed, it&apos;s easily recognized by DPI systems and susceptible to blocking.
 
 Features:
@@ -6378,7 +6394,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="260"/>
+        <location filename="../containers/containers_defs.cpp" line="279"/>
         <source>Shadowsocks proxy implemented with XRay core.
 Lightweight protocol that effectively masks VPN traffic as regular web data.
 
@@ -6401,12 +6417,12 @@ Features:
         <translation type="vanished">حقیقت کے ساتھ ایکسرےواقعیت کے ساتھ ایکس رے - سب سے زیادہ انٹرنیٹ سینسرشپ والے ممالک کے لئے مناسب ہے۔ ٹریفک ویب ٹریفک کی سطح TLS پر ماسکنگ اور فعال پرابنگ کے طریقوں سے شناخت سے بچائے جانے کی حفاظت۔</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="151"/>
+        <location filename="../containers/containers_defs.cpp" line="159"/>
         <source>IKEv2/IPsec -  Modern stable protocol, a bit faster than others, restores connection after signal loss. It has native support on the latest versions of Android and iOS.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="158"/>
+        <location filename="../containers/containers_defs.cpp" line="166"/>
         <source>Create a file vault on your server to securely store and transfer files.</source>
         <translation>فائلوں کو محفوظ طریقے سے اسٹور اور ٹرانسفر کرنے کے لیے اپنے سرور پر ایک فائل والٹ بنائیں.</translation>
     </message>
@@ -6456,7 +6472,7 @@ Unlike older protocols such as VMess, VLESS, and the XTLS-Vision transport, REAL
 یہ REALITY کو سخت سینسرشپ والے ماحولوں میں انٹرنیٹ کی آزادی کو برقرار رکھنے کے لئے ایک مضبوط حل بناتا ہے۔</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="254"/>
+        <location filename="../containers/containers_defs.cpp" line="273"/>
         <source>After installation, Amnezia will create a
 
  file storage on your server. You will be able to access it using
@@ -6480,12 +6496,12 @@ For more detailed information, you can
         <translation type="vanished">IKEv2/IPsec - جدید مستحکم پروٹوکول، دوسروں کے مقابلے میں تھوڑا تیز، سگنل ضائع ہونے کے بعد کنکشن بحال کرتا ہے۔</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="154"/>
+        <location filename="../containers/containers_defs.cpp" line="162"/>
         <source>Deploy a WordPress site on the Tor network in two clicks.</source>
         <translation>ٹور نیٹ ورک پر ایک ورڈپریس سائٹ کو دو کلکس میں تعینات کریں.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="156"/>
+        <location filename="../containers/containers_defs.cpp" line="164"/>
         <source>Replace the current DNS server with your own. This will increase your privacy level.</source>
         <translation>موجودہ DNS سرور کو اپنے سے تبدیل کریں۔ اس سے آپ کی رازداری کی سطح میں اضافہ ہوگا.</translation>
     </message>
@@ -6534,7 +6550,7 @@ While it offers a blend of security, stability, and speed, it&apos;s essential t
         <translation type="vanished">IKEv2، IPSec انکرپشن پرت کے ساتھ جوڑا، ایک جدید اور مستحکم VPN پروٹوکول کے طور پر کھڑا ہے۔ اس کی امتیازی خصوصیات میں سے ایک نیٹ ورکس اور ڈیوائسز کے درمیان تیزی سے سوئچ کرنے کی صلاحیت ہے، جو اسے متحرک نیٹ ورک کے ماحول میں خاص طور پر موافق بناتی ہے۔ اگرچہ یہ سیکیورٹی، استحکام اور رفتار کا امتزاج پیش کرتا ہے، لیکن یہ نوٹ کرنا ضروری ہے کہ IKEv2 کا آسانی سے پتہ لگایا جا سکتا ہے اور یہ بلاک کرنے کے لیے حساس ہے۔ * صرف ونڈوز پر AmneziaVPN میں دستیاب ہے * کم بجلی کی کھپت، موبائل ڈیوائسز پر * کم سے کم کنفیگریشن * DPI تجزیہ سسٹمز کے ذریعے پہچانا جاتا ہے * UDP نیٹ ورک پروٹوکول، پورٹ 500 اور 4500 پر کام .کرتا ہے</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="252"/>
+        <location filename="../containers/containers_defs.cpp" line="271"/>
         <source>DNS Service</source>
         <translation>DNS سروس</translation>
     </message>
@@ -6725,7 +6741,7 @@ While it offers a blend of security, stability, and speed, it&apos;s essential t
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/models/containers_model.cpp" line="70"/>
+        <location filename="../ui/models/containers_model.cpp" line="71"/>
         <source>AmneziaWG Legacy is a outdated version of AmneziaWG protocol. To upgrade, install AmneziaWG and recreate users.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7091,42 +7107,42 @@ While it offers a blend of security, stability, and speed, it&apos;s essential t
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1524"/>
+        <location filename="../core/controllers/serverController.cpp" line="1525"/>
         <source>Detecting server environment...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1538"/>
+        <location filename="../core/controllers/serverController.cpp" line="1539"/>
         <source>Server preflight returned no output.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1543"/>
+        <location filename="../core/controllers/serverController.cpp" line="1544"/>
         <source>Server probe: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1553"/>
+        <location filename="../core/controllers/serverController.cpp" line="1554"/>
         <source>Cancel requested, interrupting current SSH operation...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1675"/>
+        <location filename="../core/controllers/serverController.cpp" line="1678"/>
         <source>%1 is already installed, skipping the port check</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1841"/>
+        <location filename="../core/controllers/serverController.cpp" line="1844"/>
         <source>Package manager probe timed out. The remote command stopped responding.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1855"/>
+        <location filename="../core/controllers/serverController.cpp" line="1858"/>
         <source>Package manager is busy (attempt %1/30), waiting 10s... Output: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../core/controllers/serverController.cpp" line="1867"/>
+        <location filename="../core/controllers/serverController.cpp" line="1870"/>
         <source>Package manager is still busy after 30 attempts, giving up.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7491,12 +7507,12 @@ While it offers a blend of security, stability, and speed, it&apos;s essential t
 <context>
     <name>VpnConnection</name>
     <message>
-        <location filename="../vpnconnection.cpp" line="578"/>
+        <location filename="../vpnconnection.cpp" line="613"/>
         <source>Site split tunneling works only with XRay; full VPN is used for this protocol</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../vpnconnection.cpp" line="933"/>
+        <location filename="../vpnconnection.cpp" line="968"/>
         <source>Mbps</source>
         <translation>ایم بی پی ایس</translation>
     </message>
@@ -7504,42 +7520,42 @@ While it offers a blend of security, stability, and speed, it&apos;s essential t
 <context>
     <name>VpnProtocol</name>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="194"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="195"/>
         <source>Unknown</source>
         <translation>نامعلوم</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="195"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="196"/>
         <source>Disconnected</source>
         <translation>منقطع</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="196"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="197"/>
         <source>Preparing</source>
         <translation>تیاری مکمل</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="197"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="198"/>
         <source>Connecting...</source>
         <translation>منسلک ہو رہا ہے...</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="198"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="199"/>
         <source>Connected</source>
         <translation>منسلک</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="199"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="200"/>
         <source>Disconnecting...</source>
         <translation>منقطع ہو رہا ہے...</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="200"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="201"/>
         <source>Reconnecting...</source>
         <translation>دوبارہ منسلک ہو رہا ہے...</translation>
     </message>
     <message>
-        <location filename="../protocols/vpnprotocol.cpp" line="201"/>
+        <location filename="../protocols/vpnprotocol.cpp" line="202"/>
         <source>Error</source>
         <translation>خرابی</translation>
     </message>
@@ -7579,32 +7595,32 @@ While it offers a blend of security, stability, and speed, it&apos;s essential t
         <translation type="vanished">زیادہ تر وی پی این پروٹوکولز بلاک ہوتے ہیں۔ اگر دوسرے اختیارات کام نہیں کر رہے ہیں تو یہ تجویز کی جاتی ہے.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="420"/>
+        <location filename="../containers/containers_defs.cpp" line="443"/>
         <source>Recommended</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="421"/>
+        <location filename="../containers/containers_defs.cpp" line="444"/>
         <source>Alternative</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="422"/>
+        <location filename="../containers/containers_defs.cpp" line="445"/>
         <source>Fastest</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="430"/>
+        <location filename="../containers/containers_defs.cpp" line="453"/>
         <source>OpenVPN over Cloak will be installed. This is the most field-proven camouflage option in this fork: slower, but resistant to active probing and DPI blocking.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="432"/>
+        <location filename="../containers/containers_defs.cpp" line="455"/>
         <source>XRay VLESS + REALITY + XHTTP will be installed with randomized path and traffic padding. Use it when the server path is updated for the current XRay configuration.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="434"/>
+        <location filename="../containers/containers_defs.cpp" line="457"/>
         <source>Hysteria 2 will be installed. QUIC/UDP transport with HTTPS masquerading — fastest option on stable networks that allow outbound UDP.</source>
         <translation type="unfinished"></translation>
     </message>

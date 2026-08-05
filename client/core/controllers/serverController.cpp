@@ -537,7 +537,7 @@ ErrorCode ServerController::setupContainer(const ServerCredentials &credentials,
     bool isWgLike = (container == DockerContainer::WireGuard
                      || container == DockerContainer::Awg
                      || container == DockerContainer::Awg2);
-    bool isXrayLike = (container == DockerContainer::Xray);
+    bool isXrayLike = (container == DockerContainer::Xray || container == DockerContainer::XrayReality);
     bool isOvpnLike = (container == DockerContainer::OpenVpn
                        || container == DockerContainer::ShadowSocks
                        || container == DockerContainer::Cloak);
@@ -969,7 +969,7 @@ bool ServerController::isReinstallContainerRequired(DockerContainer container, c
         return true;
     }
 
-    if (container == DockerContainer::Xray) {
+    if (container == DockerContainer::Xray || container == DockerContainer::XrayReality) {
         if (oldProtoConfig.value(config_key::port).toString(protocols::xray::defaultPort)
             != newProtoConfig.value(config_key::port).toString(protocols::xray::defaultPort)) {
             return true;
@@ -1474,8 +1474,9 @@ ServerController::Vars ServerController::genVarsForScript(const ServerCredential
     vars.append({ { "$SOCKS5_USER", socks5user } });
     vars.append({ { "$SOCKS5_AUTH_TYPE", socks5user.isEmpty() ? "none" : "strong" } });
 
-    QString serverIp = (!ContainerProps::isAwgContainer(container) && 
-        container != DockerContainer::WireGuard && container != DockerContainer::Xray)
+    QString serverIp = (!ContainerProps::isAwgContainer(container) &&
+        container != DockerContainer::WireGuard && container != DockerContainer::Xray
+        && container != DockerContainer::XrayReality)
             ? NetworkUtilities::getIPAddress(credentials.hostName)
             : credentials.hostName;
     if (!serverIp.isEmpty()) {
@@ -1567,7 +1568,9 @@ ErrorCode ServerController::writeServerVersion(const ServerCredentials &credenti
     QJsonObject containerInfo = versionInfo.value(containerStr).toObject();
 
     if (container == DockerContainer::Xray) {
-        containerInfo["transport"] = "xhttp";
+        containerInfo["transport"] = "kcp";
+    } else if (container == DockerContainer::XrayReality) {
+        containerInfo["transport"] = "reality";
     } else if (container == DockerContainer::Awg2 || container == DockerContainer::Awg) {
         containerInfo["junkPackets"] = true;
     }

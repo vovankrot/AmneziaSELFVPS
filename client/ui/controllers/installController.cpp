@@ -202,6 +202,7 @@ void InstallController::install(DockerContainer container, int port, TransportPr
     // is covered as well as the proposed one. by vovankrot
     switch (container) {
     case DockerContainer::Xray:
+    case DockerContainer::XrayReality:
     case DockerContainer::SSXray:
     case DockerContainer::AnyTls:
     case DockerContainer::Hysteria2:

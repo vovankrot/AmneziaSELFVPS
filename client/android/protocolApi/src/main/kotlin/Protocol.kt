@@ -52,18 +52,40 @@ abstract class Protocol {
         }
 
         val splitTunnelType = config.optInt("splitTunnelType")
-        if (splitTunnelType == SPLIT_TUNNEL_DISABLE) return
-        val splitTunnelSites = config.getJSONArray("splitTunnelSites")
-        val addressHandlerFunc = when (splitTunnelType) {
-            SPLIT_TUNNEL_INCLUDE -> ::includeAddress
-            SPLIT_TUNNEL_EXCLUDE -> ::excludeAddress
+        if (splitTunnelType != SPLIT_TUNNEL_DISABLE) {
+            val splitTunnelSites = config.getJSONArray("splitTunnelSites")
+            val addressHandlerFunc = when (splitTunnelType) {
+                SPLIT_TUNNEL_INCLUDE -> ::includeAddress
+                SPLIT_TUNNEL_EXCLUDE -> ::excludeAddress
 
-            else -> throw BadConfigException("Unexpected value of the 'splitTunnelType' parameter: $splitTunnelType")
+                else -> throw BadConfigException("Unexpected value of the 'splitTunnelType' parameter: $splitTunnelType")
+            }
+
+            for (i in 0 until splitTunnelSites.length()) {
+                val address = InetNetwork.parse(splitTunnelSites.getString(i))
+                addressHandlerFunc(address)
+            }
         }
 
-        for (i in 0 until splitTunnelSites.length()) {
-            val address = InetNetwork.parse(splitTunnelSites.getString(i))
-            addressHandlerFunc(address)
+        // Russian GeoIP bypass. Desktop gives XRay a way to send this traffic
+        // "direct" without looping back through the tunnel via a Windows-only
+        // socket trick (see xraySiteSplitTunnelingHandledInCore in
+        // vpnconnection.cpp) -- Android has no such hook for any protocol, so
+        // it always needs these CIDRs excluded from the VpnService route table
+        // directly instead. Skipped in INCLUDE mode: ProtocolConfig.Builder
+        // rejects a config that mixes included and excluded addresses, and
+        // "only route these sites" is the opposite intent of "route
+        // everything except Russia" anyway. by vovankrot
+        val bypassRuSitesGeo = config.optJSONArray("bypassRuSitesGeo")
+        if (bypassRuSitesGeo != null && bypassRuSitesGeo.length() > 0) {
+            if (splitTunnelType == SPLIT_TUNNEL_INCLUDE) {
+                Log.w(TAG, "bypassRuSitesGeo: skipped, incompatible with INCLUDE-mode site split tunneling")
+            } else {
+                for (i in 0 until bypassRuSitesGeo.length()) {
+                    excludeAddress(InetNetwork.parse(bypassRuSitesGeo.getString(i)))
+                }
+                Log.i(TAG, "bypassRuSitesGeo: excluded ${bypassRuSitesGeo.length()} RU CIDRs from the tunnel")
+            }
         }
     }
 

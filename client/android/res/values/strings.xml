@@ -25,4 +25,8 @@
     <string name="openNotificationSettings">Open notification settings</string>
 
     <string name="tvNoFileBrowser">Please install a file management utility to browse files</string>
+
+    <string name="batteryOptimizationDialogTitle">Background restrictions</string>
+    <string name="batteryOptimizationDialogMessage">Your phone\'s battery saver can freeze AmneziaVPN in the background and break the connection or leave the app showing a black screen when you return to it. Allow AmneziaVPN to run without restrictions to avoid this.</string>
+    <string name="openBatterySettings">Open settings</string>
 </resources>

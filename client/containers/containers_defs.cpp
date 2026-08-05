@@ -69,6 +69,8 @@ QVector<amnezia::Proto> ContainerProps::protocolsForContainer(amnezia::DockerCon
 
     case DockerContainer::Xray: return { Proto::Xray };
 
+    case DockerContainer::XrayReality: return { Proto::Xray };
+
     case DockerContainer::SSXray: return { Proto::SSXray };
 
     case DockerContainer::Hysteria2: return { Proto::Hysteria2 };
@@ -113,11 +115,12 @@ QMap<DockerContainer, QString> ContainerProps::containerHumanNames()
              // is where the generation is chosen.
              { DockerContainer::Awg, QObject::tr("AmneziaWG (legacy)") },
              { DockerContainer::Awg2, "AmneziaWG" },
-             { DockerContainer::Xray, "XRay" },
+             { DockerContainer::Xray, "XRay (mKCP)" },
              { DockerContainer::Ipsec, QObject::tr("IPsec") },
              { DockerContainer::SSXray, "Shadowsocks (XRay)"},
              { DockerContainer::Hysteria2, "Hysteria 2"},
              { DockerContainer::AnyTls, "AnyTLS"},
+             { DockerContainer::XrayReality, "XRay (REALITY)" },
 
              { DockerContainer::TorWebSite, QObject::tr("Website in Tor network") },
              { DockerContainer::Dns, QObject::tr("AmneziaDNS") },
@@ -145,8 +148,13 @@ QMap<DockerContainer, QString> ContainerProps::containerDescriptions()
                              QObject::tr("AmneziaWG is a modified WireGuard-based protocol with traffic obfuscation. "
                                                      "It can perform well in some networks, but real-world resistance to blocking depends on the current DPI/TSPU profile.") },
              { DockerContainer::Xray,
-                             QObject::tr("XRay with REALITY and XHTTP masks VPN traffic as HTTPS-like web traffic. "
-                                                     "This fork installs it with randomized path and traffic padding, but effectiveness depends on the server using the current XRay configuration.") },
+                             QObject::tr("XRay over mKCP with salamander obfuscation. UDP transport that masks traffic as "
+                                                     "random noise rather than mimicking HTTPS -- survives DPI that clamps REALITY's TLS handshake on a flagged server IP, "
+                                                     "at the cost of a lower throughput ceiling than a plain TCP connection.") },
+             { DockerContainer::XrayReality,
+                             QObject::tr("XRay with REALITY and XTLS-Vision -- the official Amnezia transport. Real TLS handshake "
+                                                     "against a genuine site (e.g. a major CDN), so it looks like ordinary HTTPS and is fast on a clean connection. "
+                                                     "Gets clamped by DPI that has already flagged the server's IP; use the mKCP variant there instead.") },
              { DockerContainer::Ipsec,
                QObject::tr("IKEv2/IPsec -  Modern stable protocol, a bit faster than others, restores connection after "
                            "signal loss. It has native support on the latest versions of Android and iOS.") },
@@ -225,18 +233,29 @@ QMap<DockerContainer, QString> ContainerProps::containerDetailedDescriptions()
                                             "* Obfuscation effectiveness varies by network\n"
                       "* Operates over UDP protocol") },
         { DockerContainer::Xray,
-          QObject::tr("REALITY is an innovative protocol developed by the creators of XRay, designed specifically to combat high levels of internet censorship. "
-                      "REALITY identifies censorship systems during the TLS handshake, "
-                      "redirecting suspicious traffic seamlessly to legitimate websites like google.com while providing genuine TLS certificates. "
-                                            "In this fork, fresh installation pairs REALITY with XHTTP, randomized path and padding bytes so traffic looks closer to regular HTTPS."
-                      "\nUnlike older protocols such as VMess, VLESS, and XTLS-Vision, REALITY incorporates an advanced built-in \"friend-or-foe\" detection mechanism, "
-                      "effectively protecting against DPI and other traffic analysis methods.\n"
+          QObject::tr("XRay running VLESS over mKCP with salamander masking, this fork's default XRay variant. "
+                      "Every packet is XORed into pseudo-random noise instead of imitating a known protocol, "
+                      "which is what keeps it working on a server IP that DPI has already flagged -- REALITY's genuine "
+                      "TLS handshake gets clamped on such an IP regardless of the site it mimics, while noise has "
+                      "nothing for DPI to fingerprint.\n"
                       "\nFeatures:\n"
-                      "* Resistant to active probing and DPI detection\n"
-                                            "* Requires current server-side XRay configuration\n"
-                                            "* Highly effective in heavily censored regions when the server path is up to date\n"
+                      "* Resistant to DPI even on a flagged server IP\n"
+                      "* UDP transport with a configurable throughput ceiling (Advanced XRay settings)\n"
                       "* Minimal battery consumption on devices\n"
-                                            "* Operates over REALITY + XHTTP on port 443") },
+                      "* Operates over mKCP (UDP)") },
+        { DockerContainer::XrayReality,
+          QObject::tr("REALITY is a protocol developed by the creators of XRay, designed specifically to combat high levels of internet censorship. "
+                      "It performs a genuine TLS handshake against a real site (e.g. a major CDN) and forwards anyone who isn't "
+                      "the real client to that site unmodified, so probing it just finds an ordinary website with a valid certificate. "
+                      "Paired with XTLS-Vision, this is the official Amnezia transport and this fork's second, independently "
+                      "installable XRay variant -- installing it does not touch or remove the mKCP XRay container.\n"
+                      "\nUnlike older protocols such as VMess and plain VLESS, REALITY needs no self-signed certificate DPI could "
+                      "fingerprint, since the certificate it presents is the real site's own.\n"
+                      "\nFeatures:\n"
+                      "* Real TLS handshake -- looks like ordinary HTTPS to DPI\n"
+                      "* Faster than mKCP on a clean (unflagged) server IP\n"
+                      "* Gets clamped by DPI that has already flagged the server's IP -- use the mKCP variant there\n"
+                      "* Operates over TCP + REALITY + XTLS-Vision on port 443") },
         { DockerContainer::Ipsec,
           QObject::tr("IKEv2, combined with IPSec encryption, is a modern and reliable VPN protocol. "
                       "It reconnects quickly when switching networks or devices, making it ideal for dynamic network environments. "
@@ -297,6 +316,7 @@ Proto ContainerProps::defaultProtocol(DockerContainer c)
     case DockerContainer::Awg2: return Proto::Awg;
     case DockerContainer::Awg: return Proto::Awg;
     case DockerContainer::Xray: return Proto::Xray;
+    case DockerContainer::XrayReality: return Proto::Xray;
     case DockerContainer::Ipsec: return Proto::Ikev2;
     case DockerContainer::SSXray: return Proto::SSXray;
     case DockerContainer::Hysteria2: return Proto::Hysteria2;
@@ -343,6 +363,7 @@ bool ContainerProps::isSupportedByCurrentPlatform(DockerContainer c)
     case DockerContainer::Awg2: return true;
     case DockerContainer::Awg: return true;
     case DockerContainer::Xray: return true;
+    case DockerContainer::XrayReality: return true;
     case DockerContainer::Cloak: return true;
     case DockerContainer::SSXray: return true;
         //    case DockerContainer::ShadowSocks: return true;
@@ -358,6 +379,7 @@ bool ContainerProps::isSupportedByCurrentPlatform(DockerContainer c)
     case DockerContainer::Awg2: return true;
     case DockerContainer::Awg: return true;
     case DockerContainer::Xray: return true;
+    case DockerContainer::XrayReality: return true;
     case DockerContainer::SSXray: return true;
     case DockerContainer::Cloak:
     case DockerContainer::ShadowSocks:
@@ -381,6 +403,7 @@ bool ContainerProps::isSupportedByCurrentPlatform(DockerContainer c)
     case DockerContainer::Awg: return true;
     case DockerContainer::Cloak: return true;
     case DockerContainer::Xray: return true;
+    case DockerContainer::XrayReality: return true;
     case DockerContainer::SSXray: return true;
     default: return false;
     }
@@ -468,6 +491,7 @@ bool ContainerProps::supportsUserManagement(DockerContainer container)
     case DockerContainer::Awg:
     case DockerContainer::Awg2:
     case DockerContainer::Xray:
+    case DockerContainer::XrayReality:
         return true;
     default:
         return false;
@@ -478,6 +502,7 @@ bool ContainerProps::supportsSiteSplitTunneling(DockerContainer container)
 {
     switch (container) {
     case DockerContainer::Xray:
+    case DockerContainer::XrayReality:
     case DockerContainer::SSXray:
         return true;
     default:
@@ -509,6 +534,7 @@ int ContainerProps::installPageOrder(DockerContainer container)
     case DockerContainer::SSXray: return 3;
     case DockerContainer::Hysteria2: return 4;
     case DockerContainer::AnyTls: return 5;
+    case DockerContainer::XrayReality: return 6;
     case DockerContainer::Awg2: return 7;
     case DockerContainer::ShadowSocks: return 8;
     default: return 99;
