@@ -24,6 +24,7 @@ private:
     ErrorCode startXrayProcess(const QSharedPointer<IpcInterfaceReplica> &iface);
     bool ensureProxyReachable();
     bool performSocks5Probe(const QString &targetHost, quint16 targetPort, int timeoutMs);
+    bool performTunnelDataProbe(const QString &targetHost, quint16 targetPort, int timeoutMs);
     void scheduleHealthCheck();
     void cancelHealthCheck();
     void runHealthCheck();

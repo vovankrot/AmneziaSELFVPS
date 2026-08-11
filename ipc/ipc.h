@@ -58,13 +58,15 @@ inline QStringList sanitizeArguments(PermittedProcess proc, const QStringList &a
 
     switch (proc) {
     case Tun2Socks:
-        namedArgs["-device"] = [](const QString& v) { return v.startsWith("tun://"); };
-        namedArgs["-proxy"] = [](const QString& v) { return v.startsWith("socks5://"); };
-        // NOTE: `-tcp-auto-tuning` and `-stack` are NOT whitelisted on purpose —
-        // the bundled tun2socks (xjasonlyu c8f8cb5, Windows) does not support
-        // `-stack` at all (single-netstack build) and crashes ~5–8 s after the
-        // first real TCP flow when `-tcp-auto-tuning` is passed. See
-        // xrayprotocol.cpp::startTun2Socks() for the runtime-side note.
+        // v2.7.0 (upgraded 2026-08-05) uses cobra/pflag, which requires the
+        // double-dash long form -- a single dash before a multi-character name
+        // is parsed as bundled short flags and fails. See xrayprotocol.cpp::
+        // startTun2Socks() for the full upgrade note.
+        namedArgs["--device"] = [](const QString& v) { return v.startsWith("tun://"); };
+        namedArgs["--proxy"] = [](const QString& v) { return v.startsWith("socks5://"); };
+        // NOTE: `--tcp-auto-tuning` and `-stack` are NOT whitelisted on purpose --
+        // auto-tuning is opt-in and unused, and this build still has no `-stack`
+        // flag (single gVisor netstack).
         break;
     default:
         //FIXME

@@ -15,7 +15,9 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QNetworkInterface>
+#include <QNetworkProxy>
 #include <QJsonDocument>
+#include <QSslSocket>
 #include <QTcpSocket>
 #include <QThread>
 #include <QtCore/qlogging.h>
@@ -112,25 +114,15 @@ ErrorCode XrayProtocol::start()
             return error;
         }
 
-        if (!ensureProxyReachable()) {
-            qWarning() << "Initial XRay proxy probe failed. Retrying XRay start before routing and killswitch.";
-
-            auto xrayStop = iface->xrayStop();
-            if (!xrayStop.waitForFinished() || !xrayStop.returnValue()) {
-                qWarning() << "Failed to stop xray before retry";
-            }
-
-            error = startXrayProcess(iface);
-            if (error != ErrorCode::NoError) {
-                return error;
-            }
-
-            if (!ensureProxyReachable()) {
-                qCritical() << "XRay proxy probe failed after reconnect attempt";
-                return ErrorCode::XrayExecutableCrashed;
-            }
-        }
-
+        // Preflight removed: it was one honest TLS-through-tunnel probe (~3.5s), and on
+        // any transient network hiccup the old code retried the whole xray start once
+        // more (another ~3.5s), then returned XrayExecutableCrashed. VpnConnection saw
+        // that, kicked off a reconnect, which restarted this whole function, which
+        // probed again -- a lavine that on 2026-08-05 14:59 spawned four consecutive
+        // reconnects in 20s over a single dropped health-check, leaving stray
+        // tun2socks.exe copies fighting over the TUN device. runHealthCheck()'s three-
+        // in-a-row failure gate is the honest signal; a single preflight can never be.
+        // by vovankrot
         return startTun2Socks();
     }, [] () {
         return ErrorCode::AmneziaServiceConnectionFailed;
@@ -195,6 +187,42 @@ void XrayProtocol::stop()
     // if service is slow to respond. Default Qt RO timeout is 30s!
     constexpr int kIpcTimeoutMs = 2000;
 
+    // tun2socks is the CONSUMER of both the tun adapter and xray's SOCKS listener --
+    // it must go down first. The old order deleted the tun adapter and killed xray's
+    // SOCKS backend while tun2socks still held an open handle/connection to both,
+    // which made tun2socks crash (QProcess::Crashed) instead of exiting cleanly on
+    // every disconnect (observed 2026-08-05: "from tcp:... [proxy]" traffic flowing
+    // normally, then Xray::stopXray() immediately followed by tun2socks crashing).
+    // by vovankrot
+    if (m_tun2socksProcess) {
+        m_tun2socksProcess->blockSignals(true);
+
+#ifndef Q_OS_WIN
+        m_tun2socksProcess->terminate();
+#else
+        // terminate() does nothing useful on Windows -- kill is TerminateProcess()
+        m_tun2socksProcess->kill();
+#endif
+
+        // CRITICAL: kill()/terminate() over the IPC replica are ASYNCHRONOUS slots
+        // that return immediately, well before the child process actually exits on
+        // the service side. If we proceed to deleteTun()/xrayStop() while tun2socks
+        // is still alive it keeps an open handle on the TUN device, deleteTun blocks
+        // on the driver, every subsequent IPC call times out (2s each), and the
+        // service ends up in a wedged state where killswitch stays on, IPv6 stays
+        // blackholed, and the tun2 adapter is orphaned -- exactly the "интернет
+        // упорно не работал, помогла только перезагрузка + остановка службы" chase
+        // on 2026-08-11 06:10:44 (five consecutive 2s IPC timeouts). Wait for the
+        // real process exit BEFORE releasing the TUN device below. by vovankrot
+        auto waitForFinished = m_tun2socksProcess->waitForFinished(2000);
+        if (!waitForFinished.waitForFinished(3000) || !waitForFinished.returnValue()) {
+            qWarning() << "tun2socks did not exit within 2s after kill -- proceeding anyway";
+        }
+
+        m_tun2socksProcess->close();
+        m_tun2socksProcess.reset();
+    }
+
     IpcClient::withInterface([](QSharedPointer<IpcInterfaceReplica> iface) {
         auto disableKillSwitch = iface->disableKillSwitch();
         if (!disableKillSwitch.waitForFinished(kIpcTimeoutMs) || !disableKillSwitch.returnValue())
@@ -217,26 +245,6 @@ void XrayProtocol::stop()
             qWarning() << "Failed to stop xray";
     });
 
-    if (m_tun2socksProcess) {
-        m_tun2socksProcess->blockSignals(true);
-
-#ifndef Q_OS_WIN
-        m_tun2socksProcess->terminate();
-        auto waitForFinished = m_tun2socksProcess->waitForFinished(1000);
-        if (!waitForFinished.waitForFinished() || !waitForFinished.returnValue()) {
-            qWarning() << "Failed to terminate tun2socks. Killing the process...";
-            m_tun2socksProcess->kill();
-        }
-#else
-        // terminate does not do anything useful on Windows
-        // so just kill the process
-        m_tun2socksProcess->kill();
-#endif
-
-        m_tun2socksProcess->close();
-        m_tun2socksProcess.reset();
-    }
-
     setConnectionState(Vpn::ConnectionState::Disconnected);
 }
 
@@ -256,22 +264,30 @@ ErrorCode XrayProtocol::startTun2Socks()
     }
 
     m_tun2socksProcess->setProgram(PermittedProcess::Tun2Socks);
+    // CRITICAL: tun2socks v2.7.0 logs to STDERR (zap/JSON), whereas the old c8f8cb5
+    // build logged to STDOUT (logrus text). We only wire up readyReadStandardOutput
+    // below, and the transition to Connected is driven ENTIRELY by spotting the
+    // "[STACK] tun://... <-> socks5://..." line in that stream. Without merging the
+    // channels the line never arrives, setupRouting() never runs, and the client sits
+    // in "Connecting..." forever even though the tunnel is already carrying traffic --
+    // exactly the hang seen 2026-08-05 07:24:52-07:27:10. by vovankrot
+    m_tun2socksProcess->setProcessChannelMode(QProcess::MergedChannels);
     m_tun2socksProcess->setArguments({
-        "-device", QString("tun://%1").arg(tunName),
-        "-proxy", proxyUrl,
-        // NOTE 1: bundled tun2socks (xjasonlyu, c8f8cb5) has NO `-stack` flag —
-        // it's compiled with a single netstack (gVisor) selected at build time.
-        // Passing `-stack lwip` makes it exit with code 2 (flag parse error),
-        // which the client reports as ErrorCode 804. Do NOT add `-stack` here
-        // unless you also replace tun2socks.exe with a build that supports it.
-        //
-        // NOTE 2: `-tcp-auto-tuning` IS recognized by --help but crashes the
-        // bundled Windows build (c8f8cb5) at runtime ~5–8 s after the first
-        // real TCP flow — observed 2026-04-25 09:39 in the service log as a
-        // repeating QProcess::Crashed loop ("sites ping but don't open"
-        // because gVisor answers ICMP locally even after the proxy dies).
-        // Do NOT re-enable until tun2socks.exe is rebuilt from a newer xjasonlyu
-        // tag with the auto-tuning crash fix and verified on Windows.
+        "--device", QString("tun://%1").arg(tunName),
+        "--proxy", proxyUrl,
+        // Bundled tun2socks upgraded 2026-08-05 from xjasonlyu c8f8cb5 (pre-2026-04)
+        // to release v2.7.0 (8dda19e) -- the old build's gVisor netstack crashed
+        // (QProcess::Crashed) ~5-8s after the first real TCP flow REGARDLESS of
+        // whether -tcp-auto-tuning was passed (that flag only controls an opt-in
+        // buffer-sizing behavior; the crash itself was in the default netstack
+        // path). Confirmed via SELFVPS service log 2026-08-05 06:13: two crashes,
+        // 6.9s and ~53s after connect, with ERR_NETWORK_CHANGED in the browser as
+        // the tunnel flapped. v2.7.0 also switched its CLI parser from Go's flag
+        // package (single- or double-dash both accepted) to cobra/pflag, which
+        // treats a single dash before a multi-character name as bundled short
+        // flags -- so `-device`/`-proxy` now fail to parse and MUST be `--device`/
+        // `--proxy`. Still no `-stack` flag (single gVisor netstack, same as
+        // before) and `--tcp-auto-tuning` remains opt-in/unused here. by vovankrot
     });
 
     connect(m_tun2socksProcess.data(), &IpcProcessInterfaceReplica::readyReadStandardOutput, this, [this]() {
@@ -308,6 +324,19 @@ ErrorCode XrayProtocol::startTun2Socks()
             || connectionState() == Vpn::ConnectionState::Disconnected) {
             qDebug() << "Tun2socks (xray) finished during controlled shutdown, code" << exitCode
                      << "status" << exitStatus;
+            return;
+        }
+
+        // Rapid server/protocol switch: user hits Disconnect -> a new XrayProtocol is
+        // already being constructed BEFORE this old protocol's finished() drains. At
+        // that moment connectionState() has flipped to Connecting for the NEW protocol,
+        // so the shutdown guard above does not trigger, and we treat a clean exit-0
+        // from the old tun2socks as a fatal error (804) -- see 2026-08-05 15:23:11
+        // where an exit code of 0 raised Tun2SockExecutableCrashed anyway. A clean
+        // exit is not a crash; only NormalExit with a NON-zero code counts as one.
+        // by vovankrot
+        if (exitStatus == QProcess::ExitStatus::NormalExit && exitCode == 0) {
+            qDebug() << "Tun2socks (xray) exited cleanly during a protocol switch, ignoring";
             return;
         }
 
@@ -367,7 +396,56 @@ quint16 XrayProtocol::probePort() const
 
 bool XrayProtocol::ensureProxyReachable()
 {
-    return performSocks5Probe(probeHost(), probePort(), 3500);
+    // Same fix as runHealthCheck(): performSocks5Probe() only proved the LOCAL SOCKS
+    // inbound ACKed a CONNECT, which xray does before dialing the remote server at
+    // all -- it could never actually detect an unreachable server. This preflight
+    // runs right after xray starts, before TUN/routing/killswitch are touched, so a
+    // real end-to-end TLS probe here is the earliest honest signal for "can this
+    // server actually be reached from this network at all" -- exactly the question
+    // that could not be answered live on 2026-08-05 (server 2 access.log stayed
+    // empty through an entire "Connected" session). by vovankrot
+    qDebug() << "XrayProtocol::ensureProxyReachable() probing" << probeHost() << ":443 through the tunnel...";
+    const bool ok = performTunnelDataProbe(probeHost(), 443, 3500);
+    qDebug() << "XrayProtocol::ensureProxyReachable() result:" << ok;
+    return ok;
+}
+
+// performSocks5Probe() only proves the LOCAL SOCKS inbound answered -- xray replies
+// 0x05 0x00 to a CONNECT request immediately, before it has dialed the remote server
+// at all. So that probe stays green even when the server is completely unreachable,
+// which is exactly how a dead tunnel kept reporting "Connected" with passing health
+// checks on 2026-08-05 (server access.log showed zero entries for the whole session).
+//
+// This probe instead completes a real TLS handshake with the real target THROUGH the
+// tunnel: bytes must travel client -> xray -> server -> internet and back, so it
+// cannot succeed unless the tunnel genuinely carries traffic. by vovankrot
+bool XrayProtocol::performTunnelDataProbe(const QString &targetHost, quint16 targetPort, int timeoutMs)
+{
+    QNetworkProxy proxy(QNetworkProxy::Socks5Proxy, QStringLiteral("127.0.0.1"),
+                        static_cast<quint16>(localSocksPort()));
+    if (!m_socksUser.isEmpty() && !m_socksPassword.isEmpty()) {
+        proxy.setUser(m_socksUser);
+        proxy.setPassword(m_socksPassword);
+    }
+
+    QSslSocket socket;
+    socket.setProxy(proxy);
+    // The probe only needs to prove bytes flow end to end; a hostname/cert mismatch on
+    // a censor's interception box would still be a real round trip, and refusing it
+    // here would turn a working-but-MITMed link into a reconnect loop.
+    socket.setPeerVerifyMode(QSslSocket::QueryPeer);
+    socket.connectToHostEncrypted(targetHost, targetPort);
+
+    if (!socket.waitForEncrypted(timeoutMs)) {
+        qWarning() << "XRay tunnel data probe failed for" << targetHost << targetPort
+                   << ":" << socket.errorString();
+        socket.abort();
+        return false;
+    }
+
+    socket.disconnectFromHost();
+    qDebug() << "XRay tunnel data probe succeeded for" << targetHost << targetPort;
+    return true;
 }
 
 bool XrayProtocol::performSocks5Probe(const QString &targetHost, quint16 targetPort, int timeoutMs)
@@ -640,9 +718,14 @@ ErrorCode XrayProtocol::setupRouting() {
 // tear the protocol down with an error, so that the ordinary reconnect/failover
 // path can bring it back up cleanly. by vovankrot
 namespace {
-constexpr int kHealthCheckFirstDelayMs = 5000;
+// First check runs LONG after Connected. 5 seconds was too eager: the tun2socks
+// stack and the mKCP window are still warming up, so a probe that arrives during
+// that ramp times out even on a perfectly healthy tunnel. That single false
+// negative used to be enough to feed the retry-loop the caller was watching --
+// see 2026-08-05 14:59 where one dropped probe cascaded into a full reconnect.
+constexpr int kHealthCheckFirstDelayMs = 20000;
 constexpr int kHealthCheckIntervalMs = 30000;
-constexpr int kHealthCheckTimeoutMs = 3500;
+constexpr int kHealthCheckTimeoutMs = 5000;
 constexpr int kHealthCheckFailuresBeforeReset = 3;
 }  // namespace
 
@@ -693,7 +776,13 @@ void XrayProtocol::runHealthCheck()
         return;
     }
 
-    const bool ok = performSocks5Probe(probeHost(), probePort(), kHealthCheckTimeoutMs);
+    // NOTE: deliberately NOT performSocks5Probe() here, and deliberately port 443 rather
+    // than probePort(). probePort() returns the XRAY SERVER's port (e.g. 49379) while
+    // probeHost() is a real website -- probing "www.cloudflare.com:49379" is meaningless
+    // and only ever "passed" because xray ACKs a SOCKS CONNECT before dialing anything.
+    // A real TLS handshake to the site on 443 is the only thing that proves the tunnel
+    // actually carries traffic. by vovankrot
+    const bool ok = performTunnelDataProbe(probeHost(), 443, kHealthCheckTimeoutMs);
     if (ok) {
         if (m_healthCheckFailures > 0) {
             qDebug() << "XRay healthcheck recovered after" << m_healthCheckFailures << "failure(s)";

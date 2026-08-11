@@ -253,6 +253,24 @@ void AnyTlsProtocol::stop()
 
     constexpr int kIpcTimeoutMs = 2000;
 
+    // Kill tun2socks FIRST and wait for its real exit before touching the TUN
+    // adapter -- see xrayprotocol.cpp::stop() for the full note. Same wedge here.
+    // by vovankrot
+    if (m_tun2socksProcess) {
+        m_tun2socksProcess->blockSignals(true);
+#ifndef Q_OS_WIN
+        m_tun2socksProcess->terminate();
+#else
+        m_tun2socksProcess->kill();
+#endif
+        auto wait = m_tun2socksProcess->waitForFinished(2000);
+        if (!wait.waitForFinished(3000) || !wait.returnValue()) {
+            qWarning() << "tun2socks did not exit within 2s after kill -- proceeding anyway";
+        }
+        m_tun2socksProcess->close();
+        m_tun2socksProcess.reset();
+    }
+
     IpcClient::withInterface([this](QSharedPointer<IpcInterfaceReplica> iface) {
         auto disableKillSwitch = iface->disableKillSwitch();
         if (!disableKillSwitch.waitForFinished(kIpcTimeoutMs) || !disableKillSwitch.returnValue())
@@ -276,21 +294,6 @@ void AnyTlsProtocol::stop()
                 qWarning() << "Failed to stop AnyTLS XRay router";
         }
     });
-
-    if (m_tun2socksProcess) {
-        m_tun2socksProcess->blockSignals(true);
-#ifndef Q_OS_WIN
-        m_tun2socksProcess->terminate();
-        auto wait = m_tun2socksProcess->waitForFinished(1000);
-        if (!wait.waitForFinished() || !wait.returnValue()) {
-            m_tun2socksProcess->kill();
-        }
-#else
-        m_tun2socksProcess->kill();
-#endif
-        m_tun2socksProcess->close();
-        m_tun2socksProcess.reset();
-    }
 
     if (m_anyTlsProcess) {
         m_anyTlsProcess->blockSignals(true);
@@ -322,9 +325,15 @@ ErrorCode AnyTlsProtocol::startTun2Socks()
     }
 
     m_tun2socksProcess->setProgram(PermittedProcess::Tun2Socks);
+    // v2.7.0 logs to stderr, and the Connected transition depends on seeing the
+    // "[STACK] ..." line on stdout -- merge them. See xrayprotocol.cpp for details.
+    m_tun2socksProcess->setProcessChannelMode(QProcess::MergedChannels);
     m_tun2socksProcess->setArguments({
-        "-device", QString("tun://%1").arg(tunName),
-        "-proxy", proxyUrl,
+        "--device", QString("tun://%1").arg(tunName),
+        "--proxy", proxyUrl,
+        // tun2socks upgraded to v2.7.0 (2026-08-05) needs double-dash long flags
+        // (cobra/pflag parser) -- see xrayprotocol.cpp::startTun2Socks() for the
+        // full note. Same binary, same caveats apply here.
     });
 
     connect(m_tun2socksProcess.data(), &IpcProcessInterfaceReplica::readyReadStandardOutput, this, [this]() {

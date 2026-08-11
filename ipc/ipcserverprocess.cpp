@@ -17,7 +17,21 @@ IpcServerProcess::IpcServerProcess(QObject *parent) :
     connect(m_process.data(), &QProcess::stateChanged, this, &IpcServerProcess::stateChanged);
 
     connect(m_process.data(), &QProcess::errorOccurred, [&](QProcess::ProcessError error){
-        qDebug() << "IpcServerProcess errorOccurred " << error;
+        qDebug() << "IpcServerProcess errorOccurred " << error << "program=" << m_process->program();
+    });
+
+    // The client-side "finished" handler that would normally log the exit code never
+    // fires for these crashes (the IPC channel itself appears to go down with the
+    // process), so log it here on the service side where we know it's reliably seen.
+    // On Windows this exit code IS the NTSTATUS the process died with when Crashed
+    // (e.g. 0xC0000005 access violation, 0xC00000FD stack overflow) -- critical for
+    // diagnosing the recurring tun2socks crash without a WER dump. by vovankrot
+    connect(m_process.data(), QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            [this](int exitCode, QProcess::ExitStatus exitStatus) {
+        qDebug() << "IpcServerProcess finished" << m_process->program()
+                  << "exitStatus=" << exitStatus
+                  << "exitCode(dec)=" << exitCode
+                  << "exitCode(hex)=" << Qt::hex << exitCode << Qt::dec;
     });
 
 }

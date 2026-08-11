@@ -152,9 +152,10 @@ QMap<DockerContainer, QString> ContainerProps::containerDescriptions()
                                                      "random noise rather than mimicking HTTPS -- survives DPI that clamps REALITY's TLS handshake on a flagged server IP, "
                                                      "at the cost of a lower throughput ceiling than a plain TCP connection.") },
              { DockerContainer::XrayReality,
-                             QObject::tr("XRay with REALITY and XTLS-Vision -- the official Amnezia transport. Real TLS handshake "
-                                                     "against a genuine site (e.g. a major CDN), so it looks like ordinary HTTPS and is fast on a clean connection. "
-                                                     "Gets clamped by DPI that has already flagged the server's IP; use the mKCP variant there instead.") },
+                             QObject::tr("XRay with REALITY and XHTTP -- real TLS handshake against a genuine site (e.g. a major CDN), "
+                                                     "so it looks like ordinary HTTPS, with traffic framed as HTTP request/response chunks instead of a raw "
+                                                     "persistent stream. Fast on a clean connection. Gets clamped by DPI that has already flagged the server's "
+                                                     "IP; use the mKCP variant there instead.") },
              { DockerContainer::Ipsec,
                QObject::tr("IKEv2/IPsec -  Modern stable protocol, a bit faster than others, restores connection after "
                            "signal loss. It has native support on the latest versions of Android and iOS.") },
@@ -247,15 +248,18 @@ QMap<DockerContainer, QString> ContainerProps::containerDetailedDescriptions()
           QObject::tr("REALITY is a protocol developed by the creators of XRay, designed specifically to combat high levels of internet censorship. "
                       "It performs a genuine TLS handshake against a real site (e.g. a major CDN) and forwards anyone who isn't "
                       "the real client to that site unmodified, so probing it just finds an ordinary website with a valid certificate. "
-                      "Paired with XTLS-Vision, this is the official Amnezia transport and this fork's second, independently "
-                      "installable XRay variant -- installing it does not touch or remove the mKCP XRay container.\n"
+                      "This fork pairs REALITY with XHTTP rather than XTLS-Vision: traffic is framed as HTTP request/response chunks "
+                      "instead of a raw persistent TCP stream, which is a different evasion mechanism from Vision's stream padding "
+                      "(Vision does not work correctly over XHTTP -- it relies on manipulating raw TCP framing that HTTP request/response "
+                      "boundaries break). This is this fork's second, independently installable XRay variant -- installing it does not "
+                      "touch or remove the mKCP XRay container.\n"
                       "\nUnlike older protocols such as VMess and plain VLESS, REALITY needs no self-signed certificate DPI could "
                       "fingerprint, since the certificate it presents is the real site's own.\n"
                       "\nFeatures:\n"
                       "* Real TLS handshake -- looks like ordinary HTTPS to DPI\n"
                       "* Faster than mKCP on a clean (unflagged) server IP\n"
                       "* Gets clamped by DPI that has already flagged the server's IP -- use the mKCP variant there\n"
-                      "* Operates over TCP + REALITY + XTLS-Vision on port 443") },
+                      "* Operates over XHTTP (packet-up mode) + REALITY on port 443") },
         { DockerContainer::Ipsec,
           QObject::tr("IKEv2, combined with IPSec encryption, is a modern and reliable VPN protocol. "
                       "It reconnects quickly when switching networks or devices, making it ideal for dynamic network environments. "

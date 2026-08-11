@@ -50,6 +50,16 @@ else
 fi
 echo "$XRAY_SHORT_ID" > /opt/amnezia/xray/xray_short_id.key
 
+# XHTTP request path, randomized per install so it isn't a shared fingerprint across
+# every SELFVPS deployment, persisted so a reinstall doesn't invalidate existing clients.
+if [ -s "$XRAY_PERSIST_DIR/xray_xhttp_path.key" ]; then
+    XRAY_XHTTP_PATH=$(tr -d '[:space:]' < "$XRAY_PERSIST_DIR/xray_xhttp_path.key")
+else
+    XRAY_XHTTP_PATH="/api/v1/$(openssl rand -hex 6)"
+    echo "$XRAY_XHTTP_PATH" > "$XRAY_PERSIST_DIR/xray_xhttp_path.key"
+fi
+echo "$XRAY_XHTTP_PATH" > /opt/amnezia/xray/xray_xhttp_path.key
+
 cat > "$SERVER_JSON_TMP" <<EOF
 {
     "log": {
@@ -65,20 +75,23 @@ cat > "$SERVER_JSON_TMP" <<EOF
                 "clients": [
                     {
                         "id": "$XRAY_CLIENT_ID",
-                        "email": "$XRAY_CLIENT_ID",
-                        "flow": "xtls-rprx-vision"
+                        "email": "$XRAY_CLIENT_ID"
                     }
                 ],
                 "decryption": "none"
             },
             "streamSettings": {
-                "network": "tcp",
+                "network": "xhttp",
                 "security": "reality",
                 "realitySettings": {
                     "dest": "$XRAY_SITE_NAME:443",
                     "serverNames": ["$XRAY_SITE_NAME"],
                     "privateKey": "$XRAY_PRIVATE_KEY",
                     "shortIds": ["$XRAY_SHORT_ID"]
+                },
+                "xhttpSettings": {
+                    "path": "$XRAY_XHTTP_PATH",
+                    "mode": "packet-up"
                 }
             }
         }
@@ -86,7 +99,10 @@ cat > "$SERVER_JSON_TMP" <<EOF
     "outbounds": [
         {
             "protocol": "freedom",
-            "tag": "direct"
+            "tag": "direct",
+            "settings": {
+                "domainStrategy": "UseIPv4"
+            }
         },
         {
             "protocol": "blackhole",

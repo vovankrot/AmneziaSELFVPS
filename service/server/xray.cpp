@@ -2,6 +2,7 @@
 #include "core/networkUtilities.h"
 
 #include <QDebug>
+#include <QElapsedTimer>
 #include <QNetworkInterface>
 #include <QCoreApplication>
 #include <amnezia_xray.h>
@@ -46,15 +47,33 @@ bool Xray::startXray(const QString &cfg)
         amnezia_xray_setloghandler(ctxLogHandler, this);
 
         QByteArray bytes = cfg.toUtf8();
-        if (auto err = amnezia_xray_configure(bytes.data()); err != nullptr) {
-            qDebug() << "[xray] configuration failed: " << err;
-            amnezia_xray_free(err);
+        // amnezia_xray_configure() calls xray-core's core.New(coreConfig), which
+        // synchronously initializes every configured service (DNS, GeoIP/GeoSite
+        // routing tables, etc.) -- and amnezia_xray_start() calls server.Start(),
+        // which brings up the actual listeners/outbound handlers. Both are opaque
+        // calls into the closed-source-to-us amnezia_xray.dll with no internal
+        // logging of their own before the "core: Xray ... started" message, so a
+        // hang inside either one is invisible without bracketing timestamps like
+        // these. Added 2026-08-05 chasing an intermittent 100+s hang on connect
+        // with zero log output anywhere. by vovankrot
+        QElapsedTimer xrayStageTimer;
+        xrayStageTimer.start();
+        qDebug() << "[xray] calling amnezia_xray_configure()...";
+        auto configureErr = amnezia_xray_configure(bytes.data());
+        qDebug() << "[xray] amnezia_xray_configure() returned after" << xrayStageTimer.elapsed() << "ms";
+        if (configureErr != nullptr) {
+            qDebug() << "[xray] configuration failed: " << configureErr;
+            amnezia_xray_free(configureErr);
             return false;
         }
 
-        if (auto err = amnezia_xray_start(); err != nullptr) {
-            qDebug() << "[xray] failed to start: " << err;
-            amnezia_xray_free(err);
+        xrayStageTimer.restart();
+        qDebug() << "[xray] calling amnezia_xray_start()...";
+        auto startErr = amnezia_xray_start();
+        qDebug() << "[xray] amnezia_xray_start() returned after" << xrayStageTimer.elapsed() << "ms";
+        if (startErr != nullptr) {
+            qDebug() << "[xray] failed to start: " << startErr;
+            amnezia_xray_free(startErr);
             return false;
         }
     } catch (const std::exception &ex) {

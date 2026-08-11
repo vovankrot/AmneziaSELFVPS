@@ -30,7 +30,6 @@
                             {
                                 "id": "$XRAY_CLIENT_ID",
                                 "email": "$XRAY_CLIENT_ID",
-                                "flow": "xtls-rprx-vision",
                                 "encryption": "none"
                             }
                         ]
@@ -38,7 +37,7 @@
                 ]
             },
             "streamSettings": {
-                "network": "tcp",
+                "network": "xhttp",
                 "security": "reality",
                 "realitySettings": {
                     "fingerprint": "chrome",
@@ -46,6 +45,10 @@
                     "publicKey": "$XRAY_PUBLIC_KEY",
                     "shortId": "$XRAY_SHORT_ID",
                     "spiderX": ""
+                },
+                "xhttpSettings": {
+                    "path": "$XRAY_XHTTP_PATH",
+                    "mode": "packet-up"
                 }
             }
         },

@@ -284,7 +284,10 @@ cat > "$SERVER_JSON_TMP" <<EOF
     "outbounds": [
         {
             "protocol": "freedom",
-            "tag": "direct"
+            "tag": "direct",
+            "settings": {
+                "domainStrategy": "UseIPv4"
+            }
         },
         {
             "protocol": "blackhole",

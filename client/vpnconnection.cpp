@@ -1019,6 +1019,13 @@ void VpnConnection::reconnectToVpn() {
 
 void VpnConnection::disconnectFromVpn()
 {
+    // This function previously had no entry log at all, which made every one of its
+    // callers (UI disconnect click, closeConnection(), app shutdown) indistinguishable
+    // from an unexplained mid-connection stop in the log -- exactly the symptom being
+    // chased 2026-08-05 (XrayProtocol::stop() firing ~9-21s into a fresh XrayReality
+    // connect with no other log line anywhere in between). by vovankrot
+    qDebug() << "VpnConnection::disconnectFromVpn() called, current state="
+              << static_cast<int>(m_connectionState) << "thread=" << QThread::currentThread();
 #if defined(Q_OS_IOS) || defined(MACOS_NE)
     // iOS/macOS NE use IosController directly; m_vpnProtocol is not set there.
     IosController::Instance()->disconnectVpn();

@@ -308,11 +308,17 @@ void ExportController::generateXrayConfig(const QString &clientName)
     vlessServer.address = server.value("address").toString();
     vlessServer.port = server.value("port").toInt();
     vlessServer.id = user.value("id").toString();
-    vlessServer.flow = user.value("flow").toString("xtls-rprx-vision");
     vlessServer.encryption = user.value("encryption").toString("none");
 
     vlessServer.network = streamSettings.value("network").toString("tcp");
     vlessServer.security = streamSettings.value("security").toString("reality");
+
+    // xtls-rprx-vision only applies over a raw TCP stream; it does not work over xhttp
+    // (see XrayReality's xhttp+packet-up variant, which carries no flow at all). Only
+    // default to vision for the plain-TCP case, and only if the config didn't already
+    // say otherwise. by vovankrot
+    const QString defaultFlow = (vlessServer.network == "tcp") ? QStringLiteral("xtls-rprx-vision") : QString();
+    vlessServer.flow = user.value("flow").toString(defaultFlow);
 
     if (vlessServer.security == "reality") {
         QJsonObject realitySettings = streamSettings.value("realitySettings").toObject();
@@ -321,6 +327,12 @@ void ExportController::generateXrayConfig(const QString &clientName)
         vlessServer.shortId = realitySettings.value("shortId").toString();
         vlessServer.fingerprint = realitySettings.value("fingerprint").toString("chrome");
         vlessServer.spiderX = realitySettings.value("spiderX").toString("");
+    }
+
+    if (vlessServer.network == "xhttp") {
+        QJsonObject xhttpSettings = streamSettings.value("xhttpSettings").toObject();
+        vlessServer.xhttpPath = xhttpSettings.value("path").toString();
+        vlessServer.xhttpMode = xhttpSettings.value("mode").toString("auto");
     }
 
     m_nativeConfigString = amnezia::serialization::vless::Serialize(vlessServer, "AmneziaVPN");
