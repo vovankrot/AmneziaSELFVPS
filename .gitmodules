@@ -4,18 +4,15 @@
 [submodule "client/3rd/SortFilterProxyModel"]
 	path = client/3rd/SortFilterProxyModel
 	url = https://github.com/vovankrot/AmneziaSELFVPS.git
-	branch = vendor/SortFilterProxyModel
 [submodule "client/3rd-prebuilt"]
 	path = client/3rd-prebuilt
 	url = https://github.com/vovankrot/AmneziaSELFVPS.git
-	branch = vendor/3rd-prebuilt
 [submodule "client/3rd/amneziawg-apple"]
 	path = client/3rd/amneziawg-apple
 	url = https://github.com/amnezia-vpn/amneziawg-apple
 [submodule "client/3rd/QSimpleCrypto"]
 	path = client/3rd/QSimpleCrypto
 	url = https://github.com/vovankrot/AmneziaSELFVPS.git
-	branch = vendor/QSimpleCrypto
 [submodule "client/3rd/qtgamepad"]
 	path = client/3rd/qtgamepad
 	url = https://github.com/amnezia-vpn/qtgamepad.git
