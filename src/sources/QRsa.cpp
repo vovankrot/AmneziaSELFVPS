@@ -8,6 +8,21 @@
 
 #include "include/QRsa.h"
 
+#include <cerrno>
+#include <cstdio>
+
+#ifndef _MSC_VER
+static int fopen_s(FILE** file, const char* fileName, const char* mode)
+{
+    if (!file) {
+        return EINVAL;
+    }
+
+    *file = std::fopen(fileName, mode);
+    return *file ? 0 : errno;
+}
+#endif
+
 QSimpleCrypto::QRsa::QRsa()
 {
 }
@@ -84,8 +99,8 @@ void QSimpleCrypto::QRsa::savePublicKey(EVP_PKEY* key, const QByteArray& filePat
 {
     try {
         /* Initialize FILE */
-        FILE* publicKeyFile = fopen(filePath, "w+");
-        if (!publicKeyFile) {
+        FILE* publicKeyFile = nullptr;
+        if (fopen_s(&publicKeyFile, filePath.constData(), "w+") != 0 || !publicKeyFile) {
             throw std::runtime_error("Couldn't initialize FILE.");
         }
 
@@ -115,8 +130,8 @@ void QSimpleCrypto::QRsa::savePrivateKey(EVP_PKEY* key, const QByteArray& fileNa
 {
     try {
         /* Initialize FILE */
-        FILE* privateKeyFile = fopen(fileName, "w+");
-        if (!privateKeyFile) {
+        FILE* privateKeyFile = nullptr;
+        if (fopen_s(&privateKeyFile, fileName.constData(), "w+") != 0 || !privateKeyFile) {
             throw std::runtime_error("Couldn't initialize FILE.");
         }
 
@@ -144,8 +159,8 @@ EVP_PKEY* QSimpleCrypto::QRsa::getPublicKeyFromFile(const QByteArray& filePath)
 {
     try {
         /* Initialize read FILE */
-        FILE* publicKeyFile = fopen(filePath, "r");
-        if (!publicKeyFile) {
+        FILE* publicKeyFile = nullptr;
+        if (fopen_s(&publicKeyFile, filePath.constData(), "r") != 0 || !publicKeyFile) {
             throw std::runtime_error("Couldn't initialize FILE.");
         }
 
@@ -181,8 +196,8 @@ EVP_PKEY* QSimpleCrypto::QRsa::getPrivateKeyFromFile(const QByteArray& filePath,
 {
     try {
         /* Initialize read FILE */
-        FILE* privateKeyFile = fopen(filePath, "r");
-        if (!privateKeyFile) {
+        FILE* privateKeyFile = nullptr;
+        if (fopen_s(&privateKeyFile, filePath.constData(), "r") != 0 || !privateKeyFile) {
             throw std::runtime_error("Couldn't initialize FILE.");
         }
 

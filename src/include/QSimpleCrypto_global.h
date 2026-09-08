@@ -3,10 +3,7 @@
 
 #include <QtCore/qglobal.h>
 
-#if defined(QSIMPLECRYPTO_LIBRARY)
-#  define QSIMPLECRYPTO_EXPORT Q_DECL_EXPORT
-#else
-#  define QSIMPLECRYPTO_EXPORT Q_DECL_IMPORT
-#endif
+// QSimpleCrypto is compiled as a static component in this project (never as a shared DLL)
+#define QSIMPLECRYPTO_EXPORT
 
 #endif // QSIMPLECRYPTO_GLOBAL_H
