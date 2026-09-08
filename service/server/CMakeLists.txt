@@ -81,6 +81,7 @@ set(HEADERS
     ${CMAKE_CURRENT_LIST_DIR}/killswitch.h
     ${CMAKE_CURRENT_LIST_DIR}/systemservice.h
     ${CMAKE_CURRENT_LIST_DIR}/xray.h
+    ${CMAKE_CURRENT_LIST_DIR}/networkdiagnostics.h
     ${CMAKE_CURRENT_BINARY_DIR}/version.h
     ${QSIMPLECRYPTO_DIR}/include/QAead.h
     ${QSIMPLECRYPTO_DIR}/include/QBlockCipher.h
@@ -103,6 +104,7 @@ set(SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/killswitch.cpp
     ${CMAKE_CURRENT_LIST_DIR}/systemservice.cpp
     ${CMAKE_CURRENT_LIST_DIR}/xray.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/networkdiagnostics.cpp
     ${QSIMPLECRYPTO_DIR}/sources/QAead.cpp
     ${QSIMPLECRYPTO_DIR}/sources/QBlockCipher.cpp
     ${QSIMPLECRYPTO_DIR}/sources/QRsa.cpp
@@ -378,6 +380,10 @@ if(LINUX)
 
 endif()
 
+qt6_add_resources(QRC
+    ${CMAKE_CURRENT_LIST_DIR}/network_diagnostics/networkDiagnostics.qrc
+)
+
 include(${CMAKE_CURRENT_LIST_DIR}/../src/qtservice.cmake)
 
 include_directories(
@@ -389,7 +395,7 @@ include_directories(
 )
 
 
-add_executable(${PROJECT} ${SOURCES} ${HEADERS} ${RESOURCES})
+add_executable(${PROJECT} ${SOURCES} ${HEADERS} ${RESOURCES} ${QRC})
 target_link_libraries(${PROJECT} PRIVATE Qt6::Core Qt6::Widgets Qt6::Network Qt6::RemoteObjects Qt6::Core5Compat Qt6::DBus Qt6::Concurrent ${LIBS})
 target_compile_definitions(${PROJECT} PRIVATE "MZ_$<UPPER_CASE:${MZ_PLATFORM_NAME}>" QSIMPLECRYPTO_STATIC)
 

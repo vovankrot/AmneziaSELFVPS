@@ -44,7 +44,8 @@ IpcServerProcess::~IpcServerProcess()
 void IpcServerProcess::start()
 {
     if (m_process->program().isEmpty()) {
-        qDebug() << "IpcServerProcess failed to start, program is empty";
+        qCritical() << "IPC: refusing to start an invalid or empty privileged program";
+        return;
     }
 
     Utils::killProcessByName(m_process->program());
@@ -91,6 +92,15 @@ void IpcServerProcess::setProcessChannelMode(QProcess::ProcessChannelMode mode)
 
 void IpcServerProcess::setProgram(int programId)
 {
+    if (programId <= static_cast<int>(amnezia::PermittedProcess::Invalid)
+            || programId >= static_cast<int>(amnezia::PermittedProcess::PermittedProcessCount)) {
+        qCritical() << "IPC: rejected invalid privileged program id" << programId;
+        m_program = amnezia::PermittedProcess::Invalid;
+        m_process->setProgram({});
+        m_process->setArguments({});
+        return;
+    }
+
     m_program = static_cast<amnezia::PermittedProcess>(programId);
     m_process->setProgram(amnezia::permittedProcessPath(m_program));
     m_process->setArguments({});

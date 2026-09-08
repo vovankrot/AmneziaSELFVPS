@@ -1,14 +1,15 @@
 import QtQuick
+import "../../Config"
 
 import Style 1.0
 
 CopyableTextType {
-    lineHeight: 21.6 + LanguageModel.getLineHeightAppend()
+    lineHeight: (GC.isDesktop() ? 18 : 21.6) + LanguageModel.getLineHeightAppend()
     lineHeightMode: Text.FixedHeight
 
     color: AmneziaStyle.color.paleGray
-    font.pixelSize: 18
-    font.weight: 400
+    font.pixelSize: GC.isDesktop() ? 14 : 18
+    font.weight: GC.isDesktop() ? 500 : 400
     font.family: "Inter"
 
     wrapMode: Text.Wrap

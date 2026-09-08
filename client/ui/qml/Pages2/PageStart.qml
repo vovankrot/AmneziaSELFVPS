@@ -18,7 +18,7 @@ PageType {
     property bool isControlsDisabled: false
     property bool isTabBarDisabled: false
     readonly property bool useSideNavigation: GC.isDesktop() && tabBar.visible
-    readonly property int sideNavigationWidth: useSideNavigation ? 246 : 0
+    readonly property int sideNavigationWidth: useSideNavigation ? 210 : 0
 
     function switchRootTab(page, index) {
         tabBarStackView.goToTabBarPage(page)
@@ -287,25 +287,16 @@ PageType {
         property var clickedFunc: function() {}
 
         Layout.fillWidth: true
-        Layout.preferredHeight: 44
-        radius: 7
-        color: selected ? AmneziaStyle.color.translucentRichBrown : "transparent"
+        Layout.preferredHeight: 42
+        radius: 8
+        color: selected ? AmneziaStyle.color.deepBrown
+                        : (navigationMouse.containsMouse ? AmneziaStyle.color.translucentWhite : "transparent")
         border.width: selected ? 1 : 0
-        border.color: selected ? AmneziaStyle.color.goldenApricot : AmneziaStyle.color.slateGray
+        border.color: selected ? AmneziaStyle.color.slateGray : "transparent"
         opacity: navigationEnabled ? 1.0 : 0.44
 
-        // Primary-accent indicator bar on the active item.
-        Rectangle {
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            width: 3
-            height: 22
-            radius: 1.5
-            color: AmneziaStyle.color.goldenApricot
-            visible: navigationButton.selected
-        }
-
         MouseArea {
+            id: navigationMouse
             anchors.fill: parent
             enabled: navigationButton.navigationEnabled && root.useSideNavigation && !root.isControlsDisabled && !root.isTabBarDisabled
             cursorShape: Qt.PointingHandCursor
@@ -315,13 +306,13 @@ PageType {
 
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 14
-            anchors.rightMargin: 14
-            spacing: 12
+            anchors.leftMargin: 12
+            anchors.rightMargin: 12
+            spacing: 10
 
             Image {
-                Layout.preferredWidth: 20
-                Layout.preferredHeight: 20
+                Layout.preferredWidth: 17
+                Layout.preferredHeight: 17
                 source: navigationButton.image
                 opacity: navigationButton.selected ? 1.0 : 0.78
             }
@@ -329,8 +320,8 @@ PageType {
             Text {
                 Layout.fillWidth: true
                 text: navigationButton.text
-                color: navigationButton.selected ? AmneziaStyle.color.goldenApricot : AmneziaStyle.color.mutedGray
-                font.pixelSize: 14
+                color: navigationButton.selected ? AmneziaStyle.color.paleGray : AmneziaStyle.color.mutedGray
+                font.pixelSize: 13
                 font.weight: navigationButton.selected ? 600 : 500
                 elide: Text.ElideRight
             }
@@ -369,71 +360,26 @@ PageType {
             anchors.bottomMargin: 24
             spacing: 0
 
-            Rectangle {
-                Layout.preferredWidth: 150
-                Layout.preferredHeight: 104
-                Layout.bottomMargin: 18
-                radius: 18
-                color: AmneziaStyle.color.onyxBlack
-                border.width: 1
-                border.color: AmneziaStyle.color.slateGray
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.bottomMargin: 30
+                spacing: 9
 
                 Image {
-                    anchors.centerIn: parent
-                    width: 122
-                    height: 82
+                    Layout.preferredWidth: 27
+                    Layout.preferredHeight: 27
                     fillMode: Image.PreserveAspectFit
-                    source: "qrc:/images/amneziaBigLogo.png"
+                    source: "qrc:/images/controls/amnezia.svg"
                 }
-            }
 
-            Text {
-                Layout.fillWidth: true
-                text: qsTr("Amnezia")
-                color: AmneziaStyle.color.paleGray
-                font.pixelSize: 30
-                font.weight: 300
-            }
-
-            Text {
-                Layout.fillWidth: true
-                Layout.topMargin: -2
-                text: qsTr("VPN")
-                color: AmneziaStyle.color.paleGray
-                font.pixelSize: 30
-                font.weight: 650
-            }
-
-            Rectangle {
-                Layout.preferredWidth: versionColumn.implicitWidth + 24
-                Layout.preferredHeight: versionColumn.implicitHeight + 12
-                Layout.topMargin: 16
-                Layout.bottomMargin: 28
-                radius: 14
-                color: AmneziaStyle.color.benefitsPanelBackground
-
-                ColumnLayout {
-                    id: versionColumn
-                    anchors.centerIn: parent
-                    spacing: 1
-
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "v" + SettingsController.getAppVersion()
-                        color: AmneziaStyle.color.mutedGray
-                        font.family: "Inter"
-                        font.pixelSize: 11
-                        font.weight: 600
-                    }
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "coopilot version"
-                        color: AmneziaStyle.color.softViolet
-                        font.family: "Inter"
-                        font.pixelSize: 9
-                        font.weight: 600
-                        font.italic: true
-                    }
+                Text {
+                    Layout.fillWidth: true
+                    text: "AmneziaVPN"
+                    color: AmneziaStyle.color.paleGray
+                    font.family: "Inter"
+                    font.pixelSize: 14
+                    font.weight: 600
+                    elide: Text.ElideRight
                 }
             }
 
@@ -493,6 +439,7 @@ PageType {
                 Layout.topMargin: 8
                 text: qsTr("Add server")
                 image: "qrc:/images/controls/plus.svg"
+                visible: false
                 selected: tabBar.currentIndex === 3
                 clickedFunc: function() {
                     root.switchRootTab(PageEnum.PageSetupWizardConfigSource, 3)
@@ -506,8 +453,8 @@ PageType {
             // Connection status — small shield, shown on every page via the rail.
             // by vovankrot
             RowLayout {
-                Layout.leftMargin: 16
-                Layout.bottomMargin: 18
+                Layout.leftMargin: 4
+                Layout.bottomMargin: 6
                 Layout.topMargin: 8
                 spacing: 8
                 visible: root.useSideNavigation
@@ -535,6 +482,17 @@ PageType {
                     font.pixelSize: 12
                     font.weight: 600
                 }
+            }
+
+            Text {
+                Layout.leftMargin: 4
+                Layout.bottomMargin: 2
+                text: "v" + SettingsController.getAppVersion()
+                color: AmneziaStyle.color.charcoalGray
+                font.family: "Inter"
+                font.pixelSize: 10
+                elide: Text.ElideRight
+                Layout.fillWidth: true
             }
         }
     }

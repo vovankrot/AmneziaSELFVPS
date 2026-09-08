@@ -3714,20 +3714,23 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <translation type="vanished">लॉग के साथ फ़ोल्डर खोलें</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="192"/>
-        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="218"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="227"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="253"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="279"/>
         <source>Save</source>
         <translation>सहेजें</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="193"/>
-        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="219"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="228"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="254"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="279"/>
         <source>Logs files (*.log)</source>
         <translation>लॉग फ़ाइलें (*.log)</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="202"/>
-        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="227"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="237"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="262"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="287"/>
         <source>Logs file saved</source>
         <translation>लॉग फ़ाइल सहेजी गई</translation>
     </message>
@@ -3747,11 +3750,13 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
     </message>
     <message>
         <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="86"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="120"/>
         <source>Continue</source>
         <translation>जारी रखना</translation>
     </message>
     <message>
         <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="87"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="121"/>
         <source>Cancel</source>
         <translation>रद्द करना</translation>
     </message>
@@ -3761,32 +3766,67 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <translation>लॉग साफ़ कर दिए गए हैं</translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="181"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="113"/>
+        <source>Run network diagnostics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="118"/>
+        <source>Run network diagnostics?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="119"/>
+        <source>This collects local network configuration (adapters, routes, DNS, proxy, drivers and firewall state) and saves a separate timestamped log. It takes a few seconds and does not open a console window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="128"/>
+        <source>Network diagnostics saved</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="129"/>
+        <source>Network diagnostics failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="216"/>
         <source>Client logs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="182"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="217"/>
         <source>AmneziaVPN logs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="143"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="270"/>
+        <source>Network diagnostics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="271"/>
+        <source>Local network configuration snapshot collected via the background service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="176"/>
         <source>Open logs folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="157"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="190"/>
         <source>Export logs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="210"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="245"/>
         <source>Service logs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="211"/>
+        <location filename="../ui/qml/Pages2/PageSettingsLogging.qml" line="246"/>
         <source>AmneziaVPN-service logs</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5845,7 +5885,7 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
     <message>
         <location filename="../protocols/protocols_defs.cpp" line="84"/>
         <location filename="../containers/containers_defs.cpp" line="128"/>
-        <location filename="../containers/containers_defs.cpp" line="277"/>
+        <location filename="../containers/containers_defs.cpp" line="281"/>
         <source>SOCKS5 proxy server</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6217,7 +6257,7 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
     </message>
     <message>
         <location filename="../containers/containers_defs.cpp" line="125"/>
-        <location filename="../containers/containers_defs.cpp" line="270"/>
+        <location filename="../containers/containers_defs.cpp" line="274"/>
         <source>Website in Tor network</source>
         <translation>टोर नेटवर्क में वेबसाइट</translation>
     </message>
@@ -6262,17 +6302,22 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="172"/>
+        <location filename="../containers/containers_defs.cpp" line="155"/>
+        <source>XRay with REALITY and XHTTP -- real TLS handshake against a genuine site (e.g. a major CDN), so it looks like ordinary HTTPS, with traffic framed as HTTP request/response chunks instead of a raw persistent stream. Fast on a clean connection. Gets clamped by DPI that has already flagged the server&apos;s IP; use the mKCP variant there instead.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../containers/containers_defs.cpp" line="173"/>
         <source>Hysteria 2 — QUIC/UDP-based VPN with HTTPS masquerading and Brutal congestion control. Very fast on lossy networks; UDP-only.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="175"/>
+        <location filename="../containers/containers_defs.cpp" line="176"/>
         <source>AnyTLS — TLS-in-TLS proxy with multiplexing. Looks like ordinary HTTPS traffic, TCP-based.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="225"/>
+        <location filename="../containers/containers_defs.cpp" line="226"/>
         <source>AmneziaWG is a modern VPN protocol based on WireGuard, combining simplified architecture with high performance across all devices. It adds obfuscation on top of WireGuard, but practical resistance to blocking depends on the current network environment and DPI/TSPU rules.
 
 Use it when you specifically need a WireGuard-like path and have validated it on the target network.
@@ -6286,7 +6331,20 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="286"/>
+        <location filename="../containers/containers_defs.cpp" line="248"/>
+        <source>REALITY is a protocol developed by the creators of XRay, designed specifically to combat high levels of internet censorship. It performs a genuine TLS handshake against a real site (e.g. a major CDN) and forwards anyone who isn&apos;t the real client to that site unmodified, so probing it just finds an ordinary website with a valid certificate. This fork pairs REALITY with XHTTP rather than XTLS-Vision: traffic is framed as HTTP request/response chunks instead of a raw persistent TCP stream, which is a different evasion mechanism from Vision&apos;s stream padding (Vision does not work correctly over XHTTP -- it relies on manipulating raw TCP framing that HTTP request/response boundaries break). This is this fork&apos;s second, independently installable XRay variant -- installing it does not touch or remove the mKCP XRay container.
+
+Unlike older protocols such as VMess and plain VLESS, REALITY needs no self-signed certificate DPI could fingerprint, since the certificate it presents is the real site&apos;s own.
+
+Features:
+* Real TLS handshake -- looks like ordinary HTTPS to DPI
+* Faster than mKCP on a clean (unflagged) server IP
+* Gets clamped by DPI that has already flagged the server&apos;s IP -- use the mKCP variant there
+* Operates over XHTTP (packet-up mode) + REALITY on port 443</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../containers/containers_defs.cpp" line="290"/>
         <source>Hysteria 2 is a modern censorship-resistant proxy built on QUIC.
 It runs over UDP and uses HTTPS masquerading: unauthenticated clients see a real-looking website.
 
@@ -6298,7 +6356,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="294"/>
+        <location filename="../containers/containers_defs.cpp" line="298"/>
         <source>AnyTLS is a TLS-in-TLS multiplexed proxy.
 It looks like ordinary HTTPS traffic to DPI, and uses TCP — so it works on UDP-blocked networks.
 
@@ -6309,7 +6367,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="170"/>
+        <location filename="../containers/containers_defs.cpp" line="171"/>
         <source>Shadowsocks proxy via XRay core. Lightweight, fast, and resistant to DPI detection.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6324,12 +6382,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="155"/>
-        <source>XRay with REALITY and XTLS-Vision -- the official Amnezia transport. Real TLS handshake against a genuine site (e.g. a major CDN), so it looks like ordinary HTTPS and is fast on a clean connection. Gets clamped by DPI that has already flagged the server&apos;s IP; use the mKCP variant there instead.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../containers/containers_defs.cpp" line="182"/>
+        <location filename="../containers/containers_defs.cpp" line="183"/>
         <source>OpenVPN is one of the most popular and reliable VPN protocols. It uses SSL/TLS encryption, supports a wide variety of devices and operating systems, and is continuously improved by the community due to its open-source nature. It provides a good balance between speed and security but is easily recognized by DPI systems, making it susceptible to blocking.
 
 Features:
@@ -6340,7 +6393,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="193"/>
+        <location filename="../containers/containers_defs.cpp" line="194"/>
         <source>Shadowsocks is based on the SOCKS5 protocol and encrypts connections using AEAD cipher. Although designed to be discreet, it doesn&apos;t mimic a standard HTTPS connection and can be detected by some DPI systems. Due to limited support in Amnezia, we recommend using the AmneziaWG protocol.
 
 Features:
@@ -6352,7 +6405,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="202"/>
+        <location filename="../containers/containers_defs.cpp" line="203"/>
         <source>This combination includes the OpenVPN protocol and the Cloak plugin, specifically designed to protect against blocking.
 
 OpenVPN securely encrypts all internet traffic between your device and the server.
@@ -6370,7 +6423,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="215"/>
+        <location filename="../containers/containers_defs.cpp" line="216"/>
         <source>WireGuard is a modern, streamlined VPN protocol offering stable connectivity and excellent performance across all devices. It uses fixed encryption settings, delivering lower latency and higher data transfer speeds compared to OpenVPN. However, WireGuard is easily identifiable by DPI systems due to its distinctive packet signatures, making it susceptible to blocking.
 
 Features:
@@ -6382,7 +6435,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="236"/>
+        <location filename="../containers/containers_defs.cpp" line="237"/>
         <source>XRay running VLESS over mKCP with salamander masking, this fork&apos;s default XRay variant. Every packet is XORed into pseudo-random noise instead of imitating a known protocol, which is what keeps it working on a server IP that DPI has already flagged -- REALITY&apos;s genuine TLS handshake gets clamped on such an IP regardless of the site it mimics, while noise has nothing for DPI to fingerprint.
 
 Features:
@@ -6393,20 +6446,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="247"/>
-        <source>REALITY is a protocol developed by the creators of XRay, designed specifically to combat high levels of internet censorship. It performs a genuine TLS handshake against a real site (e.g. a major CDN) and forwards anyone who isn&apos;t the real client to that site unmodified, so probing it just finds an ordinary website with a valid certificate. Paired with XTLS-Vision, this is the official Amnezia transport and this fork&apos;s second, independently installable XRay variant -- installing it does not touch or remove the mKCP XRay container.
-
-Unlike older protocols such as VMess and plain VLESS, REALITY needs no self-signed certificate DPI could fingerprint, since the certificate it presents is the real site&apos;s own.
-
-Features:
-* Real TLS handshake -- looks like ordinary HTTPS to DPI
-* Faster than mKCP on a clean (unflagged) server IP
-* Gets clamped by DPI that has already flagged the server&apos;s IP -- use the mKCP variant there
-* Operates over TCP + REALITY + XTLS-Vision on port 443</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../containers/containers_defs.cpp" line="260"/>
+        <location filename="../containers/containers_defs.cpp" line="264"/>
         <source>IKEv2, combined with IPSec encryption, is a modern and reliable VPN protocol. It reconnects quickly when switching networks or devices, making it ideal for dynamic network environments. While it provides good security and speed, it&apos;s easily recognized by DPI systems and susceptible to blocking.
 
 Features:
@@ -6418,7 +6458,7 @@ Features:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="279"/>
+        <location filename="../containers/containers_defs.cpp" line="283"/>
         <source>Shadowsocks proxy implemented with XRay core.
 Lightweight protocol that effectively masks VPN traffic as regular web data.
 
@@ -6441,12 +6481,12 @@ Features:
         <translation type="vanished">वास्तविकता के साथ एक्सरे - उच्चतम स्तर की इंटरनेट सेंसरशिप वाले देशों के लिए उपयुक्त। टीएलएस स्तर पर ट्रैफ़िक को वेब ट्रैफ़िक के रूप में छिपाया जाता है, और सक्रिय जांच विधियों द्वारा पता लगाने से सुरक्षा प्रदान की जाती है.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="159"/>
+        <location filename="../containers/containers_defs.cpp" line="160"/>
         <source>IKEv2/IPsec -  Modern stable protocol, a bit faster than others, restores connection after signal loss. It has native support on the latest versions of Android and iOS.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="166"/>
+        <location filename="../containers/containers_defs.cpp" line="167"/>
         <source>Create a file vault on your server to securely store and transfer files.</source>
         <translation>फ़ाइलों को सुरक्षित रूप से संग्रहीत और स्थानांतरित करने के लिए अपने सर्वर पर एक फ़ाइल वॉल्ट बनाएं.</translation>
     </message>
@@ -6509,7 +6549,7 @@ WireGuard is very susceptible to blocking due to its distinct packet signatures.
 * यूडीपी नेटवर्क प्रोटोकॉल पर काम करता है।.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="273"/>
+        <location filename="../containers/containers_defs.cpp" line="277"/>
         <source>After installation, Amnezia will create a
 
  file storage on your server. You will be able to access it using
@@ -6540,12 +6580,12 @@ For more detailed information, you can
         <translation type="vanished">IKEv2/IPsec - आधुनिक स्थिर प्रोटोकॉल, दूसरों की तुलना में थोड़ा तेज़, सिग्नल हानि के बाद कनेक्शन पुनर्स्थापित करता है।</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="162"/>
+        <location filename="../containers/containers_defs.cpp" line="163"/>
         <source>Deploy a WordPress site on the Tor network in two clicks.</source>
         <translation>दो क्लिक में टोर नेटवर्क पर एक वर्डप्रेस साइट तैनात करें।.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="164"/>
+        <location filename="../containers/containers_defs.cpp" line="165"/>
         <source>Replace the current DNS server with your own. This will increase your privacy level.</source>
         <translation>वर्तमान DNS सर्वर को अपने स्वयं के DNS सर्वर से बदलें। इससे आपकी गोपनीयता का स्तर बढ़ जाएगा.</translation>
     </message>
@@ -6632,7 +6672,7 @@ While it offers a blend of security, stability, and speed, it&apos;s essential t
 * यूडीपी नेटवर्क प्रोटोकॉल, पोर्ट 500 और 4500 पर काम करता है.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="271"/>
+        <location filename="../containers/containers_defs.cpp" line="275"/>
         <source>DNS Service</source>
         <translation>DNS सेवाएँ</translation>
     </message>
@@ -7348,17 +7388,17 @@ While it offers a blend of security, stability, and speed, it&apos;s essential t
 <context>
     <name>SettingsController</name>
     <message>
-        <location filename="../ui/controllers/settingsController.cpp" line="185"/>
+        <location filename="../ui/controllers/settingsController.cpp" line="195"/>
         <source>Can&apos;t open file: %1</source>
         <translation type="unfinished">फ़ाइल नहीं खुल सकती: %1</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/settingsController.cpp" line="255"/>
+        <location filename="../ui/controllers/settingsController.cpp" line="265"/>
         <source>Backup file is corrupted</source>
         <translation>बैकअप फ़ाइल दूषित है</translation>
     </message>
     <message>
-        <location filename="../ui/controllers/settingsController.cpp" line="278"/>
+        <location filename="../ui/controllers/settingsController.cpp" line="288"/>
         <source>All settings have been reset to default values</source>
         <translation>सभी सेटिंग्स को डिफ़ॉल्ट मानों पर रीसेट कर दिया गया है</translation>
     </message>
@@ -7677,32 +7717,32 @@ While it offers a blend of security, stability, and speed, it&apos;s essential t
         <translation type="vanished">अधिकांश वीपीएन प्रोटोकॉल अवरुद्ध हैं। यदि अन्य विकल्प काम नहीं कर रहे हों तो अनुशंसित.</translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="443"/>
+        <location filename="../containers/containers_defs.cpp" line="447"/>
         <source>Recommended</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="444"/>
+        <location filename="../containers/containers_defs.cpp" line="448"/>
         <source>Alternative</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="445"/>
+        <location filename="../containers/containers_defs.cpp" line="449"/>
         <source>Fastest</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="453"/>
+        <location filename="../containers/containers_defs.cpp" line="457"/>
         <source>OpenVPN over Cloak will be installed. This is the most field-proven camouflage option in this fork: slower, but resistant to active probing and DPI blocking.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="455"/>
+        <location filename="../containers/containers_defs.cpp" line="459"/>
         <source>XRay VLESS + REALITY + XHTTP will be installed with randomized path and traffic padding. Use it when the server path is updated for the current XRay configuration.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../containers/containers_defs.cpp" line="457"/>
+        <location filename="../containers/containers_defs.cpp" line="461"/>
         <source>Hysteria 2 will be installed. QUIC/UDP transport with HTTPS masquerading — fastest option on stable networks that allow outbound UDP.</source>
         <translation type="unfinished"></translation>
     </message>

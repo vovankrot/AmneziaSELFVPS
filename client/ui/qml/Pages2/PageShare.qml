@@ -191,7 +191,23 @@ PageType {
 
         anchors.top: parent.top
         anchors.bottom: parent.bottom
+        anchors.leftMargin: GC.isDesktop() ? Math.max(28, (root.width - 600) / 2) : 0
+        anchors.rightMargin: GC.isDesktop() ? Math.max(28, (root.width - 600) / 2) : 1
         contentHeight: content.height + 10
+
+        Rectangle {
+            id: desktopCreateClientCard
+            z: -1
+            anchors.left: content.left
+            anchors.right: content.right
+            y: content.y + accessTypeSelector.y - 14
+            height: Math.max(0, content.y + shareButton.y + shareButton.height - y + 14)
+            radius: 10
+            color: AmneziaStyle.color.deepBrown
+            border.width: 1
+            border.color: AmneziaStyle.color.slateGray
+            visible: GC.isDesktop() && accessTypeSelector.currentIndex === 0
+        }
 
         ColumnLayout {
             id: content
@@ -200,8 +216,8 @@ PageType {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            anchors.rightMargin: 16
-            anchors.leftMargin: 16
+            anchors.rightMargin: GC.isDesktop() ? 18 : 16
+            anchors.leftMargin: GC.isDesktop() ? 18 : 16
 
             spacing: 0
 
@@ -269,13 +285,13 @@ PageType {
 
                 property int currentIndex: 0
 
-                Layout.topMargin: 32
+                Layout.topMargin: GC.isDesktop() ? 22 : 32
 
                 implicitWidth: accessTypeSelectorContent.implicitWidth
                 implicitHeight: accessTypeSelectorContent.implicitHeight
 
                 color: AmneziaStyle.color.onyxBlack
-                radius: 16
+                radius: GC.isDesktop() ? 8 : 16
 
                 RowLayout {
                     id: accessTypeSelectorContent
@@ -286,7 +302,7 @@ PageType {
                         id: connectionRadioButton
                         checked: accessTypeSelector.currentIndex === 0
 
-                        implicitWidth: (root.width - 32) / (root.supportsUserManagement ? 2 : 1)
+                        implicitWidth: (a.width - 36) / (root.supportsUserManagement ? 2 : 1)
                         text: qsTr("Connection")
 
                         onClicked: {
@@ -302,7 +318,7 @@ PageType {
                         checked: accessTypeSelector.currentIndex === 1
                         visible: root.supportsUserManagement
 
-                        implicitWidth: (root.width - 32) / 2
+                        implicitWidth: (a.width - 36) / 2
                         text: qsTr("Users")
 
                         onClicked: {
@@ -321,8 +337,8 @@ PageType {
 
             ParagraphTextType {
                 Layout.fillWidth: true
-                Layout.topMargin: 24
-                Layout.bottomMargin: 24
+                Layout.topMargin: GC.isDesktop() ? 16 : 24
+                Layout.bottomMargin: GC.isDesktop() ? 8 : 24
 
                 visible: accessTypeSelector.currentIndex === 0
 
@@ -333,7 +349,7 @@ PageType {
             TextFieldWithHeaderType {
                 id: clientNameTextField
                 Layout.fillWidth: true
-                Layout.topMargin: 16
+                Layout.topMargin: GC.isDesktop() ? 10 : 16
 
                 visible: accessTypeSelector.currentIndex === 0
 
@@ -351,7 +367,7 @@ PageType {
                 property int currentIndex: -1
 
                 Layout.fillWidth: true
-                Layout.topMargin: 16
+                Layout.topMargin: GC.isDesktop() ? 10 : 16
 
                 drawerHeight: 0.4375
                 drawerParent: root
@@ -414,7 +430,7 @@ PageType {
                 signal protocolSelectorTextChanged
 
                 Layout.fillWidth: true
-                Layout.topMargin: 16
+                Layout.topMargin: GC.isDesktop() ? 10 : 16
 
                 drawerHeight: 0.5
                 drawerParent: root
@@ -524,7 +540,7 @@ PageType {
                 property int currentIndex: 0
 
                 Layout.fillWidth: true
-                Layout.topMargin: 16
+                Layout.topMargin: GC.isDesktop() ? 10 : 16
 
                 drawerHeight: 0.4375
                 drawerParent: root
@@ -588,8 +604,8 @@ PageType {
                 id: shareButton
 
                 Layout.fillWidth: true
-                Layout.topMargin: 40
-                Layout.bottomMargin: 32
+                Layout.topMargin: GC.isDesktop() ? 18 : 40
+                Layout.bottomMargin: GC.isDesktop() ? 18 : 32
 
                 enabled: shareButtonEnabled
                 visible: accessTypeSelector.currentIndex === 0

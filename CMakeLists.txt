@@ -40,6 +40,14 @@ if(APPLE)
     set(CMAKE_OSX_ARCHITECTURES "x86_64")
 endif()
 
+execute_process(
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMAND git rev-parse --short HEAD
+    OUTPUT_VARIABLE GIT_COMMIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+add_definitions(-DGIT_COMMIT_HASH="${GIT_COMMIT_HASH}")
+
 add_subdirectory(client)
 
 add_subdirectory(service)

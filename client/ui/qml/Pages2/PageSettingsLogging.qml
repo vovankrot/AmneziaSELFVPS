@@ -100,6 +100,39 @@ PageType {
                     showQuestionDrawer(headerText, "", yesButtonText, noButtonText, yesButtonFunction, noButtonFunction)
                 }
             }
+
+            DividerType {
+                visible: root.networkDiagnosticsAvailable
+            }
+
+            LabelWithButtonType {
+                Layout.fillWidth: true
+                Layout.topMargin: -8
+                visible: root.networkDiagnosticsAvailable
+
+                text: qsTr("Run network diagnostics")
+                leftImageSource: "qrc:/images/controls/scan-line.svg"
+                isSmallLeftImage: true
+
+                clickedFunction: function() {
+                    var headerText = qsTr("Run network diagnostics?")
+                    var descriptionText = qsTr("This collects local network configuration (adapters, routes, DNS, proxy, drivers and firewall state) and saves a separate timestamped log. It takes a few seconds and does not open a console window.")
+                    var yesButtonText = qsTr("Continue")
+                    var noButtonText = qsTr("Cancel")
+
+                    var yesButtonFunction = function() {
+                        PageController.showBusyIndicator(true)
+                        var success = SettingsController.runNetworkDiagnostics()
+                        PageController.showBusyIndicator(false)
+                        PageController.showNotificationMessage(success
+                                                               ? qsTr("Network diagnostics saved")
+                                                               : qsTr("Network diagnostics failed"))
+                    }
+
+                    showQuestionDrawer(headerText, descriptionText, yesButtonText, noButtonText,
+                                       yesButtonFunction, function() {})
+                }
+            }
         }
 
         model: logTypes
@@ -168,12 +201,14 @@ PageType {
     // Show service logs only if this is NOT a macOS build with
     // Network-Extension (IsMacOsNeBuild is injected from C++ at run-time)
     // or if this is NOT a mobile build
-    property list<QtObject> logTypes: (IsMacOsNeBuild || GC.isMobile()) ? [
-        clientLogs
-    ] : [
-        clientLogs,
-        serviceLogs
-    ]
+    readonly property bool networkDiagnosticsAvailable: !GC.isMobile() && !IsMacOsNeBuild
+            && (Qt.platform.os === "windows" || Qt.platform.os === "linux" || Qt.platform.os === "osx")
+
+    property list<QtObject> logTypes: (IsMacOsNeBuild || GC.isMobile())
+            ? [clientLogs]
+            : (networkDiagnosticsAvailable
+               ? [clientLogs, serviceLogs, networkDiagnosticsLog]
+               : [clientLogs, serviceLogs])
 
     QtObject {
         id: clientLogs
@@ -223,6 +258,31 @@ PageType {
             if (fileName !== "") {
                 PageController.showBusyIndicator(true)
                 SettingsController.exportServiceLogsFile(fileName)
+                PageController.showBusyIndicator(false)
+                PageController.showNotificationMessage(qsTr("Logs file saved"))
+            }
+        }
+    }
+
+    QtObject {
+        id: networkDiagnosticsLog
+
+        readonly property string title: qsTr("Network diagnostics")
+        readonly property string description: qsTr("Local network configuration snapshot collected via the background service")
+        readonly property bool isVisible: root.networkDiagnosticsAvailable
+        readonly property var openLogsHandler: function() {
+            SettingsController.openLogsFolder()
+        }
+        readonly property var exportLogsHandler: function() {
+            var timestamp = Qt.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss")
+            var fileName = SystemController.getFileName(
+                        qsTr("Save"), qsTr("Logs files (*.log)"),
+                        StandardPaths.standardLocations(StandardPaths.DocumentsLocation)
+                            + "/Amnezia-network-" + timestamp,
+                        true, ".log")
+            if (fileName !== "") {
+                PageController.showBusyIndicator(true)
+                SettingsController.exportNetworkDiagnosticsFile(fileName)
                 PageController.showBusyIndicator(false)
                 PageController.showNotificationMessage(qsTr("Logs file saved"))
             }

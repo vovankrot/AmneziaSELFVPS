@@ -20,6 +20,7 @@ public:
     static void deInit();
 
     static bool setServiceLogsEnabled(bool enabled);
+    static bool runNetworkDiagnostics();
 
     static bool openLogsFolder(bool isServiceLogger);
 
@@ -29,10 +30,13 @@ public:
 
     static QString userLogsFilePath();
     static QString serviceLogsFilePath();
+    static QString newNetworkDiagnosticsFilePath();
+    static QString latestNetworkDiagnosticsFilePath();
     static QString systemLogDir();
 
     static QString getLogFile();
     static QString getServiceLogFile();
+    static QString getNetworkDiagnosticsFile();
 
 #ifdef Q_OS_WIN
     static void writeEmergencyCrashFile(const QString &reason, const QString &details);
@@ -108,6 +112,7 @@ private:
 
     static QString userLogsDir();
     static QString fallbackLogsDir(bool isServiceLogger);
+    static bool saveNetworkDiagnosticsResult(const QString &result);
 
     static QFile m_file;
     static QTextStream m_textStream;

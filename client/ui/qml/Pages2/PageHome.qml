@@ -24,6 +24,7 @@ PageType {
     property bool serverUpdateAvailable: false
     property bool isHotReconfiguring: DiagnosticsController.isResolving
     property int xrayRealitySwitcherRefresh: 0
+    property bool desktopAdvancedExpanded: false
 
     Connections {
         target: InstallController
@@ -247,9 +248,11 @@ PageType {
             id: homeColumnLayout
             objectName: "homeColumnLayout"
 
-            y: 12 + SettingsController.safeAreaTopMargin
-            width: homeFlickable.width
-            height: Math.max(homeFlickable.height - y - 16, implicitHeight)
+            y: (GC.isDesktop() ? 18 : 12) + SettingsController.safeAreaTopMargin
+            width: GC.isDesktop() ? Math.min(homeFlickable.width, 480) : homeFlickable.width
+            x: (homeFlickable.width - width) / 2
+            height: implicitHeight
+            spacing: 8
 
             BasicButtonType {
                 id: loggingButton
@@ -268,7 +271,7 @@ PageType {
                 textColor: AmneziaStyle.color.mutedGray
                 borderWidth: 0
 
-                visible: isLoggingEnabled ? true : false
+                visible: !GC.isDesktop() && isLoggingEnabled
                 text: qsTr("Logging enabled")
 
                 Keys.onEnterPressed: this.clicked()
@@ -296,7 +299,7 @@ PageType {
                 textColor: AmneziaStyle.color.mutedGray
                 borderWidth: 0
 
-                visible: SettingsController.isDevModeEnabled && isDevGatewayEnabled
+                visible: !GC.isDesktop() && SettingsController.isDevModeEnabled && isDevGatewayEnabled
                 text: qsTr("Dev gateway enabled")
 
                 Keys.onEnterPressed: this.clicked()
@@ -326,11 +329,11 @@ PageType {
                                                         : AmneziaStyle.color.deepBrown)
 
                 Layout.alignment: Qt.AlignHCenter
-                Layout.topMargin: 16
+                Layout.topMargin: GC.isDesktop() ? 4 : 16
                 Layout.bottomMargin: 4
 
-                implicitWidth: 132
-                implicitHeight: 132
+                implicitWidth: GC.isDesktop() ? 94 : 132
+                implicitHeight: implicitWidth
 
                 Behavior on implicitHeight { NumberAnimation { duration: 200 } }
 
@@ -500,7 +503,7 @@ PageType {
                               ? AmneziaStyle.color.goldenApricot
                               : AmneziaStyle.color.mutedGray)
                     font.family: "Inter"
-                    font.pixelSize: 15
+                    font.pixelSize: GC.isDesktop() ? 14 : 15
                     font.weight: 600
                 }
             }
@@ -518,8 +521,8 @@ PageType {
                 visible: ServersModel.getServersCount() > 0
 
                 implicitWidth: serverSwitcherRow.implicitWidth + 28
-                implicitHeight: 40
-                radius: 12
+                implicitHeight: GC.isDesktop() ? 34 : 40
+                radius: 8
 
                 color: serverChipMouse.containsMouse
                        ? AmneziaStyle.color.slateGray
@@ -543,8 +546,8 @@ PageType {
                         text: ServersModel.defaultServerName
                         color: AmneziaStyle.color.paleGray
                         font.family: "Inter"
-                        font.pixelSize: 18
-                        font.weight: 700
+                        font.pixelSize: GC.isDesktop() ? 15 : 18
+                        font.weight: 600
                         elide: Text.ElideRight
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -586,7 +589,7 @@ PageType {
                 objectName: "connectButtonBlock"
 
                 Layout.alignment: Qt.AlignHCenter
-                Layout.preferredWidth: Math.min(parent.width - 64, 324)
+                Layout.preferredWidth: Math.min(parent.width - 64, GC.isDesktop() ? 300 : 324)
                 Layout.topMargin: 8
                 Layout.bottomMargin: 8
 
@@ -598,6 +601,7 @@ PageType {
                     objectName: "connectButton"
 
                     width: Math.max(0, parent.width - homeHelpButton.implicitWidth - 8)
+                    height: implicitHeight
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
                 }
@@ -639,6 +643,8 @@ PageType {
                 implicitHeight: 62
                 radius: 12
                 color: AmneziaStyle.color.deepBrown
+                border.width: 1
+                border.color: AmneziaStyle.color.slateGray
                 visible: ServersModel.getServersCount() > 0
 
                 RowLayout {
@@ -648,6 +654,8 @@ PageType {
 
                     ColumnLayout {
                         Layout.fillWidth: true
+                        Layout.preferredWidth: 1
+                        Layout.minimumWidth: 0
                         spacing: 2
                         Text { text: qsTr("Protocol"); color: AmneziaStyle.color.mutedGray; font.family: "Inter"; font.pixelSize: 11 }
                         Text {
@@ -658,6 +666,8 @@ PageType {
                     }
                     ColumnLayout {
                         Layout.fillWidth: true
+                        Layout.preferredWidth: 1
+                        Layout.minimumWidth: 0
                         spacing: 2
                         Text { text: qsTr("Obfuscation"); color: AmneziaStyle.color.mutedGray; font.family: "Inter"; font.pixelSize: 11 }
                         Text {
@@ -690,6 +700,8 @@ PageType {
                 implicitHeight: 62
                 radius: 12
                 color: AmneziaStyle.color.deepBrown
+                border.width: 1
+                border.color: AmneziaStyle.color.slateGray
                 visible: ServersModel.getServersCount() > 0
 
                 RowLayout {
@@ -699,6 +711,8 @@ PageType {
 
                     ColumnLayout {
                         Layout.fillWidth: true
+                        Layout.preferredWidth: 1
+                        Layout.minimumWidth: 0
                         spacing: 2
                         Text { text: qsTr("Traffic"); color: AmneziaStyle.color.mutedGray; font.family: "Inter"; font.pixelSize: 11 }
                         Text {
@@ -710,6 +724,8 @@ PageType {
                     }
                     ColumnLayout {
                         Layout.fillWidth: true
+                        Layout.preferredWidth: 1
+                        Layout.minimumWidth: 0
                         spacing: 2
                         Text { text: qsTr("IP address"); color: AmneziaStyle.color.mutedGray; font.family: "Inter"; font.pixelSize: 11 }
                         RowLayout {
@@ -740,6 +756,57 @@ PageType {
                 }
             }
 
+            Rectangle {
+                id: desktopAdvancedToggle
+                Layout.alignment: Qt.AlignHCenter
+                Layout.fillWidth: true
+                Layout.maximumWidth: 360
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+                Layout.topMargin: 8
+                implicitHeight: 38
+                radius: 8
+                color: advancedMouse.containsMouse
+                       ? AmneziaStyle.color.deepBrown
+                       : AmneziaStyle.color.onyxBlack
+                border.width: 1
+                border.color: AmneziaStyle.color.slateGray
+                visible: GC.isDesktop() && ServersModel.getServersCount() > 0
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 13
+                    anchors.rightMargin: 13
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: qsTr("Advanced")
+                        color: AmneziaStyle.color.mutedGray
+                        font.family: "Inter"
+                        font.pixelSize: 12
+                        font.weight: 500
+                    }
+                    TintedIconType {
+                        Layout.preferredWidth: 14
+                        Layout.preferredHeight: 14
+                        source: root.desktopAdvancedExpanded
+                                ? "qrc:/images/controls/chevron-up.svg"
+                                : "qrc:/images/controls/chevron-down.svg"
+                        tintColor: AmneziaStyle.color.mutedGray
+                        iconWidth: 14
+                        iconHeight: 14
+                    }
+                }
+
+                MouseArea {
+                    id: advancedMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.desktopAdvancedExpanded = !root.desktopAdvancedExpanded
+                }
+            }
+
             // Reality DNS Recovery Button
             BasicButtonType {
                 id: realityDnsRecoveryButton
@@ -759,6 +826,9 @@ PageType {
                 borderWidth: 0
 
                 visible: {
+                    if (GC.isDesktop() && !root.desktopAdvancedExpanded) {
+                        return false
+                    }
                     var containerName = (ServersModel.defaultServerDefaultContainerName || "").toLowerCase()
                     return containerName.indexOf("xray") !== -1 || containerName.indexOf("ssxray") !== -1
                 }
@@ -814,7 +884,8 @@ PageType {
                 Layout.bottomMargin: 2
                 spacing: 6
 
-                visible: !ServersModel.isDefaultServerFromApi && installedProtocolsModel.count > 1
+                visible: (!GC.isDesktop() || root.desktopAdvancedExpanded)
+                         && !ServersModel.isDefaultServerFromApi && installedProtocolsModel.count > 1
 
                 CaptionTextType {
                     Layout.alignment: Qt.AlignHCenter
@@ -893,7 +964,7 @@ PageType {
                 id: autoFailoverRow
                 Layout.alignment: Qt.AlignHCenter
                 spacing: 8
-                visible: ServersModel.getServersCount() > 1
+                visible: (!GC.isDesktop() || root.desktopAdvancedExpanded) && ServersModel.getServersCount() > 1
 
                 CaptionTextType {
                     text: qsTr("Auto-failover")
@@ -941,7 +1012,8 @@ PageType {
                 id: awgHeaderProtectionRow
                 Layout.alignment: Qt.AlignHCenter
                 spacing: 8
-                visible: (root.xrayRealitySwitcherRefresh, root.defaultContainer()) === ContainerEnum.Awg2
+                visible: (!GC.isDesktop() || root.desktopAdvancedExpanded)
+                         && (root.xrayRealitySwitcherRefresh, root.defaultContainer()) === ContainerEnum.Awg2
 
                 CaptionTextType {
                     text: qsTr("Header protection")
@@ -1141,6 +1213,7 @@ PageType {
 
                 Layout.alignment: Qt.AlignHCenter
                 spacing: 4
+                visible: !GC.isDesktop() || root.desktopAdvancedExpanded
 
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
@@ -1242,6 +1315,7 @@ PageType {
                 objectName: "splitTunnelingButton"
 
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
+                visible: !GC.isDesktop() || root.desktopAdvancedExpanded
                 leftPadding: 16
                 rightPadding: 16
 
@@ -1294,6 +1368,7 @@ PageType {
                 Layout.leftMargin: 16
                 Layout.rightMargin: 16
                 Layout.topMargin: 22
+                visible: !GC.isDesktop()
             }
 
             // ── Signature — by vovankrot (clean, no glow halo) ───────────────
@@ -1312,6 +1387,7 @@ PageType {
                 font.weight: 600
                 font.italic: true
                 opacity: 0.85
+                visible: !GC.isDesktop()
             }
         }
     }

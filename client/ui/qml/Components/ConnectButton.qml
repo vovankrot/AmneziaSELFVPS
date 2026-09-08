@@ -1,4 +1,5 @@
 import QtQuick
+import "../Config"
 import QtQuick.Controls
 import QtQuick.Layouts
 
@@ -14,7 +15,7 @@ Button {
     property string defaultButtonColor: AmneziaStyle.color.goldenApricot
     property string progressButtonColor: AmneziaStyle.color.charcoalGray
     property string connectedButtonColor: AmneziaStyle.color.goldenApricot
-    property string disconnectButtonColor: AmneziaStyle.color.vibrantRed
+    property string disconnectButtonColor: AmneziaStyle.color.goldenApricot
     property bool buttonActiveFocus: activeFocus && (Qt.platform.os !== "android" || SettingsController.isOnTv())
     property color idleBorderColor: AmneziaStyle.color.transparent
 
@@ -27,8 +28,8 @@ Button {
     Keys.onLeftPressed: FocusController.nextKeyLeftItem()
     Keys.onRightPressed: FocusController.nextKeyRightItem()
 
-    implicitWidth: 240
-    implicitHeight: 56
+    implicitWidth: GC.isDesktop() ? 220 : 240
+    implicitHeight: GC.isDesktop() ? 40 : 56
 
     text: ConnectionController.actionButtonText
 
@@ -42,16 +43,17 @@ Button {
 
     background: Rectangle {
         id: bg
+        objectName: "connectButtonBackground"
         anchors.fill: parent
-        radius: 16
+        radius: GC.isDesktop() ? 8 : 16
         clip: true
         color: {
             if (ConnectionController.isConnectionInProgress) {
                 return root.progressButtonColor
             } else if (ConnectionController.isConnected) {
-                return root.pressed ? AmneziaStyle.color.burntOrange : (root.hovered ? AmneziaStyle.color.burntOrange : root.disconnectButtonColor)
+                return root.pressed ? Qt.darker(root.disconnectButtonColor, 1.15) : (root.hovered ? AmneziaStyle.color.softViolet : root.disconnectButtonColor)
             } else {
-                return root.pressed ? AmneziaStyle.color.burntOrange : (root.hovered ? AmneziaStyle.color.mutedBrown : root.defaultButtonColor)
+                return root.pressed ? Qt.darker(root.defaultButtonColor, 1.15) : (root.hovered ? AmneziaStyle.color.softViolet : root.defaultButtonColor)
             }
         }
         border.color: {
@@ -71,7 +73,7 @@ Button {
             visible: ConnectionController.isConnectionInProgress
             anchors.fill: parent
             anchors.margins: 3
-            radius: 13
+            radius: GC.isDesktop() ? 6 : 13
             color: AmneziaStyle.color.transparent
             border.width: 1
             border.color: AmneziaStyle.color.goldenApricot
@@ -96,7 +98,7 @@ Button {
         height: 24
 
         font.weight: 700
-        font.pixelSize: 18
+        font.pixelSize: GC.isDesktop() ? 13 : 18
 
         color: {
             if (ConnectionController.isConnectionInProgress) {
@@ -104,7 +106,7 @@ Button {
             } else if (ConnectionController.isConnected) {
                 return AmneziaStyle.color.paleGray
             } else {
-                return AmneziaStyle.color.midnightBlack
+                return AmneziaStyle.color.pearlGray
             }
         }
         text: root.text

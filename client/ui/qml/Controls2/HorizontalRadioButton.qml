@@ -1,4 +1,5 @@
 import QtQuick
+import "../Config"
 import QtQuick.Controls
 import QtQuick.Layouts
 
@@ -55,7 +56,7 @@ RadioButton {
 
     indicator: Rectangle {
         anchors.fill: parent
-        radius: 16
+        radius: GC.isDesktop() ? 8 : 16
 
         color: {
             if (root.enabled) {
@@ -113,10 +114,11 @@ RadioButton {
             color: root.enabled ? root.textColor : root.textDisabledColor
 
             Layout.fillWidth: true
-            Layout.rightMargin: 24
-            Layout.leftMargin: 24
-            Layout.topMargin: 12
-            Layout.bottomMargin: 12
+            Layout.rightMargin: GC.isDesktop() ? 16 : 24
+            Layout.leftMargin: GC.isDesktop() ? 16 : 24
+            Layout.topMargin: GC.isDesktop() ? 9 : 12
+            Layout.bottomMargin: GC.isDesktop() ? 9 : 12
+            font.pixelSize: GC.isDesktop() ? 13 : 16
 
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter

@@ -1,4 +1,5 @@
 import QtQuick
+import "../Config"
 import QtQuick.Controls
 import QtQuick.Layouts
 
@@ -58,7 +59,8 @@ Button {
         FocusController.nextKeyRightItem()
     }
     
-    implicitHeight: 56
+    implicitHeight: GC.isDesktop() ? 40 : 56
+    implicitWidth: content.implicitWidth + 32
 
     hoverEnabled: true
 
@@ -71,7 +73,7 @@ Button {
 
         anchors.fill: parent
 
-        radius: 10
+        radius: GC.isDesktop() ? 8 : 10
 
         Rectangle {
             id: background
@@ -79,7 +81,7 @@ Button {
             anchors.fill: focusBorder
             anchors.margins: root.activeFocus ? 2 : 0
 
-            radius: root.activeFocus ? 8 : 10
+            radius: root.activeFocus ? 7 : (GC.isDesktop() ? 8 : 10)
             color: {
                 if (root.enabled) {
                     if (root.pressed) {
@@ -145,8 +147,8 @@ Button {
                 id: leftImageOriginal
                 source: root.leftImageSource
                 visible: root.leftImageSource !== "" && root.leftImageColor === ""
-                Layout.preferredHeight: root.changeLeftImageSize ? 20 : implicitHeight
-                Layout.preferredWidth: root.changeLeftImageSize ? 20 : implicitWidth
+                Layout.preferredHeight: root.changeLeftImageSize ? (GC.isDesktop() ? 16 : 20) : implicitHeight
+                Layout.preferredWidth: root.changeLeftImageSize ? (GC.isDesktop() ? 16 : 20) : implicitWidth
             }
 
             TintedIconType {
@@ -154,8 +156,8 @@ Button {
                 source: root.leftImageSource
                 tintColor: root.leftImageColor
                 visible: root.leftImageSource !== "" && root.leftImageColor !== ""
-                iconWidth: root.changeLeftImageSize ? 20 : 24
-                iconHeight: root.changeLeftImageSize ? 20 : 24
+                iconWidth: root.changeLeftImageSize ? (GC.isDesktop() ? 16 : 20) : 24
+                iconHeight: root.changeLeftImageSize ? (GC.isDesktop() ? 16 : 20) : 24
                 Layout.preferredHeight: iconHeight
                 Layout.preferredWidth: iconWidth
             }
@@ -166,6 +168,8 @@ Button {
                 color: root.textColor
                 text: root.text
                 visible: root.text === "" ? false : true
+                font.pixelSize: GC.isDesktop() ? 13 : 16
+                font.weight: GC.isDesktop() ? 600 : 500
 
                 horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignVCenter
@@ -175,8 +179,8 @@ Button {
                 source: root.rightImageSource
                 tintColor: root.textColor
                 visible: root.rightImageSource !== ""
-                iconWidth: 20
-                iconHeight: 20
+                iconWidth: GC.isDesktop() ? 16 : 20
+                iconHeight: GC.isDesktop() ? 16 : 20
                 Layout.preferredHeight: iconHeight
                 Layout.preferredWidth: iconWidth
             }

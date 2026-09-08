@@ -1,4 +1,5 @@
 import QtQuick
+import "../Config"
 import QtQuick.Controls
 import QtQuick.Layouts
 
@@ -70,10 +71,10 @@ Switch {
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
 
-        implicitWidth: 52
-        implicitHeight: 32
+        implicitWidth: GC.isDesktop() ? 34 : 52
+        implicitHeight: GC.isDesktop() ? 20 : 32
 
-        radius: 16
+        radius: height / 2
         color: root.checked ? (root.enabled ? root.checkedIndicatorColor : root.checkedDisabledIndicatorColor)
                             : root.defaultIndicatorColor
 
@@ -91,9 +92,9 @@ Switch {
             id: innerCircle
 
             anchors.verticalCenter: parent.verticalCenter
-            x: root.checked ? parent.width - width - 4 : 8
-            width: root.checked ? 24 : 16
-            height: root.checked ? 24 : 16
+            x: root.checked ? parent.width - width - (GC.isDesktop() ? 3 : 4) : (GC.isDesktop() ? 3 : 8)
+            width: GC.isDesktop() ? 14 : (root.checked ? 24 : 16)
+            height: width
             radius: 23
             color: root.checked ? (root.enabled ? root.checkedInnerCircleColor : root.checkedDisabledInnerCircleColor)
                                 : (root.enabled ? root.defaultInnerCircleColor : root.defaultDisabledInnerCircleColor)
@@ -105,8 +106,8 @@ Switch {
 
         Rectangle {
             anchors.centerIn: innerCircle
-            width: 40
-            height: 40
+            width: GC.isDesktop() ? 30 : 40
+            height: width
             radius: 23
             color: root.hovered ? root.hoveredIndicatorBackgroundColor : root.defaultIndicatorBackgroundColor
 
@@ -121,6 +122,7 @@ Switch {
 
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
+        anchors.right: parent.right
 
         ListItemTitleType {
             Layout.fillWidth: true
@@ -128,6 +130,7 @@ Switch {
 
             text: root.text
             color: root.enabled ? root.textColor : root.textDisabledColor
+            font.pixelSize: GC.isDesktop() ? 13 : 18
         }
 
         CaptionTextType {
@@ -137,6 +140,7 @@ Switch {
             rightPadding: indicator.width
 
             color: root.enabled ? root.descriptionTextColor : root.descriptionTextDisabledColor
+            font.pixelSize: GC.isDesktop() ? 11 : 13
 
             visible: text !== ""
         }

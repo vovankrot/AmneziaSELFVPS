@@ -1,4 +1,5 @@
 import QtQuick
+import "../Config"
 import QtQuick.Controls
 import QtQuick.Layouts
 
@@ -62,7 +63,7 @@ Item {
             Layout.fillWidth: true
             Layout.preferredHeight: input.implicitHeight
             color: root.enabled ? root.backgroundColor : root.backgroundDisabledColor
-            radius: 16
+            radius: GC.isDesktop() ? 8 : 16
             border.color: getBackgroundBorderColor(root.borderColor)
             border.width: 1
 
@@ -74,7 +75,7 @@ Item {
                 id: input
                 anchors.fill: backgroud
                 ColumnLayout {
-                    Layout.margins: 16
+                    Layout.margins: GC.isDesktop() ? 11 : 16
                     LabelTextType {
                         text: root.headerText
                         color: root.enabled ? root.headerTextColor : root.headerTextDisabledColor
@@ -107,11 +108,11 @@ Item {
                         selectionColor:  AmneziaStyle.color.richBrown
                         selectedTextColor: AmneziaStyle.color.paleGray
 
-                        font.pixelSize: 16
+                        font.pixelSize: GC.isDesktop() ? 13 : 16
                         font.weight: 400
                         font.family: "Inter"
 
-                        height: 24
+                        Layout.preferredHeight: GC.isDesktop() ? 20 : 24
                         Layout.fillWidth: true
 
                         topPadding: 0

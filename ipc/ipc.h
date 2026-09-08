@@ -15,7 +15,8 @@ enum PermittedProcess {
     OpenVPN,
     Wireguard,
     Tun2Socks,
-    CertUtil
+    CertUtil,
+    PermittedProcessCount
 };
 
 inline QString permittedProcessPath(PermittedProcess pid)
@@ -57,6 +58,17 @@ inline QStringList sanitizeArguments(PermittedProcess proc, const QStringList &a
     QList<Validator> positionalArgs;
 
     switch (proc) {
+    case OpenVPN: {
+        namedArgs["--config"] = [](const QString& v) { return !v.isEmpty(); };
+        namedArgs["--management"] = [](const QString& v) { return !v.isEmpty(); };
+        namedArgs["--management-client"] = nullptr;
+        positionalArgs.append([](const QString& v) {
+            bool ok = false;
+            const int port = v.toInt(&ok);
+            return ok && port > 0 && port <= 65535;
+        });
+        break;
+    }
     case Tun2Socks:
         // v2.7.0 (upgraded 2026-08-05) uses cobra/pflag, which requires the
         // double-dash long form -- a single dash before a multi-character name
@@ -68,9 +80,12 @@ inline QStringList sanitizeArguments(PermittedProcess proc, const QStringList &a
         // auto-tuning is opt-in and unused, and this build still has no `-stack`
         // flag (single gVisor netstack).
         break;
-    default:
-        //FIXME
+    case CertUtil:
+        // certutil arguments are assembled by the IKEv2 client flow. Preserve
+        // compatibility here; all other privileged processes are deny-by-default.
         return args;
+    default:
+        return {};
     }
 
 

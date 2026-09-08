@@ -1,4 +1,5 @@
 import QtQuick
+import "../Config"
 import QtQuick.Controls
 import QtQuick.Layouts
 
@@ -119,19 +120,19 @@ Item {
     RowLayout {
         id: content
         anchors.fill: parent
-        anchors.leftMargin: 16
-        anchors.rightMargin: 16
-        anchors.topMargin: 16
-        anchors.bottomMargin: 16
+        anchors.leftMargin: GC.isDesktop() ? 12 : 16
+        anchors.rightMargin: GC.isDesktop() ? 12 : 16
+        anchors.topMargin: GC.isDesktop() ? 10 : 16
+        anchors.bottomMargin: GC.isDesktop() ? 10 : 16
 
         Rectangle {
             id: leftImageBackground
 
             visible: leftImageSource ? true : false
 
-            Layout.preferredHeight: (rightImageSource || !isLeftImageHoverEnabled || isSmallLeftImage) ? 40 : 56
-            Layout.preferredWidth: (rightImageSource || !isLeftImageHoverEnabled || isSmallLeftImage)? 40 : 56
-            Layout.rightMargin: isSmallLeftImage ? 8 : (rightImageSource || !isLeftImageHoverEnabled) ? 16 : 0
+            Layout.preferredHeight: GC.isDesktop() ? 32 : ((rightImageSource || !isLeftImageHoverEnabled || isSmallLeftImage) ? 40 : 56)
+            Layout.preferredWidth: GC.isDesktop() ? 32 : ((rightImageSource || !isLeftImageHoverEnabled || isSmallLeftImage)? 40 : 56)
+            Layout.rightMargin: GC.isDesktop() ? 8 : (isSmallLeftImage ? 8 : (rightImageSource || !isLeftImageHoverEnabled) ? 16 : 0)
 
             radius: 12
             color: AmneziaStyle.color.transparent
@@ -162,8 +163,8 @@ Item {
             property real textLineHeight: 21.6
             property real descriptionTextLineHeight: 16
 
-            property int textPixelSize: 18
-            property int descriptionTextSize: 13
+            property int textPixelSize: GC.isDesktop() ? 14 : 18
+            property int descriptionTextSize: GC.isDesktop() ? 11 : 13
 
             ListItemTitleType {
                 text: root.text

@@ -163,6 +163,16 @@ void SettingsController::clearLogs()
     qInfo().noquote() << QString("SSL backend: %1").arg(QSslSocket::sslLibraryVersionString());
 }
 
+bool SettingsController::runNetworkDiagnostics()
+{
+    return Logger::runNetworkDiagnostics();
+}
+
+void SettingsController::exportNetworkDiagnosticsFile(const QString &fileName)
+{
+    SystemController::saveFile(fileName, Logger::getNetworkDiagnosticsFile());
+}
+
 void SettingsController::backupAppConfig(const QString &fileName)
 {
     QByteArray data = m_settings->backupAppConfig();

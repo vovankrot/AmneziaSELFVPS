@@ -38,8 +38,8 @@ Item {
     property string rootButtonPressedBorderColor: AmneziaStyle.color.paleGray
 
     property int rootButtonTextLeftMargins: 16
-    property int rootButtonTextTopMargin: 16
-    property int rootButtonTextBottomMargin: 16
+    property int rootButtonTextTopMargin: GC.isDesktop() ? 10 : 16
+    property int rootButtonTextBottomMargin: GC.isDesktop() ? 10 : 16
 
     property real drawerHeight: 0.9
     property Item drawerParent
@@ -116,7 +116,7 @@ Item {
         border.color: root.activeFocus ? root.borderFocusedColor : AmneziaStyle.color.transparent
         border.width: root.activeFocus ? root.borderFocusedWidth : 0
         anchors.fill: rootButtonContent
-        radius: 12
+        radius: GC.isDesktop() ? 8 : 12
 
 
         Rectangle {
@@ -124,7 +124,7 @@ Item {
 
             anchors.fill: focusBorder
             anchors.margins: root.activeFocus ? 2 : 0
-            radius: root.activeFocus ? 10 : 12
+            radius: root.activeFocus ? 7 : (GC.isDesktop() ? 8 : 12)
 
             color: {
                 if (root.enabled) {
@@ -190,8 +190,8 @@ Item {
         ImageButtonType {
             Layout.rightMargin: 16
 
-            implicitWidth: 40
-            implicitHeight: 40
+            implicitWidth: GC.isDesktop() ? 32 : 40
+            implicitHeight: GC.isDesktop() ? 32 : 40
 
             hoverEnabled: false
             image: rootButtonImage
