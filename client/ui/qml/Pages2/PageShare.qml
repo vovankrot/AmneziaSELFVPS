@@ -40,6 +40,7 @@ PageType {
         }
 
         function onGenerateConfig(type) {
+            if (ExportController.clientsLoading) return
             PageController.showBusyIndicator(true)
 
             var configCaption
@@ -191,8 +192,10 @@ PageType {
 
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        anchors.leftMargin: GC.isDesktop() ? Math.max(28, (root.width - 600) / 2) : 0
-        anchors.rightMargin: GC.isDesktop() ? Math.max(28, (root.width - 600) / 2) : 1
+        anchors.leftMargin: GC.isDesktop() ? 64 : 0
+        anchors.rightMargin: GC.isDesktop() ? 64 : 1
+        anchors.topMargin: GC.isDesktop() ? 28 + SettingsController.safeAreaTopMargin : 0
+        anchors.bottomMargin: GC.isDesktop() ? 28 : 0
         contentHeight: content.height + 10
 
         Rectangle {
@@ -206,7 +209,7 @@ PageType {
             color: AmneziaStyle.color.deepBrown
             border.width: 1
             border.color: AmneziaStyle.color.slateGray
-            visible: GC.isDesktop() && accessTypeSelector.currentIndex === 0
+            visible: false
         }
 
         ColumnLayout {
@@ -216,8 +219,8 @@ PageType {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            anchors.rightMargin: GC.isDesktop() ? 18 : 16
-            anchors.leftMargin: GC.isDesktop() ? 18 : 16
+            anchors.rightMargin: GC.isDesktop() ? 0 : 16
+            anchors.leftMargin: GC.isDesktop() ? 0 : 16
 
             spacing: 0
 
@@ -225,8 +228,9 @@ PageType {
                 id: header
                 Layout.fillWidth: true
                 Layout.topMargin: 24 + SettingsController.safeAreaTopMargin
+                visible: !GC.isDesktop()
 
-                headerText: qsTr("Share VPN Access")
+                headerText: GC.isDesktop() ? (accessTypeSelector.currentIndex === 0 ? qsTr("New client") : qsTr("Clients")) : qsTr("Share VPN Access")
 
                 actionButtonImage: "qrc:/images/controls/more-vertical.svg"
                 actionButtonFunction: function() {
@@ -280,10 +284,62 @@ PageType {
                 }
             }
 
+            RowLayout {
+                id: desktopClientsHeader
+                objectName: "desktopClientsHeader"
+                Layout.fillWidth: true
+                visible: GC.isDesktop()
+                spacing: 12
+
+                Text {
+                    Layout.fillWidth: true
+                    text: accessTypeSelector.currentIndex === 0 ? qsTr("New client") : qsTr("Clients")
+                    color: AmneziaStyle.color.paleGray
+                    font.family: "Inter"
+                    font.pixelSize: 24
+                    font.weight: 700
+                }
+
+                BasicButtonType {
+                    objectName: "desktopClientsBackButton"
+                    visible: accessTypeSelector.currentIndex === 0 && root.supportsUserManagement
+                    text: qsTr("Back to clients")
+                    defaultColor: AmneziaStyle.color.transparent
+                    hoveredColor: AmneziaStyle.color.translucentWhite
+                    textColor: AmneziaStyle.color.mutedGray
+                    borderWidth: 0
+                    clickedFunc: function() { usersRadioButton.clicked(); a.contentY = 0 }
+                }
+
+                BasicButtonType {
+                    objectName: "desktopAddClientButton"
+                        enabled: !ExportController.clientsLoading
+                    visible: accessTypeSelector.currentIndex === 1
+                    text: qsTr("Add client")
+                    leftImageSource: "qrc:/images/controls/plus.svg"
+                    implicitHeight: 40
+                    defaultColor: AmneziaStyle.color.goldenApricot
+                    hoveredColor: AmneziaStyle.color.softViolet
+                    pressedColor: AmneziaStyle.color.accentGlowViolet
+                    textColor: AmneziaStyle.color.paleGray
+                    clickedFunc: function() { connectionRadioButton.clicked(); a.contentY = 0 }
+                }
+
+                ImageButtonType {
+                    objectName: "desktopClientsMenuButton"
+                    image: "qrc:/images/controls/more-vertical.svg"
+                    imageColor: AmneziaStyle.color.mutedGray
+                    implicitWidth: 40
+                    implicitHeight: 40
+                    onClicked: shareFullAccessDrawer.openTriggered()
+                }
+            }
+
             Rectangle {
                 id: accessTypeSelector
 
-                property int currentIndex: 0
+                property int currentIndex: GC.isDesktop() && root.supportsUserManagement ? 1 : 0
+                visible: !GC.isDesktop()
 
                 Layout.topMargin: GC.isDesktop() ? 22 : 32
 
@@ -323,16 +379,75 @@ PageType {
 
                         onClicked: {
                             accessTypeSelector.currentIndex = 1
-                            PageController.showBusyIndicator(true)
                             ExportController.updateClientManagementModel(ContainersModel.getProcessedContainerIndex(),
                                                                          ServersModel.getProcessedServerCredentials())
-                            PageController.showBusyIndicator(false)
                         }
 
                         Keys.onEnterPressed: this.clicked()
                         Keys.onReturnPressed: this.clicked()
                     }
                 }
+            }
+
+            RowLayout {
+                id: desktopClientFilters
+                objectName: "desktopClientFilters"
+                Layout.fillWidth: true
+                Layout.topMargin: 24
+                Layout.bottomMargin: 12
+                visible: GC.isDesktop() && accessTypeSelector.currentIndex === 1
+                spacing: 12
+
+                Rectangle {
+                    Layout.preferredWidth: Math.min(260, (desktopClientFilters.width - 164) / 2)
+                    Layout.preferredHeight: 44
+                    radius: 8
+                    color: desktopServerFilterMouse.containsMouse ? AmneziaStyle.color.translucentWhite : "transparent"
+                    border.width: 1
+                    border.color: AmneziaStyle.color.slateGray
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 14
+                        anchors.rightMargin: 12
+                        Text { Layout.fillWidth: true; text: serverSelector.text; color: AmneziaStyle.color.paleGray; font.family: "Inter"; font.pixelSize: 13; elide: Text.ElideRight }
+                        TintedIconType { Layout.preferredWidth: 14; Layout.preferredHeight: 14; source: "qrc:/images/controls/chevron-down.svg"; tintColor: AmneziaStyle.color.mutedGray; iconWidth: 14; iconHeight: 14 }
+                    }
+                    MouseArea { id: desktopServerFilterMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: serverSelector.openTriggered() }
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: Math.min(210, (desktopClientFilters.width - 164) / 2)
+                    Layout.preferredHeight: 44
+                    radius: 8
+                    color: desktopProtocolFilterMouse.containsMouse ? AmneziaStyle.color.translucentWhite : "transparent"
+                    border.width: 1
+                    border.color: AmneziaStyle.color.slateGray
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 14
+                        anchors.rightMargin: 12
+                        Text { Layout.fillWidth: true; text: protocolSelector.text; color: AmneziaStyle.color.paleGray; font.family: "Inter"; font.pixelSize: 13; elide: Text.ElideRight }
+                        TintedIconType { Layout.preferredWidth: 14; Layout.preferredHeight: 14; source: "qrc:/images/controls/chevron-down.svg"; tintColor: AmneziaStyle.color.mutedGray; iconWidth: 14; iconHeight: 14 }
+                    }
+                    MouseArea { id: desktopProtocolFilterMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: protocolSelector.openTriggered() }
+                }
+                BusyIndicator {
+                    objectName: "clientsRefreshIndicator"
+                    Layout.preferredWidth: 28
+                    Layout.preferredHeight: 28
+                    running: ExportController.clientsLoading
+                    visible: running
+                }
+                BasicButtonType {
+                    objectName: "clientsRefreshButton"
+                    text: qsTr("Refresh")
+                    enabled: !ExportController.clientsLoading
+                    clickedFunc: function() {
+                        ExportController.updateClientManagementModel(ContainersModel.getProcessedContainerIndex(),
+                                                                     ServersModel.getProcessedServerCredentials(), true)
+                    }
+                }
+                Item { Layout.fillWidth: true }
             }
 
             ParagraphTextType {
@@ -354,7 +469,7 @@ PageType {
                 visible: accessTypeSelector.currentIndex === 0
 
                 headerText: qsTr("User name")
-                textField.text: "New client"
+                textField.text: qsTr("New client")
                 textField.maximumLength: 20
 
                 checkEmptyText: true
@@ -368,6 +483,7 @@ PageType {
 
                 Layout.fillWidth: true
                 Layout.topMargin: GC.isDesktop() ? 10 : 16
+                visible: !GC.isDesktop() || accessTypeSelector.currentIndex === 0
 
                 drawerHeight: 0.4375
                 drawerParent: root
@@ -431,6 +547,7 @@ PageType {
 
                 Layout.fillWidth: true
                 Layout.topMargin: GC.isDesktop() ? 10 : 16
+                visible: !GC.isDesktop() || accessTypeSelector.currentIndex === 0
 
                 drawerHeight: 0.5
                 drawerParent: root
@@ -491,10 +608,8 @@ PageType {
                         fillConnectionTypeModel()
 
                         if (accessTypeSelector.currentIndex === 1 && root.supportsUserManagement) {
-                            PageController.showBusyIndicator(true)
                             ExportController.updateClientManagementModel(ContainersModel.getProcessedContainerIndex(),
                                                                          ServersModel.getProcessedServerCredentials())
-                            PageController.showBusyIndicator(false)
                         }
 
                         protocolSelector.protocolSelectorTextChanged()
@@ -607,7 +722,7 @@ PageType {
                 Layout.topMargin: GC.isDesktop() ? 18 : 40
                 Layout.bottomMargin: GC.isDesktop() ? 18 : 32
 
-                enabled: shareButtonEnabled
+                enabled: shareButtonEnabled && !ExportController.clientsLoading
                 visible: accessTypeSelector.currentIndex === 0
 
                 text: qsTr("Share")
@@ -626,7 +741,7 @@ PageType {
                 Layout.topMargin: 24
                 Layout.bottomMargin: 16
 
-                visible: accessTypeSelector.currentIndex === 1 && !root.isSearchBarVisible
+                visible: !GC.isDesktop() && accessTypeSelector.currentIndex === 1 && !root.isSearchBarVisible
 
                 headerText: qsTr("Users")
                 actionButtonImage: "qrc:/images/controls/search.svg"
@@ -638,7 +753,7 @@ PageType {
             RowLayout {
                 Layout.topMargin: 24
                 Layout.bottomMargin: 16
-                visible: accessTypeSelector.currentIndex === 1 && root.isSearchBarVisible
+                visible: !GC.isDesktop() && accessTypeSelector.currentIndex === 1 && root.isSearchBarVisible
 
                 TextFieldWithHeaderType {
                     id: searchTextField
@@ -680,6 +795,8 @@ PageType {
 
             ListView {
                 id: clientsListView
+                objectName: "clientsListView"
+                enabled: !ExportController.clientsLoading
                 Layout.fillWidth: true
                 Layout.preferredHeight: childrenRect.height
 
@@ -716,12 +833,13 @@ PageType {
                         anchors.left: parent.left
                         anchors.right: parent.right
 
-                        anchors.rightMargin: -16
-                        anchors.leftMargin: -16
+                        anchors.rightMargin: GC.isDesktop() ? 0 : -16
+                        anchors.leftMargin: GC.isDesktop() ? 0 : -16
 
                         LabelWithButtonType {
                             id: clientFocusItem
                             Layout.fillWidth: true
+                            visible: !GC.isDesktop()
 
                             text: clientName
                             textMaximumLineCount: 1
@@ -731,6 +849,86 @@ PageType {
 
                             clickedFunction: function() {
                                 clientInfoDrawer.openTriggered()
+                            }
+                        }
+
+                        Rectangle {
+                            objectName: "desktopClientRow"
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 68
+                            visible: GC.isDesktop()
+                            color: desktopClientMouse.containsMouse ? AmneziaStyle.color.translucentWhite : "transparent"
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 10
+                                spacing: 14
+
+                                TintedIconType {
+                                    Layout.preferredWidth: 24
+                                    Layout.preferredHeight: 24
+                                    source: "qrc:/images/controls/monitor.svg"
+                                    tintColor: AmneziaStyle.color.lightGray
+                                    iconWidth: 24
+                                    iconHeight: 24
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 3
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: clientName
+                                        color: AmneziaStyle.color.paleGray
+                                        font.family: "Inter"
+                                        font.pixelSize: 14
+                                        font.weight: 600
+                                        elide: Text.ElideRight
+                                    }
+                                    RowLayout {
+                                        spacing: 7
+                                        Rectangle {
+                                            Layout.preferredWidth: 8
+                                            Layout.preferredHeight: 8
+                                            radius: 4
+                                            color: isOnline ? AmneziaStyle.color.vibrantGreen : AmneziaStyle.color.charcoalGray
+                                        }
+                                        Text {
+                                            text: isOnline ? qsTr("Online") : qsTr("Offline")
+                                            color: isOnline ? AmneziaStyle.color.vibrantGreen : AmneziaStyle.color.mutedGray
+                                            font.family: "Inter"
+                                            font.pixelSize: 12
+                                        }
+                                    }
+                                }
+
+                                Text {
+                                    Layout.preferredWidth: 180
+                                    text: root.hasText(latestActivity) ? latestActivity : "—"
+                                    color: AmneziaStyle.color.mutedGray
+                                    font.family: "Inter"
+                                    font.pixelSize: 12
+                                    horizontalAlignment: Text.AlignRight
+                                    elide: Text.ElideRight
+                                }
+
+                                TintedIconType {
+                                    Layout.preferredWidth: 18
+                                    Layout.preferredHeight: 18
+                                    source: "qrc:/images/controls/more-vertical.svg"
+                                    tintColor: AmneziaStyle.color.mutedGray
+                                    iconWidth: 18
+                                    iconHeight: 18
+                                }
+                            }
+
+                            MouseArea {
+                                id: desktopClientMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: clientInfoDrawer.openTriggered()
                             }
                         }
 
@@ -1013,6 +1211,7 @@ PageType {
 
                                                     if (clientNameEditor.textField.text !== clientName) {
                                                         clientsListView.freezeFilter = true
+                                                        if (ExportController.clientsLoading) return
                                                         PageController.showBusyIndicator(true)
                                                         ExportController.renameClient(proxyClientManagementModel.mapToSource(index),
                                                                                       clientNameEditor.textField.text,
@@ -1050,6 +1249,7 @@ PageType {
 
                                         var yesButtonFunction = function() {
                                             clientInfoDrawer.closeTriggered()
+                                            if (ExportController.clientsLoading) return
                                             PageController.showBusyIndicator(true)
                                             ExportController.revokeConfig(proxyClientManagementModel.mapToSource(index),
                                                                           ContainersModel.getProcessedContainerIndex(),

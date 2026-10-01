@@ -1,4 +1,5 @@
 #include "importController.h"
+#include "core/configFormat.h"
 
 #include <QFile>
 #include <QFileInfo>
@@ -164,6 +165,10 @@ bool ImportController::extractConfigFromData(QString data)
         m_configType = checkConfigFormat(config);
     }
 
+    if (!ConfigFormat::backendCompatible(config)) {
+        emit importErrorOccurred(ErrorCode::UnsupportedAwgBackend, false);
+        return false;
+    }
     switch (m_configType) {
     case ConfigTypes::OpenVpn: {
         m_config = extractOpenVpnConfig(config);
@@ -184,6 +189,11 @@ bool ImportController::extractConfigFromData(QString data)
     }
     case ConfigTypes::Amnezia: {
         m_config = QJsonDocument::fromJson(config.toUtf8()).object();
+        if (!ConfigFormat::supported(m_config)) {
+            m_config = {};
+            emit importErrorOccurred(ErrorCode::ImportInvalidConfigError, false);
+            return false;
+        }
 
         if (apiUtils::isServerFromApi(m_config)) {
             auto apiConfig = m_config.value(apiDefs::key::apiConfig).toObject();
@@ -220,13 +230,13 @@ bool ImportController::extractConfigFromQr(const QByteArray &data)
     QJsonObject dataObj = QJsonDocument::fromJson(data).object();
     if (!dataObj.isEmpty()) {
         m_config = dataObj;
-        return true;
+        return ConfigFormat::supported(m_config);
     }
 
     QByteArray ba_uncompressed = qUncompress(data);
     if (!ba_uncompressed.isEmpty()) {
         m_config = QJsonDocument::fromJson(ba_uncompressed).object();
-        return true;
+        return !m_config.isEmpty() && ConfigFormat::supported(m_config);
     }
 
     m_configType = checkConfigFormat(data);
@@ -240,7 +250,7 @@ bool ImportController::extractConfigFromQr(const QByteArray &data)
 
         if (!ba.isEmpty()) {
             m_config = QJsonDocument::fromJson(ba).object();
-            return true;
+            return !m_config.isEmpty() && ConfigFormat::supported(m_config);
         }
     }
 
@@ -304,6 +314,10 @@ void ImportController::processNativeWireGuardConfig()
 
 void ImportController::importConfig()
 {
+    if (!ConfigFormat::supported(m_config)) {
+        emit importErrorOccurred(ErrorCode::ImportInvalidConfigError, false);
+        return;
+    }
     ServerCredentials credentials;
     credentials.hostName = m_config.value(config_key::hostName).toString();
     credentials.port = m_config.value(config_key::port).toInt();

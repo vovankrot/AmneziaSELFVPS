@@ -211,12 +211,20 @@ bool KillSwitch::disableKillSwitch() {
     // protocols (Hysteria2/AnyTLS/Xray) engage it via enablePeerTraffic but, unlike the
     // WireGuard daemon, never stop it on teardown. activateSplitTunnel with an empty
     // config falls through to WindowsSplitTunnel::stop() and is a no-op when not running. by vovankrot
-    WindowsDaemon::instance()->activateSplitTunnel(InterfaceConfig(), 0);
+    const bool splitStopped = WindowsDaemon::instance()->activateSplitTunnel(InterfaceConfig(), 0);
+    if (!splitStopped) {
+        // A timed-out driver request may still own a WFP transaction. Starting
+        // another transaction here can wedge the service's IPC event loop.
+        qWarning() << "Split tunnel did not stop; skipping firewall transaction so the service remains responsive";
+        return false;
+    }
 
     if (isStrictKillSwitchEnabled()) {
-        return disableAllTraffic();
+        const bool firewallRestored = disableAllTraffic();
+        return firewallRestored && splitStopped;
     }
-    return WindowsFirewall::create(this)->allowAllTraffic();
+    const bool firewallRestored = WindowsFirewall::create(this)->allowAllTraffic();
+    return firewallRestored && splitStopped;
 #endif
 
     m_allowedRanges.clear();
@@ -376,7 +384,21 @@ bool KillSwitch::enablePeerTraffic(const QJsonObject &configStr) {
     }
 
     WindowsDaemon::instance()->prepareActivation(config, inetAdapterIndex);
-    WindowsDaemon::instance()->activateSplitTunnel(config, vpnAdapterIndex);
+    if (!WindowsDaemon::instance()->activateSplitTunnel(config, vpnAdapterIndex)) {
+        qWarning() << "Split tunnel activation failed; refusing to report a connected tunnel";
+        return false;
+    }
+
+    if (vpnAdapterIndex > 0 && !config.m_vpnDisabledApps.isEmpty()) {
+        if (!static_cast<WindowsDaemon*>(WindowsDaemon::instance())->appBypassActive()) {
+            qWarning() << "Requested app bypass is unavailable; refusing a mixed IPv4/IPv6 policy";
+            return false;
+        }
+        if (!firewall || !firewall->enableIpv6AppBypass(config.m_vpnDisabledApps)) {
+            qWarning() << "Could not establish IPv6 policy for excluded apps";
+            return false;
+        }
+    }
 
     // Activate site-based exclusion routes for split tunneling (independent of killswitch)
     if (splitTunnelType == 2 && !config.m_excludedAddresses.isEmpty()) {

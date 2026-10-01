@@ -1,0 +1,494 @@
+{
+  "formatVersion": 1,
+  "files": [
+    {
+      "path": "deploy/prebuilt-selfvps/windows/x64/anytls/anytls-client.exe",
+      "sha256": "2f6398e9d61623232d5f3fbfc218738244f28c7a22f0ac1bb2e326743fa2bb0a",
+      "source": "https://github.com/anytls/anytls-go",
+      "revision": "2012ef89768409f45437f1c06a7af5f6eea402ad + tools/anytls-security/patch.py",
+      "architecture": "windows-x64",
+      "toolchain": "go1.24.4",
+      "license": "Upstream repository does not contain a LICENSE file at this revision; review before public distribution"
+    },
+    {
+      "path": "deploy/prebuilt-selfvps/windows/x64/hysteria/hysteria.exe",
+      "sha256": "807ae5332a8fefeeff804923e057b6942acceaa11706ac7fa3db42f192c2fde1",
+      "source": "https://github.com/apernet/hysteria",
+      "revision": "2.12.2 (619a6f856b69fb7ee6a7a379e810e68b84004605)",
+      "architecture": "windows-x64",
+      "toolchain": "go1.26.6",
+      "license": "MIT"
+    },
+    {
+      "path": "deploy/prebuilt-selfvps/windows/x64/mullvad-split-tunnel.cat",
+      "sha256": "c599926a0327d7ae06b534f4cd039db30392e1897bb9d03e4fec3631744a4e6d",
+      "source": "https://github.com/mullvad/mullvadvpn-app-binaries/tree/main/x86_64-pc-windows-msvc/split-tunnel",
+      "revision": "1.3.0.0; source 0a0eb97f67d1dbcb3d08bda66d3b24f465d95475",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "GPL-3.0 / MPL-2.0; bundled licenses/mullvad-split-tunnel",
+      "upstreamGitBlobSha1": "7e8c568d76c493d0871a8864326e4c9d1093dfaa"
+    },
+    {
+      "path": "deploy/prebuilt-selfvps/windows/x64/mullvad-split-tunnel.inf",
+      "sha256": "3dd5905e5fb98d61a942a33e8c9a5ba07c3a2de1e4f319e1fec3e54df6591608",
+      "source": "https://github.com/mullvad/mullvadvpn-app-binaries/tree/main/x86_64-pc-windows-msvc/split-tunnel",
+      "revision": "1.3.0.0; source 0a0eb97f67d1dbcb3d08bda66d3b24f465d95475",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "GPL-3.0 / MPL-2.0; bundled licenses/mullvad-split-tunnel",
+      "upstreamGitBlobSha1": "cb1339196acbcb02ceebfef7cb8a965c7deed8b8"
+    },
+    {
+      "path": "deploy/prebuilt-selfvps/windows/x64/mullvad-split-tunnel.sys",
+      "sha256": "10cf25bbcfe51fd663a1fec88a98e9b858f3a579589bb2ec496b66e4fdd1b201",
+      "source": "https://github.com/mullvad/mullvadvpn-app-binaries/tree/main/x86_64-pc-windows-msvc/split-tunnel",
+      "revision": "1.3.0.0; source 0a0eb97f67d1dbcb3d08bda66d3b24f465d95475",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "GPL-3.0 / MPL-2.0; bundled licenses/mullvad-split-tunnel",
+      "upstreamGitBlobSha1": "a3b826300e48acc385cbc8fe94fb138b6cf4ca20"
+    },
+    {
+      "path": "deploy/prebuilt-selfvps/windows/x64/tunnel.dll",
+      "sha256": "eb47cfd2866a5add83b6e682b1023063e21594b1483910e6516541089ef960d7",
+      "source": "https://github.com/amnezia-vpn/amneziawg-windows",
+      "revision": "3.0.2",
+      "architecture": "windows-x64",
+      "toolchain": "go1.25.0",
+      "license": "MIT"
+    },
+    {
+      "path": "deploy/prebuilt-selfvps/android/arm64-v8a/libwg-go.so",
+      "sha256": "5b9557e6df8fb3e2eba3a132a3eefa88d06a83eda80569fc23df05e94a2b5942",
+      "source": "https://github.com/amnezia-vpn/amneziawg-android",
+      "revision": "3.0.1",
+      "architecture": "arm64-v8a",
+      "toolchain": "go1.25.0",
+      "license": "Apache-2.0 / bundled upstream licenses"
+    },
+    {
+      "path": "deploy/prebuilt-selfvps/android/arm64-v8a/libwg-quick.so",
+      "sha256": "69013293689fd5a0691362805899cfe9eceda2e4b8355e730c2900eb45837414",
+      "source": "https://github.com/amnezia-vpn/amneziawg-android",
+      "revision": "3.0.1",
+      "architecture": "arm64-v8a",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "Apache-2.0 / bundled upstream licenses"
+    },
+    {
+      "path": "deploy/prebuilt-selfvps/android/arm64-v8a/libwg.so",
+      "sha256": "0b7ba35d7decd1872a8b4eb6197af1f679497f8352b5cc748cda99fd6c066731",
+      "source": "https://github.com/amnezia-vpn/amneziawg-android",
+      "revision": "3.0.1",
+      "architecture": "arm64-v8a",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "Apache-2.0 / bundled upstream licenses"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/amnezia_xray.dll",
+      "sha256": "413059878fb3126e289846c29c694921be2d6be71a760836d5ac1443e39f6f51",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "go1.25.7",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/anytls/anytls-client.exe",
+      "sha256": "7d8ba23f7cfdf5e59f59ebe0d68ae434c0cb14a14852e2ea4efb51eeea715e3b",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "go1.25.5",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/cloak/ck-client.exe",
+      "sha256": "5f6c360795e17e7727c93fa7a7a9f026586efe783f1e7ef79652c09f5d518ee3",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "go1.22.2",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/cygwin/cygcrypto-1.1.dll",
+      "sha256": "257e32004f7834a418d7cd83b2757cd523383334af5861023f73dec2af981637",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/cygwin/cygwin1.dll",
+      "sha256": "e1be941fa207e2d335800ca3529860aad083117e5195e355bcbb762c7115ffaf",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/cygwin/cygz.dll",
+      "sha256": "fc5f2c0998b30d99c1a5e8d05eb959ef91c5721dc0d1a617b15010f88126d4c1",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/cygwin/ssh-keygen.exe",
+      "sha256": "c5bfa9cfddd0b43f74d40deb58bd90fe81a9f512f1388e2b26a0fcdfb377f7f8",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/hysteria/hysteria.exe",
+      "sha256": "e80c71bcf57d21cd6dede6b05938a24a9d75f44b494632be6b94bb1283928680",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "go1.26.3",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/libcrypto-3-x64.dll",
+      "sha256": "02fb35f77d33dfb1869c0dc9304cead7a533c96d21f9313d4aec104483207333",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/libssl-3-x64.dll",
+      "sha256": "5d2e3bc27d219d5a9f5e738bb162faea59ee489c0dcdab8cf27e7805249515ec",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/mullvad-split-tunnel.cat",
+      "sha256": "385c90be86b6c934344c6d2647887182b41d7e37803dc5eabe7e0805f6210317",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/mullvad-split-tunnel.inf",
+      "sha256": "a9500015b0c93c96d6859e942cf76b6b637653f46addee11bb07af0c1ea6e879",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/mullvad-split-tunnel.sys",
+      "sha256": "8bdc9fc6aa1203e444a2d6e3a564cf8dd8f7ec9db850f0095b9d33e16b96aff5",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/openvpn/libcrypto-1_1-x64.dll",
+      "sha256": "d0fc3b18252508786a51cba42acda5650565c46093b3989db7edc2606627df0a",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/openvpn/libpkcs11-helper-1.dll",
+      "sha256": "349a586b6722d39657118fcabeb2aa86d9a5f2fa5c2d22009c86a583c6b5cc27",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/openvpn/libssl-1_1-x64.dll",
+      "sha256": "03f4dd5e8452a04d1073d4ab50088714416fadf7a1966baf75836a4bca9029f3",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/openvpn/openvpn.exe",
+      "sha256": "df13a43623cfa5507851ce50b7d44dcd356807ae7f2f1c8adb2e019ba6a25f60",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/ss/libbloom.dll",
+      "sha256": "4edc4fcab6de2ec6ab3fc89452333b1a421a63ab87d97da0932730027119979b",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/ss/libcares-4.dll",
+      "sha256": "f095f804c035a82c6c3dc2c49fc0e35aa300210f4dd24b12189f3ad26e5df7ee",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/ss/libcork.dll",
+      "sha256": "f5ff4aea981d08c4166a01e1288fabd8acbd10d9c85c0aac7a7bf434f0f06403",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/ss/libev-4.dll",
+      "sha256": "de6bd95c0f6e052f9da598434c38a3565cffb82b2a2338aecb8ecd43bbb46997",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/ss/libgcc_s_dw2-1.dll",
+      "sha256": "d7b8aecd64eeea27eb9423025fd9cf3ac1bd436cee17139eb290434619b579b2",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/ss/libipset.dll",
+      "sha256": "57444ac9fbdfe93ae140e484fb99ba9b95b658a7807ab49561288377c0fe9290",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/ss/libmbedcrypto.dll",
+      "sha256": "889a11ede816af95c6ad1f4965c86d9f973b9f7ffdd57c029d42e97bb16028eb",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/ss/libpcre-1.dll",
+      "sha256": "1582f71c6efef398ad83f19e6bb54bbdf11f527a227adc80dbf49370e4cbfcf0",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/ss/libshadowsocks-libev.dll",
+      "sha256": "deab1b87f51cd9ebf6783ef53ba9cb5b2edea5446cd7ac8db8ab512f91102cb9",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/ss/libsodium-23.dll",
+      "sha256": "1288abf739c61a1dea7ed2fe2bf51d4a29eb8b143cd5419293265c79927fee1f",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/ss/libwinpthread-1.dll",
+      "sha256": "64992a61bb8c1f82b59bf160e70fa54d6d1f953cf6007be88cbb35899f4ebbf2",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/ss/ss-local.exe",
+      "sha256": "1cfd1d86cf80e476faa74d55f8736565cbd5fb20ce559aedba75e3a4a6dd2561",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/ss/ss-tunnel.exe",
+      "sha256": "05e58a4bcfb8082bf183a8805f9438cdb0016a003698cab09334d80181d3d3bd",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/ssh.dll",
+      "sha256": "5697dd2213debc6f03152f305a21b8464099555ab79feb7611b3c3b9f8b0e2cc",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/tap/windows_10/devcon.exe",
+      "sha256": "bee3a63db18565ab77ad5714594b658c1d47c7e475009b25d430df9ed634ea46",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/tap/windows_10/OemVista.inf",
+      "sha256": "1327ab3a8c50691f04bea8e2ca356c5b604092a719e219464f8cc4b42e192de9",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/tap/windows_10/tap0901.cat",
+      "sha256": "ee062e5ef2743ceab10c64830e4cefe52e35cc1ece85947ac4e61ddd1c0b05f7",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/tap/windows_10/tap0901.sys",
+      "sha256": "581dcaace05d5c1ac9512457ff50565aca5d904d2c209bd3fc369ca4d4a0d2b1",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/tap/windows_10/tapinstall.exe",
+      "sha256": "b6b33f4cd19c606e4c616f08c11fd4ae775accb24b78ef66eb31c279ca403381",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/tap/windows_7/OemVista.inf",
+      "sha256": "150ef8eb07532146f833dc020c02238161043260b8a565c3cfcb2365bad980d9",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/tap/windows_7/tap0901.cat",
+      "sha256": "baecd78253fb6fbcfb521131e3570bf655aa9a05bb5610ce8bb4bddccf599b24",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/tap/windows_7/tap0901.sys",
+      "sha256": "4c474ea37a98899e2997591a5e963f10f7d89d620c74c8ee099d3490f5213246",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/tap/windows_7/tapinstall.exe",
+      "sha256": "9f45a39015774eeaa2a6218793edc8e6273eb9f764f3aedee5cf9e9ccacdb53f",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/tunnel.dll",
+      "sha256": "eb47cfd2866a5add83b6e682b1023063e21594b1483910e6516541089ef960d7",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "go1.25.0",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/WdfCoinstaller01011.dll",
+      "sha256": "b2ce2291d10834e132ec1a349b726822e8c943b47af968e9de592ed7ae1cfa36",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/wintun.dll",
+      "sha256": "e5da8447dc2c320edc0fc52fa01885c103de8c118481f683643cacc3220dafce",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/xray/tun2socks.exe",
+      "sha256": "076b3c3d6a372bae3f49f2b415a4105f70c30a3ed3caaed7979390e649892559",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "go1.26.3",
+      "license": "See upstream source and deploy/license"
+    },
+    {
+      "path": "client/3rd-prebuilt/deploy-prebuilt/windows/x64/xray/wintun.dll",
+      "sha256": "e5da8447dc2c320edc0fc52fa01885c103de8c118481f683643cacc3220dafce",
+      "source": "https://github.com/amnezia-vpn/3rd-prebuilt",
+      "revision": "bf614047c01c4ff6797870a756777a779c70d654",
+      "architecture": "windows-x64",
+      "toolchain": "Not embedded; inherited audited binary snapshot",
+      "license": "See upstream source and deploy/license"
+    }
+  ]
+}

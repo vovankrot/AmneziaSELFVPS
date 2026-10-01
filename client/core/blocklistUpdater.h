@@ -35,6 +35,7 @@ private:
     QNetworkAccessManager *m_nam = nullptr;
     std::shared_ptr<Settings> m_settings;
     QTimer m_timer;
+    bool m_updating = false;
 
     static constexpr int UpdateIntervalDays = 3;
     static constexpr const char *DownloadUrl =

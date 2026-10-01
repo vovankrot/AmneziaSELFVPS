@@ -24,10 +24,11 @@ fi
 
 killall -KILL anytls-server 2>/dev/null || true
 
-PASSWORD_FILE="/opt/amnezia/anytls/anytls_password.key"
+CONFIG_DIR="/opt/amnezia/anytls"
+PASSWORD_FILE="$CONFIG_DIR/anytls_password.key"
 if [ -f "$PASSWORD_FILE" ] && [ -n "${ANYTLS_SERVER_PORT:-}" ]; then
     PASSWORD="$(tr -d '\r\n ' < "$PASSWORD_FILE")"
-    exec anytls-server -l "0.0.0.0:${ANYTLS_SERVER_PORT}" -p "$PASSWORD"
+    exec anytls-server -l "0.0.0.0:${ANYTLS_SERVER_PORT}" -p "$PASSWORD" -cert "$CONFIG_DIR/server.crt" -key "$CONFIG_DIR/server.key"
 fi
 
 # No config yet — idle so install pipeline can drop files.

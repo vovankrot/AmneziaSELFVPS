@@ -102,6 +102,7 @@
         <file>server_scripts/write_server_version.sh</file>
         <file>server_scripts/read_server_version.sh</file>
         <file>server_scripts/hot_reconfigure_xray.sh</file>
+        <file>server_scripts/update_hysteria2.sh</file>
         <file>server_scripts/remove_container.sh</file>
         <file>server_scripts/setup_host_firewall.sh</file>
         <file>server_scripts/sftp/configure_container.sh</file>
@@ -141,12 +142,15 @@
         <file>server_scripts/anytls/template.json</file>
         <file>ui/qml/Components/AdLabel.qml</file>
         <file>ui/qml/Components/ConnectButton.qml</file>
+        <file>ui/qml/Components/DesktopTopNavigation.qml</file>
         <file>ui/qml/Components/ConnectionTypeSelectionDrawer.qml</file>
         <file>ui/qml/Components/GamepadLoader.qml</file>
         <file>ui/qml/Components/HomeContainersListView.qml</file>
         <file>ui/qml/Components/HomeServerListDrawer.qml</file>
         <file>ui/qml/Components/HomeProtocolListDrawer.qml</file>
         <file>ui/qml/Components/HomeSplitTunnelingDrawer.qml</file>
+        <file>ui/qml/Components/AppUpdateDialog.qml</file>
+        <file>ui/qml/Components/SshHostTrustDialog.qml</file>
         <file>ui/qml/Components/InstalledAppsDrawer.qml</file>
         <file>ui/qml/Components/BenefitRow.qml</file>
         <file>ui/qml/Components/BenefitsPanel.qml</file>

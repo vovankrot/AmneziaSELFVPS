@@ -278,38 +278,85 @@ void WindowsDaemon::prepareActivation(const InterfaceConfig& config, int inetAda
   }
 }
 
-void WindowsDaemon::activateSplitTunnel(const InterfaceConfig& config, int vpnAdapterIndex) {
-  if (m_splitTunnelManager == nullptr)
+bool WindowsDaemon::fallBackFromUnresponsiveSplitTunnel(const char* operation) {
+  if (!m_splitTunnelManager || !m_splitTunnelManager->isUnresponsive()) {
+    return false;
+  }
+
+  // A timed-out IOCTL has been quarantined by WindowsSplitTunnel. Do not issue a
+  // cleanup/reset request: it can block behind the same kernel request. Dropping
+  // the manager makes the remainder of this service lifetime use a normal full
+  // tunnel, so a broken optional app-exclusion feature cannot take the VPN down.
+  logger.warning() << "Split-tunnel driver became unresponsive during" << operation
+                   << "; temporarily disabling app split tunneling and continuing with a full VPN tunnel";
+  m_splitTunnelQuarantined = true;
+  m_splitTunnelManager.reset();
+  emit networkPolicyWarning(tr("Драйвер исключений приложений не отвечает. Исключения отключены: весь трафик идёт через VPN. Для восстановления нужен перезапуск службы или Windows."));
+  return true;
+}
+
+void WindowsDaemon::tryRestoreSplitTunnelManager() {
+  if (m_splitTunnelQuarantined || m_splitTunnelManager || !m_firewallManager) {
     return;
+  }
+
+  // Quarantined handles retain exclusive driver access. Only a missing driver
+  // without an outstanding IOCTL can be retried safely in this service lifetime.
+  auto restoredManager = WindowsSplitTunnel::create(m_firewallManager);
+  if (restoredManager) {
+    logger.info() << "Split-tunnel driver manager restored; app split tunneling can be retried";
+    m_splitTunnelManager = std::move(restoredManager);
+  } else {
+    logger.warning() << "Split-tunnel driver manager is still unavailable; continuing with a full VPN tunnel";
+  }
+}
+
+bool WindowsDaemon::activateSplitTunnel(const InterfaceConfig& config, int vpnAdapterIndex) {
+  m_appBypassActive = false;
+  if (!m_splitTunnelManager && !config.m_vpnDisabledApps.isEmpty()) {
+    tryRestoreSplitTunnelManager();
+  }
+
+  if (m_splitTunnelManager == nullptr) {
+    if (!config.m_vpnDisabledApps.isEmpty()) {
+      logger.warning() << "App split tunneling is unavailable; continuing with a full VPN tunnel";
+      emit networkPolicyWarning(tr("Исключения приложений недоступны. Весь трафик идёт через VPN."));
+    }
+    return true;
+  }
 
   const QStringList sanitizedApps = sanitizeSplitTunnelApps(config.m_vpnDisabledApps);
 
   if (!sanitizedApps.isEmpty()) {
     if (!m_splitTunnelManager->start(m_inetAdapterIndex, vpnAdapterIndex)) {
+      if (fallBackFromUnresponsiveSplitTunnel("startup")) return true;
       emit backendFailure(DaemonError::ERROR_SPLIT_TUNNEL_START_FAILURE);
-      return;
+      return false;
     }
     if (!m_splitTunnelManager->excludeApps(sanitizedApps)) {
+      if (fallBackFromUnresponsiveSplitTunnel("rule configuration")) return true;
       emit backendFailure(DaemonError::ERROR_SPLIT_TUNNEL_EXCLUDE_FAILURE);
+      return false;
     }
+    m_appBypassActive = true;
   } else {
     if (!config.m_vpnDisabledApps.isEmpty()) {
       logger.warning() << "Skipping app split tunnel activation: no valid executable paths remain after sanitization";
     }
 
-    if (!m_splitTunnelManager->stop() && m_splitTunnelManager->isRunning()) {
+    if (!m_splitTunnelManager->stop()) {
       emit backendFailure(DaemonError::ERROR_SPLIT_TUNNEL_START_FAILURE);
+      return false;
     }
   }
+  return true;
 }
 
 bool WindowsDaemon::run(Op op, const InterfaceConfig& config) {
   if (!m_splitTunnelManager) {
     if (config.m_vpnDisabledApps.length() > 0) {
-      // The Client has sent us a list of disabled apps, but we failed
-      // to init the the split tunnel driver.
-      // So let the client know this was not possible
-      emit backendFailure(DaemonError::ERROR_SPLIT_TUNNEL_INIT_FAILURE);
+      logger.warning() << "App split tunneling is unavailable; continuing with a full VPN tunnel";
+      emit networkPolicyWarning(tr("Исключения приложений недоступны. Весь трафик идёт через VPN."));
     }
     return true;
   }
@@ -325,14 +372,19 @@ bool WindowsDaemon::run(Op op, const InterfaceConfig& config) {
 
   if (!sanitizedApps.isEmpty()) {
     if (!m_splitTunnelManager->start(m_inetAdapterIndex)) {
+      if (fallBackFromUnresponsiveSplitTunnel("startup")) return true;
       emit backendFailure(DaemonError::ERROR_SPLIT_TUNNEL_START_FAILURE);
+      return false;
     };
     if (!m_splitTunnelManager->excludeApps(sanitizedApps)) {
+      if (fallBackFromUnresponsiveSplitTunnel("rule configuration")) return true;
       emit backendFailure(DaemonError::ERROR_SPLIT_TUNNEL_EXCLUDE_FAILURE);
+      return false;
     };
     // Now the driver should be running (State == 4)
     if (!m_splitTunnelManager->isRunning()) {
       emit backendFailure(DaemonError::ERROR_SPLIT_TUNNEL_START_FAILURE);
+      return false;
     }
     return true;
   }

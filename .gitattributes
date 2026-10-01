@@ -15,3 +15,6 @@ client/server_scripts/*/*.profile text eol=lf
 
 # Shell scripts must stay LF so bash does not choke on CRLF (build_env.sh, wrappers, deploy/*.sh)
 *.sh text eol=lf
+
+# Preserve upstream license text verbatim, including existing spacing
+deploy/prebuilt-selfvps/windows/x64/licenses/** whitespace=-blank-at-eol

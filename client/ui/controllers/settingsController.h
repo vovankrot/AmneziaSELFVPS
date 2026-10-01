@@ -69,6 +69,7 @@ public slots:
     QString getAppVersion();
 
     void clearSettings();
+    void resetProcessedServerSshTrust();
 
     bool isAutoConnectEnabled();
     void toggleAutoConnect(bool enable);

@@ -54,7 +54,7 @@
 Сборка:
 ```powershell
 .\build_installer.ps1 -SkipAndroidApk -NoElevate
-# → AmneziaVPN_<версия>_x64_setup.exe в корне
+# → dist/AmneziaVPN_<версия>_x64_setup.exe
 ```
 
 ### Android (APK)
@@ -68,7 +68,7 @@
 Сборка:
 ```powershell
 .\build_android.ps1 -AndroidApkAbi arm64-v8a -AndroidBuildType Debug
-# → AmneziaVPN_<версия>_android_arm64-v8a_debug.apk
+# → dist/AmneziaVPN_<версия>_android_arm64-v8a_debug.apk
 ```
 
 ### Linux (.bin инсталлятор — через WSL)

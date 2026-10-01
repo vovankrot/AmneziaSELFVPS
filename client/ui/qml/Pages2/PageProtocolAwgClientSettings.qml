@@ -101,7 +101,7 @@ PageType {
                 Layout.leftMargin: 16
                 Layout.rightMargin: 16
 
-                headerText: "Jc - Junk packet count"
+                headerText: qsTr("Jc - Junk packet count")
                 textField.text: clientJunkPacketCount
 
                 textField.onEditingFinished: {
@@ -123,7 +123,7 @@ PageType {
                 Layout.leftMargin: 16
                 Layout.rightMargin: 16
 
-                headerText: "Jmin - Junk packet minimum size"
+                headerText: qsTr("Jmin - Junk packet minimum size")
                 textField.text: clientJunkPacketMinSize
 
                 textField.onEditingFinished: {
@@ -145,7 +145,7 @@ PageType {
                 Layout.leftMargin: 16
                 Layout.rightMargin: 16
 
-                headerText: "Jmax - Junk packet maximum size"
+                headerText: qsTr("Jmax - Junk packet maximum size")
                 textField.text: clientJunkPacketMaxSize
 
                 textField.onEditingFinished: {
@@ -311,7 +311,7 @@ PageType {
 
                 enabled: false
 
-                headerText: "S1 - Init packet junk size"
+                headerText: qsTr("S1 - Init packet junk size")
                 textField.text: serverInitPacketJunkSize
             }
 
@@ -323,7 +323,7 @@ PageType {
 
                 enabled: false
 
-                headerText: "S2 - Response packet junk size"
+                headerText: qsTr("S2 - Response packet junk size")
                 textField.text: serverResponsePacketJunkSize
             }
 
@@ -337,7 +337,7 @@ PageType {
 
                 enabled: false
 
-                headerText: "S3 - Cookie Reply packet junk size"
+                headerText: qsTr("S3 - Cookie Reply packet junk size")
                 textField.text: serverCookieReplyPacketJunkSize
             }
 
@@ -351,7 +351,7 @@ PageType {
 
                 enabled: false
 
-                headerText: "S4 - Transport packet junk size"
+                headerText: qsTr("S4 - Transport packet junk size")
                 textField.text: serverTransportPacketJunkSize
             }
 
@@ -363,7 +363,7 @@ PageType {
 
                 enabled: false
 
-                headerText: "H1 - Init packet magic header"
+                headerText: qsTr("H1 - Init packet magic header")
                 textField.text: serverInitPacketMagicHeader
             }
 
@@ -375,7 +375,7 @@ PageType {
 
                 enabled: false
 
-                headerText: "H2 - Response packet magic header"
+                headerText: qsTr("H2 - Response packet magic header")
                 textField.text: serverResponsePacketMagicHeader
             }
 
@@ -387,7 +387,7 @@ PageType {
 
                 enabled: false
 
-                headerText: "H3 - Underload packet magic header"
+                headerText: qsTr("H3 - Underload packet magic header")
                 textField.text: serverUnderloadPacketMagicHeader
             }
 
@@ -399,7 +399,7 @@ PageType {
 
                 enabled: false
 
-                headerText: "H4 - Transport packet magic header"
+                headerText: qsTr("H4 - Transport packet magic header")
                 textField.text: serverTransportPacketMagicHeader
             }
         }

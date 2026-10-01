@@ -2,6 +2,7 @@
 #define EXPORTCONTROLLER_H
 
 #include <QObject>
+#include <QElapsedTimer>
 
 #include "ui/models/clientManagementModel.h"
 #include "ui/models/containers_model.h"
@@ -14,6 +15,9 @@ public:
     explicit ExportController(const QSharedPointer<ServersModel> &serversModel, const QSharedPointer<ContainersModel> &containersModel,
                               const QSharedPointer<ClientManagementModel> &clientManagementModel, const std::shared_ptr<Settings> &settings,
                               QObject *parent = nullptr);
+
+    Q_PROPERTY(bool clientsLoading READ clientsLoading NOTIFY clientsLoadingChanged)
+    bool clientsLoading() const { return m_clientsLoading; }
 
     Q_PROPERTY(QList<QString> qrCodes READ getQrCodes NOTIFY exportConfigChanged)
     Q_PROPERTY(int qrCodesCount READ getQrCodesCount NOTIFY exportConfigChanged)
@@ -36,11 +40,12 @@ public slots:
 
     void exportConfig(const QString &fileName);
 
-    void updateClientManagementModel(const DockerContainer container, ServerCredentials credentials);
+    void updateClientManagementModel(const DockerContainer container, ServerCredentials credentials, bool forceRefresh = false);
     void revokeConfig(const int row, const DockerContainer container, ServerCredentials credentials);
     void renameClient(const int row, const QString &clientName, const DockerContainer container, ServerCredentials credentials);
 
 signals:
+    void clientsLoadingChanged();
     void generateConfig(int type);
     void revokeConfigCompleted();
     void exportErrorOccurred(const QString &errorMessage);
@@ -62,6 +67,14 @@ private:
     QSharedPointer<ContainersModel> m_containersModel;
     QSharedPointer<ClientManagementModel> m_clientManagementModel;
     std::shared_ptr<Settings> m_settings;
+
+    bool m_clientsLoading = false;
+    QByteArray m_clientsCacheKey;
+    QByteArray m_clientsActiveKey;
+    QByteArray m_clientsRequestedKey;
+    DockerContainer m_pendingClientsContainer {};
+    ServerCredentials m_pendingClientsCredentials;
+    QElapsedTimer m_clientsCacheAge;
 
     QString m_config;
     QString m_nativeConfigString;

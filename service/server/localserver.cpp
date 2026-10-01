@@ -10,6 +10,7 @@
 #include <QString>
 
 #include "ipc.h"
+#include "localPeerAuth.h"
 #include "killswitch.h"
 #include "logger.h"
 #include "xray.h"
@@ -42,6 +43,7 @@ LocalServer::LocalServer(QObject *parent) : QObject(parent),
             qWarning() << "LocalServer: nextPendingConnection returned nullptr";
             return;
         }
+        if (!amnezia::authorizeLocalPeer(socket)) return;
         m_serverNode.addHostSideConnection(socket);
 
         if (!m_isRemotingEnabled) {
@@ -56,6 +58,7 @@ LocalServer::LocalServer(QObject *parent) : QObject(parent),
         return;
     }
 
+    connect(Daemon::instance(), &Daemon::networkPolicyWarning, &m_ipcServer, &IpcServer::networkPolicyWarning);
     m_networkWatcher.initialize();
     connect(&m_networkWatcher, &NetworkWatcher::networkChanged, &m_ipcServer, &IpcServer::networkChanged);
     connect(&m_networkWatcher, &NetworkWatcher::networkChanged, this, []() {

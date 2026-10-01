@@ -149,7 +149,37 @@ PageType {
                 text: qsTr("Check for updates")
 
                 clickedFunc: function() {
-                    Qt.openUrlExternally("https://github.com/amnezia-vpn/desktop-client/releases/latest")
+                    if (typeof AppUpdater !== "undefined" && AppUpdater.supported) AppUpdater.check()
+                    else Qt.openUrlExternally("https://github.com/vovankrot/AmneziaSELFVPS/releases/latest")
+                }
+            }
+
+            Switch {
+                Layout.alignment: Qt.AlignHCenter
+                visible: typeof AppUpdater !== "undefined" && AppUpdater.supported
+                text: qsTr("Автоматически проверять релизы SELFVPS")
+                checked: typeof AppUpdater !== "undefined" && AppUpdater.automatic
+                onClicked: AppUpdater.automatic = checked
+            }
+            ParagraphTextType {
+                Layout.fillWidth: true
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+                horizontalAlignment: Text.AlignHCenter
+                text: typeof AppUpdater !== "undefined" ? AppUpdater.status : ""
+                textFormat: Text.PlainText
+                wrapMode: Text.Wrap
+            }
+            BasicButtonType {
+                Layout.alignment: Qt.AlignHCenter
+                visible: typeof AppUpdater !== "undefined" && AppUpdater.availableVersion !== ""
+                enabled: typeof AppUpdater !== "undefined" && !AppUpdater.busy
+                text: typeof AppUpdater !== "undefined" && AppUpdater.ready ? qsTr("Установить обновление") : qsTr("Скачать обновление")
+                clickedFunc: function() {
+                    if (AppUpdater.ready) {
+                        showQuestionDrawer(qsTr("Установить обновление?"), qsTr("VPN отключится, приложение закроется. Настройки сохранятся."),
+                            qsTr("Установить"), qsTr("Отмена"), function() { AppUpdater.install() }, function() {})
+                    } else AppUpdater.download()
                 }
             }
 

@@ -1,0 +1,99 @@
+name: SELFVPS regressions
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    paths: ['client/**', 'ipc/**', 'service/**', 'installer/**', 'tests/**', 'tools/**', 'deploy/**', '.gitleaks.toml', '.github/workflows/regressions.yml']
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          arch: 'win64_msvc2022_64'
+          modules: 'qt5compat'
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.4'
+          cache: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Installer file transaction regressions
+        run: dotnet run --project tests/installer-regressions/installer-regressions.csproj --configuration Release
+      - name: Verify dependency manifest and failure handling
+        shell: pwsh
+        run: |
+          ./tools/verify-prebuilts.ps1
+          python tests/test_prebuilt_manifest.py
+          python tests/test_translations.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m pip install cryptography
+      - name: Build and run security, UI and driver regressions
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
+          QT_FORCE_STDERR_LOGGING: '1'
+        run: |
+          foreach ($suite in @('security-regressions', 'ui-regressions', 'driver-regressions', 'update-regressions', 'client-refresh-regressions')) {
+            cmake -S "tests/$suite" -B "build/$suite" -G 'Visual Studio 17 2022' -A x64
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            cmake --build "build/$suite" --config Release -- /m:2
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            if ($suite -eq 'security-regressions') {
+              & "build/$suite/Release/$suite.exe" -o security-results.txt,txt
+              $result = $LASTEXITCODE
+              Get-Content security-results.txt
+            } else {
+              & "build/$suite/Release/$suite.exe"
+              $result = $LASTEXITCODE
+            }
+            if ($result) { exit $result }
+          }
+          python tests/test_hysteria_update.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python tests/test_hysteria_interop.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Rebuild and verify AnyTLS security patch
+        shell: pwsh
+        run: |
+          git clone --depth 1 --branch v0.0.12 https://github.com/anytls/anytls-go.git build/anytls
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $revision = git -C build/anytls rev-parse HEAD
+          if ($revision -ne '2012ef89768409f45437f1c06a7af5f6eea402ad') { throw 'Unexpected AnyTLS source revision' }
+          python tools/anytls-security/patch.py build/anytls
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          go -C build/anytls test ./util ./cmd/client ./cmd/server
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          go -C build/anytls build -trimpath -o ../anytls-server-test.exe ./cmd/server
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python tests/test_anytls_interop.py build/anytls-server-test.exe
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Gitleaks and scan the published source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          audit_dir="$(mktemp -d)"
+          trap 'rm -rf "$audit_dir"' EXIT
+          base=https://github.com/gitleaks/gitleaks/releases/download/v8.30.1
+          curl --fail --location "$base/gitleaks_8.30.1_linux_x64.tar.gz" -o "$audit_dir/gitleaks_8.30.1_linux_x64.tar.gz"
+          curl --fail --location "$base/gitleaks_8.30.1_checksums.txt" -o "$audit_dir/checksums.txt"
+          (cd "$audit_dir" && grep 'gitleaks_8.30.1_linux_x64.tar.gz$' checksums.txt | sha256sum --check -)
+          tar -xzf "$audit_dir/gitleaks_8.30.1_linux_x64.tar.gz" -C "$audit_dir"
+          "$audit_dir/gitleaks" dir . --config .gitleaks.toml --redact=100 --no-banner --ignore-gitleaks-allow

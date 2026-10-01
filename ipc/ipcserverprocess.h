@@ -40,6 +40,7 @@ signals:
 private:
     amnezia::PermittedProcess m_program = amnezia::PermittedProcess::Invalid;
     QSharedPointer<QProcess> m_process;
+    bool m_argumentsAccepted = false;
 };
 
 #else

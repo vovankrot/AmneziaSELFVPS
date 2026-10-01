@@ -162,3 +162,20 @@ installer/AmneziaVPN.Installer/Payload/
 # Personal build logs + private VPS/diag scripts + settings backups — never publish
 *.log
 tools/_*
+
+# Local outputs, diagnostics and Python/editor caches
+/dist/
+/.local/
+/.venv/
+/.mypy_cache/
+/.pytest_cache/
+__pycache__/
+*.pyc
+*.lscache
+/_*.sh
+
+# Network captures and crash dumps can contain private traffic or credentials
+*.pcap
+*.pcapng
+*.etl
+*.dmp

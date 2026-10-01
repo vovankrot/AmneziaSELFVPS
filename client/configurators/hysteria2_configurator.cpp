@@ -4,6 +4,8 @@
 #include "core/controllers/serverController.h"
 #include "core/scripts_registry.h"
 #include "logger.h"
+#include <QSslCertificate>
+#include <QCryptographicHash>
 
 namespace {
 Logger logger("Hysteria2Configurator");
@@ -66,7 +68,15 @@ QString Hysteria2Configurator::createConfig(const ServerCredentials &credentials
     // $HYSTERIA_LOCAL_PROXY_PORT, $HYSTERIA_MASQUERADE_HOST and $SERVER_IP_ADDRESS.
     // We override the masquerade var with the server-confirmed value, and add
     // the password placeholders.
+    const QByteArray certificatePem = m_serverController->getTextFileFromContainer(
+        container, credentials, "/opt/amnezia/hysteria2/hysteria2_server.crt", errorCode);
+    const QSslCertificate certificate(certificatePem, QSsl::Pem);
+    if (errorCode != ErrorCode::NoError || certificate.isNull()) {
+        errorCode = ErrorCode::TlsCertificateTrustMissing;
+        return {};
+    }
     ServerController::Vars vars = m_serverController->genVarsForScript(credentials, container, containerConfig);
+    vars.append({ QStringLiteral("$HYSTERIA_CERT_PIN"), QString::fromLatin1(certificate.digest(QCryptographicHash::Sha256).toHex()) });
     for (auto &v : vars) {
         if (v.first == QStringLiteral("$HYSTERIA_MASQUERADE_HOST")) {
             v.second = masquerade;

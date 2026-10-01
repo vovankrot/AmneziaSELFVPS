@@ -430,7 +430,9 @@ try {
             throw "APK not found for ABI '$abi' under: $apkOutputDir"
         }
 
-        $targetApk = Join-Path $ProjectDir ("AmneziaVPN_{0}_android_{1}_{2}.apk" -f $AppVersionShort, $abi, $apkTypeSuffix)
+        $releaseDir = Join-Path $ProjectDir 'dist'
+        New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null
+        $targetApk = Join-Path $releaseDir ("AmneziaVPN_{0}_android_{1}_{2}.apk" -f $AppVersionShort, $abi, $apkTypeSuffix)
         Copy-Item $sourceApk $targetApk -Force
         $Artifacts += $targetApk
     }

@@ -6,7 +6,7 @@
 #include "ui/models/containers_model.h"
 #include "ui/models/servers_model.h"
 
-namespace
+namespace ImportConfig
 {
     enum class ConfigTypes {
         Amnezia,
@@ -19,6 +19,8 @@ namespace
         Invalid
     };
 }
+
+using ImportConfig::ConfigTypes;
 
 class ImportController : public QObject
 {

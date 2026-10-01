@@ -56,6 +56,10 @@ class WindowsSplitTunnel final {
   // Returns true if the split-tunnel driver is now up and running.
   bool isRunning();
 
+  // A timed out synchronous IOCTL means this handle must not be used again.
+  // Callers can fall back to a regular (non-app-split) VPN session instead.
+  bool isUnresponsive() const;
+
   static bool detectConflict();
 
   // States for GetState
@@ -79,6 +83,7 @@ class WindowsSplitTunnel final {
   static bool resetDriver(HANDLE driverIO);
 
   HANDLE m_driver = INVALID_HANDLE_VALUE;
+  DRIVER_STATE m_lastState = STATE_UNKNOWN;
   DRIVER_STATE getState();
   QString stateString();
 

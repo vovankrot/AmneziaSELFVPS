@@ -18,6 +18,10 @@ class InstallController : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool shouldUseAnyTlsVariant READ shouldUseAnyTlsVariant WRITE setShouldUseAnyTlsVariant NOTIFY shouldUseAnyTlsVariantChanged)
+    Q_PROPERTY(bool hysteria2Updating READ hysteria2Updating NOTIFY hysteria2UpdatingChanged)
+    Q_PROPERTY(bool hysteria2VersionChecking READ hysteria2VersionChecking NOTIFY hysteria2VersionStateChanged)
+    Q_PROPERTY(bool hysteria2UpdateAvailable READ hysteria2UpdateAvailable NOTIFY hysteria2VersionStateChanged)
+    Q_PROPERTY(QString hysteria2InstalledVersion READ hysteria2InstalledVersion NOTIFY hysteria2VersionStateChanged)
 public:
     explicit InstallController(const QSharedPointer<ServersModel> &serversModel, const QSharedPointer<ContainersModel> &containersModel,
                                const QSharedPointer<ProtocolsModel> &protocolsModel,
@@ -26,6 +30,10 @@ public:
     ~InstallController();
 
     bool shouldUseAnyTlsVariant() const;
+    bool hysteria2Updating() const { return m_hysteria2Updating; }
+    bool hysteria2VersionChecking() const { return m_hysteria2VersionChecking; }
+    bool hysteria2UpdateAvailable() const { return m_hysteria2UpdateAvailable; }
+    QString hysteria2InstalledVersion() const { return m_hysteria2InstalledVersion; }
 
 public slots:
     // useAnyTlsVariant: when true and `container == Xray`, the install is
@@ -39,6 +47,8 @@ public slots:
     void scanServerForInstalledContainers();
 
     void updateContainer(QJsonObject config);
+    void checkHysteria2Version();
+    void updateHysteria2();
 
     void removeProcessedServer();
     void rebootProcessedServer();
@@ -110,6 +120,9 @@ signals:
     void serverConfigUpdateAvailable(int serverIndex, int currentSchema, int requiredSchema);
     void serverConfigUpToDate(int serverIndex);
     void hotReconfigureFinished(const QString &message, bool success);
+    void hysteria2UpdateFinished(bool success, const QString &message);
+    void hysteria2UpdatingChanged();
+    void hysteria2VersionStateChanged();
 
     void installLogMessage(const QString &line);
     void snapshotRestoreFinished(const QString &message, bool success);
@@ -141,6 +154,10 @@ private:
 
     bool m_shouldCreateServer;
     bool m_shouldUseAnyTlsVariant = false;
+    bool m_hysteria2Updating = false;
+    bool m_hysteria2VersionChecking = false;
+    bool m_hysteria2UpdateAvailable = false;
+    QString m_hysteria2InstalledVersion;
 
     QString m_privateKeyPassphrase;
 

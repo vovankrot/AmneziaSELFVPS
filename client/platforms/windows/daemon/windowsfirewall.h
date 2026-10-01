@@ -36,10 +36,12 @@ class WindowsFirewall final : public QObject {
    * Platform.
    */
   static WindowsFirewall* create(QObject* parent);
+  static const GUID& baselineSublayerKey();
   ~WindowsFirewall() override;
 
   bool enableInterface(int vpnAdapterIndex);
   bool enableLanBypass(const QList<IPAddress>& ranges);
+  bool enableIpv6AppBypass(const QStringList& appPaths);
   bool enablePeerTraffic(const InterfaceConfig& config);
   bool disablePeerTraffic(const QString& pubkey);
   bool disableKillSwitch();
@@ -55,7 +57,8 @@ class WindowsFirewall final : public QObject {
   QMultiMap<QString, uint64_t> m_peerRules;
 
   bool allowTrafficForAppOnAll(const QString& exePath, int weight,
-                               const QString& title);
+                               const QString& title, bool ipv6Only = false,
+                               const QString& peer = QString());
   bool blockTrafficTo(const QList<IPAddress>& range, uint8_t weight,
                       const QString& title, const QString& peer = QString());
   bool blockTrafficTo(const IPAddress& addr, uint8_t weight,

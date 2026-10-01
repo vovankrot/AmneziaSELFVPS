@@ -133,6 +133,10 @@ WindowsFirewall::~WindowsFirewall() {
 }
 
 // static
+const GUID& WindowsFirewall::baselineSublayerKey() {
+  return ST_FW_WINFW_BASELINE_SUBLAYER_KEY;
+}
+
 bool WindowsFirewall::initSublayer() {
   // If we were not able to aquire a handle, this will fail anyway.
   // We need to open up another handle because of wfp rules:
@@ -481,9 +485,36 @@ bool WindowsFirewall::allowAllTraffic() {
     return true;
 }
 
+bool WindowsFirewall::enableIpv6AppBypass(const QStringList& appPaths) {
+  if (appPaths.isEmpty()) return false;
+  const QString peer = QStringLiteral("selfvps-app-bypass-ipv6");
+  if (m_peerRules.contains(peer) && !disablePeerTraffic(peer)) return false;
+  const auto oldRules = m_peerRules;
+  if (FwpmTransactionBegin0(m_sessionHandle, 0) != ERROR_SUCCESS) return false;
+  auto rollback = qScopeGuard([&] {
+    FwpmTransactionAbort0(m_sessionHandle);
+    m_peerRules = oldRules;
+  });
+  // The SOCKS/TUN path transports IPv4. Block native IPv6 for other apps,
+  // but allow explicitly excluded executables on their physical interface.
+  // Do not install system-wide IPv6 blackhole routes: these also break bypass.
+  if (!blockTrafficTo(IPAddress(QStringLiteral("::/0")), LOW_WEIGHT,
+                      QStringLiteral("Block IPv6 outside SOCKS tunnel"), peer)) return false;
+  if (!allowTrafficTo(IPAddress(QStringLiteral("::1/128")), HIGH_WEIGHT,
+                      QStringLiteral("Allow IPv6 loopback"), peer)) return false;
+  for (const auto& path : appPaths) {
+    if (!allowTrafficForAppOnAll(path, HIGH_WEIGHT, QStringLiteral("Allow excluded app IPv6"), true, peer)) return false;
+  }
+  if (FwpmTransactionCommit0(m_sessionHandle) != ERROR_SUCCESS) return false;
+  rollback.dismiss();
+  logger.info() << "IPv6 bypass enabled for" << appPaths.size() << "excluded executables";
+  return true;
+}
+
 bool WindowsFirewall::allowTrafficForAppOnAll(const QString& exePath,
                                               int weight,
-                                              const QString& title) {
+                                              const QString& title, bool ipv6Only,
+                                              const QString& peer) {
   DWORD result = ERROR_SUCCESS;
   Q_ASSERT(weight <= 15);
 
@@ -497,6 +528,7 @@ bool WindowsFirewall::allowTrafficForAppOnAll(const QString& exePath,
     WindowsUtils::windowsLog("FwpmGetAppIdFromFileName0 failure");
     return false;
   }
+  const auto releaseAppId = qScopeGuard([&] { FwpmFreeMemory0(reinterpret_cast<void**>(&appID)); });
   // Condition: Request must come from the .exe
   FWPM_FILTER_CONDITION0 conds;
   conds.fieldKey = FWPM_CONDITION_ALE_APP_ID;
@@ -519,16 +551,16 @@ bool WindowsFirewall::allowTrafficForAppOnAll(const QString& exePath,
   // #1 Permit outbound IPv4 traffic.
   {
     QString desc("Permit (out) IPv4 Traffic of: " + appName);
-    filter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
-    if (!enableFilter(&filter, title, desc)) {
+    filter.layerKey = ipv6Only ? FWPM_LAYER_ALE_AUTH_CONNECT_V6 : FWPM_LAYER_ALE_AUTH_CONNECT_V4;
+    if (!enableFilter(&filter, title, desc, peer)) {
       return false;
     }
   }
   // #2 Permit inbound IPv4 traffic.
   {
     QString desc("Permit (in) IPv4 Traffic of: " + appName);
-    filter.layerKey = FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4;
-    if (!enableFilter(&filter, title, desc)) {
+    filter.layerKey = ipv6Only ? FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6 : FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4;
+    if (!enableFilter(&filter, title, desc, peer)) {
       return false;
     }
   }

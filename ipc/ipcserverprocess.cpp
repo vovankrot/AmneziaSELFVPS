@@ -43,14 +43,15 @@ IpcServerProcess::~IpcServerProcess()
 
 void IpcServerProcess::start()
 {
-    if (m_process->program().isEmpty()) {
+    if (m_process->program().isEmpty() || !m_argumentsAccepted) {
         qCritical() << "IPC: refusing to start an invalid or empty privileged program";
         return;
     }
 
     Utils::killProcessByName(m_process->program());
     m_process->start();
-    qDebug() << "IpcServerProcess started, " << m_process->program() << m_process->arguments();
+    qDebug() << "IpcServerProcess started" << m_process->program()
+             << "argument count=" << m_process->arguments().size();
 
     m_process->waitForStarted();
 }
@@ -70,7 +71,10 @@ void IpcServerProcess::close()
 
 void IpcServerProcess::setArguments(const QStringList &arguments)
 {
-    m_process->setArguments(amnezia::sanitizeArguments(m_program, arguments));
+    const auto sanitized = amnezia::sanitizeArguments(m_program, arguments);
+    m_argumentsAccepted = !sanitized.isEmpty() && sanitized == arguments;
+    m_process->setArguments(m_argumentsAccepted ? sanitized : QStringList{});
+    if (!m_argumentsAccepted) qWarning() << "IPC: rejected privileged process arguments";
 }
 
 void IpcServerProcess::setInputChannelMode(QProcess::InputChannelMode mode)
@@ -81,7 +85,12 @@ void IpcServerProcess::setInputChannelMode(QProcess::InputChannelMode mode)
 void IpcServerProcess::setNativeArguments(const QString &arguments)
 {
 #ifdef Q_OS_WIN
-    m_process->setNativeArguments(arguments);
+    // Native command-line strings would bypass the typed argument allowlist.
+    m_process->setNativeArguments({});
+    if (!arguments.isEmpty()) {
+        m_argumentsAccepted = false;
+        qWarning() << "IPC: rejected native privileged process arguments";
+    }
 #endif
 }
 
@@ -92,6 +101,10 @@ void IpcServerProcess::setProcessChannelMode(QProcess::ProcessChannelMode mode)
 
 void IpcServerProcess::setProgram(int programId)
 {
+    m_argumentsAccepted = false;
+#ifdef Q_OS_WIN
+    m_process->setNativeArguments({});
+#endif
     if (programId <= static_cast<int>(amnezia::PermittedProcess::Invalid)
             || programId >= static_cast<int>(amnezia::PermittedProcess::PermittedProcessCount)) {
         qCritical() << "IPC: rejected invalid privileged program id" << programId;
@@ -108,7 +121,9 @@ void IpcServerProcess::setProgram(int programId)
 
 void IpcServerProcess::setWorkingDirectory(const QString &dir)
 {
-    m_process->setWorkingDirectory(dir);
+    // A caller-controlled working directory can affect privileged DLL/config loading.
+    Q_UNUSED(dir)
+    m_process->setWorkingDirectory(QFileInfo(m_process->program()).absolutePath());
 }
 
 QByteArray IpcServerProcess::readAll()

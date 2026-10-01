@@ -1,6 +1,10 @@
 #include "exportController.h"
+#include "core/configFormat.h"
 
 #include <QBuffer>
+#include <QCryptographicHash>
+#include <QFutureWatcher>
+#include <QtConcurrent>
 #include <QDataStream>
 #include <QDesktopServices>
 #include <QFile>
@@ -48,7 +52,7 @@ void ExportController::generateFullAccessConfig()
     }
     serverConfig[config_key::containers] = containers;
 
-    QByteArray compressedConfig = QJsonDocument(serverConfig).toJson();
+    QByteArray compressedConfig = QJsonDocument(ConfigFormat::stamp(serverConfig)).toJson();
     compressedConfig = qCompress(compressedConfig, 8);
     m_config = QString("vpn://%1").arg(QString(compressedConfig.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals)));
 
@@ -58,6 +62,7 @@ void ExportController::generateFullAccessConfig()
 
 void ExportController::generateConnectionConfig(const QString &clientName)
 {
+    if (m_clientsLoading) return;
     clearPreviousConfig();
 
     int serverIndex = m_serversModel->getProcessedServerIndex();
@@ -90,7 +95,7 @@ void ExportController::generateConnectionConfig(const QString &clientName)
         serverConfig.insert(config_key::dns2, dns.second);
     }
 
-    QByteArray compressedConfig = QJsonDocument(serverConfig).toJson();
+    QByteArray compressedConfig = QJsonDocument(ConfigFormat::stamp(serverConfig)).toJson();
     compressedConfig = qCompress(compressedConfig, 8);
     m_config = QString("vpn://%1").arg(QString(compressedConfig.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals)));
 
@@ -131,6 +136,7 @@ ErrorCode ExportController::generateNativeConfig(const DockerContainer container
 
 void ExportController::generateOpenVpnConfig(const QString &clientName)
 {
+    if (m_clientsLoading) return;
     QJsonObject nativeConfig;
     DockerContainer container = static_cast<DockerContainer>(m_containersModel->getProcessedContainerIndex());
     ErrorCode errorCode = ErrorCode::NoError;
@@ -157,6 +163,7 @@ void ExportController::generateOpenVpnConfig(const QString &clientName)
 
 void ExportController::generateWireGuardConfig(const QString &clientName)
 {
+    if (m_clientsLoading) return;
     QJsonObject nativeConfig;
     ErrorCode errorCode = generateNativeConfig(DockerContainer::WireGuard, clientName, Proto::WireGuard, nativeConfig);
     if (errorCode) {
@@ -176,6 +183,7 @@ void ExportController::generateWireGuardConfig(const QString &clientName)
 
 void ExportController::generateAwgConfig(const QString &clientName)
 {
+    if (m_clientsLoading) return;
     QJsonObject nativeConfig;
     ErrorCode errorCode = generateNativeConfig(static_cast<DockerContainer>(m_containersModel->getProcessedContainerIndex()), clientName,
                                                Proto::Awg, nativeConfig);
@@ -196,6 +204,7 @@ void ExportController::generateAwgConfig(const QString &clientName)
 
 void ExportController::generateShadowSocksConfig()
 {
+    if (m_clientsLoading) return;
     QJsonObject nativeConfig;
     DockerContainer container = static_cast<DockerContainer>(m_containersModel->getProcessedContainerIndex());
     ErrorCode errorCode = ErrorCode::NoError;
@@ -230,6 +239,7 @@ void ExportController::generateShadowSocksConfig()
 
 void ExportController::generateCloakConfig()
 {
+    if (m_clientsLoading) return;
     QJsonObject nativeConfig;
     ErrorCode errorCode = generateNativeConfig(DockerContainer::Cloak, "", Proto::Cloak, nativeConfig);
     if (errorCode) {
@@ -250,6 +260,7 @@ void ExportController::generateCloakConfig()
 
 void ExportController::generateXrayConfig(const QString &clientName)
 {
+    if (m_clientsLoading) return;
     // Xray data
     QJsonObject nativeConfig;
     ErrorCode errorCode = generateNativeConfig(DockerContainer::Xray, clientName, Proto::Xray, nativeConfig);
@@ -360,17 +371,73 @@ void ExportController::exportConfig(const QString &fileName)
     SystemController::saveFile(fileName, m_config);
 }
 
-void ExportController::updateClientManagementModel(const DockerContainer container, ServerCredentials credentials)
+void ExportController::updateClientManagementModel(const DockerContainer container, ServerCredentials credentials, bool forceRefresh)
 {
-    QSharedPointer<ServerController> serverController(new ServerController(m_settings));
-    ErrorCode errorCode = m_clientManagementModel->updateModel(container, credentials, serverController);
-    if (errorCode != ErrorCode::NoError) {
-        emit exportErrorOccurred(errorCode);
+    // Include authentication identity without retaining plaintext credentials in cache keys.
+    QByteArray identity;
+    QDataStream stream(&identity, QIODevice::WriteOnly);
+    stream << credentials.hostName << credentials.port << credentials.userName << credentials.secretData << int(container);
+    const auto key = QCryptographicHash::hash(identity, QCryptographicHash::Sha256);
+    m_clientsRequestedKey = key;
+    m_pendingClientsContainer = container;
+    m_pendingClientsCredentials = credentials;
+    if (m_clientsLoading) {
+        // One SSH job at a time. Its completion picks up the most recent selection.
+        if (key != m_clientsActiveKey) {
+            m_clientManagementModel->replaceSnapshot({});
+            m_clientsCacheAge.invalidate();
+        }
+        return;
     }
+    if (!forceRefresh && key == m_clientsCacheKey && m_clientsCacheAge.isValid()
+            && m_clientsCacheAge.elapsed() < 30000) return;
+    if (key != m_clientsCacheKey) {
+        m_clientManagementModel->replaceSnapshot({});
+        m_clientsCacheAge.invalidate();
+    }
+    m_clientsActiveKey = key;
+    m_clientsLoading = true;
+    emit clientsLoadingChanged();
+    using Result = QPair<ErrorCode, QJsonArray>;
+    auto *watcher = new QFutureWatcher<Result>(this);
+    connect(watcher, &QFutureWatcher<Result>::finished, this, [this, watcher, key]() {
+        const auto result = watcher->resultAt(watcher->future().resultCount() - 1);
+        watcher->deleteLater();
+        m_clientsLoading = false;
+        if (m_clientsRequestedKey != key) {
+            updateClientManagementModel(m_pendingClientsContainer, m_pendingClientsCredentials, true);
+            return;
+        }
+        if (result.first == ErrorCode::NoError) {
+            m_clientManagementModel->replaceSnapshot(result.second);
+            m_clientsCacheKey = key;
+            m_clientsCacheAge.start();
+        } else {
+            m_clientsCacheAge.invalidate();
+        }
+        emit clientsLoadingChanged();
+        if (result.first != ErrorCode::NoError) emit exportErrorOccurred(result.first);
+    });
+    connect(watcher, &QFutureWatcher<Result>::resultReadyAt, this, [this, watcher, key](int index) {
+        if (m_clientsRequestedKey != key) return;
+        const auto result = watcher->resultAt(index);
+        if (result.first == ErrorCode::NoError) m_clientManagementModel->replaceSnapshot(result.second);
+    });
+    watcher->setFuture(QtConcurrent::run([settings = m_settings, container, credentials](QPromise<Result> &promise) {
+        // Both QObjects stay on the worker. Publish client names first; SSH log
+        // parsing and runtime statistics can finish while the list is visible.
+        ClientManagementModel model(settings);
+        QSharedPointer<ServerController> serverController(new ServerController(settings));
+        const auto error = model.updateModel(container, credentials, serverController,
+            [&promise](const QJsonArray &clients) { promise.addResult(Result {ErrorCode::NoError, clients}); });
+        promise.addResult(Result {error, model.snapshot()});
+    }));
 }
 
 void ExportController::revokeConfig(const int row, const DockerContainer container, ServerCredentials credentials)
 {
+    if (m_clientsLoading) return;
+    m_clientsCacheAge.invalidate();
     QSharedPointer<ServerController> serverController(new ServerController(m_settings));
     ErrorCode errorCode =
             m_clientManagementModel->revokeClient(row, container, credentials, m_serversModel->getProcessedServerIndex(), serverController);
@@ -382,6 +449,8 @@ void ExportController::revokeConfig(const int row, const DockerContainer contain
 
 void ExportController::renameClient(const int row, const QString &clientName, const DockerContainer container, ServerCredentials credentials)
 {
+    if (m_clientsLoading) return;
+    m_clientsCacheAge.invalidate();
     QSharedPointer<ServerController> serverController(new ServerController(m_settings));
     ErrorCode errorCode = m_clientManagementModel->renameClient(row, clientName, container, credentials, serverController);
     if (errorCode != ErrorCode::NoError) {
@@ -396,6 +465,7 @@ int ExportController::getQrCodesCount()
 
 void ExportController::clearPreviousConfig()
 {
+    m_clientsCacheAge.invalidate();
     m_config.clear();
     m_nativeConfigString.clear();
     m_qrCodes.clear();

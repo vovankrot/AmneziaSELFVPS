@@ -11,9 +11,11 @@
 #include <QRegularExpression>
 #include <QTcpSocket>
 #include <QThread>
+#include <QProcessEnvironment>
 #include <QUrl>
 
 #include "core/networkUtilities.h"
+#include "core/socksProbe.h"
 #include "core/serialization/serialization.h"
 #include "ipc.h"
 #include "protocols/protocols_defs.h"
@@ -26,20 +28,6 @@ static const QString tunName = "tun2";
 #endif
 
 namespace {
-bool waitForSocketBytes(QTcpSocket &socket, qint64 minBytes, int timeoutMs)
-{
-    QElapsedTimer timer;
-    timer.start();
-
-    while (socket.bytesAvailable() < minBytes) {
-        const int remaining = timeoutMs - static_cast<int>(timer.elapsed());
-        if (remaining <= 0 || !socket.waitForReadyRead(qMin(remaining, 250))) {
-            return false;
-        }
-    }
-    return true;
-}
-
 bool isAppSplitTunnelActive(const QJsonObject &config)
 {
     const auto appsRouteMode = static_cast<Settings::AppsRouteMode>(
@@ -71,6 +59,7 @@ AnyTlsProtocol::AnyTlsProtocol(const QJsonObject &configuration, QObject *parent
     m_serverAddress = anytls.value(QStringLiteral("server")).toString();
     m_password = anytls.value(QStringLiteral("password")).toString();
     m_sni = anytls.value(QStringLiteral("sni")).toString();
+    m_certificatePin = anytls.value(QStringLiteral("certificate_sha256")).toString();
 
     const int parsedPort = parseLocalPort(anytls.value(QStringLiteral("socks5_listen")).toString());
     if (parsedPort > 0) {
@@ -102,7 +91,7 @@ int AnyTlsProtocol::parseLocalPort(const QString &listen) const
 QString AnyTlsProtocol::buildServerUri() const
 {
     const QString encodedPassword = QString::fromLatin1(QUrl::toPercentEncoding(m_password));
-    QString uri = QStringLiteral("anytls://%1@%2/?insecure=1").arg(encodedPassword, m_serverAddress);
+    QString uri = QStringLiteral("anytls://%1@%2/").arg(encodedPassword, m_serverAddress);
     if (!m_sni.trimmed().isEmpty()) {
         uri += QStringLiteral("&sni=%1").arg(QString::fromLatin1(QUrl::toPercentEncoding(m_sni.trimmed())));
     }
@@ -118,6 +107,9 @@ ErrorCode AnyTlsProtocol::start()
         qCritical() << "AnyTlsProtocol::start(): incomplete AnyTLS config";
         return ErrorCode::InternalError;
     }
+
+    if (!QRegularExpression(QStringLiteral("^[0-9a-fA-F]{64}$")).match(m_certificatePin).hasMatch())
+        return ErrorCode::TlsCertificateTrustMissing;
 
     const QString anytlsExe = Utils::anytlsPath();
     if (!QFileInfo::exists(anytlsExe)) {
@@ -199,9 +191,15 @@ ErrorCode AnyTlsProtocol::startAnyTlsProcess()
 {
     m_anyTlsProcess = new QProcess(this);
     m_anyTlsProcess->setProgram(Utils::anytlsPath());
+    auto environment = QProcessEnvironment::systemEnvironment();
+    environment.remove("TLS_KEY_LOG");
+    environment.insert("ANYTLS_PASSWORD", m_password);
+    m_anyTlsProcess->setProcessEnvironment(environment);
     m_anyTlsProcess->setArguments({
         QStringLiteral("-l"), QStringLiteral("127.0.0.1:%1").arg(m_socksPort),
-        QStringLiteral("-s"), buildServerUri(),
+        QStringLiteral("-s"), m_serverAddress,
+        QStringLiteral("-sni"), m_sni,
+        QStringLiteral("-pin"), m_certificatePin,
     });
     m_anyTlsProcess->setProcessChannelMode(QProcess::MergedChannels);
 
@@ -400,105 +398,7 @@ bool AnyTlsProtocol::ensureXrayRouterReachable()
 bool AnyTlsProtocol::performSocks5Probe(const QString &targetHost, quint16 targetPort, int timeoutMs, int socksPort,
                                         const QString &user, const QString &password)
 {
-    const QByteArray hostBytes = targetHost.toUtf8();
-    if (hostBytes.isEmpty() || hostBytes.size() > 255) {
-        qWarning() << "AnyTLS probe: invalid target host" << targetHost;
-        return false;
-    }
-
-    QElapsedTimer timer;
-    timer.start();
-
-    while (timer.elapsed() < timeoutMs) {
-        const int remaining = timeoutMs - static_cast<int>(timer.elapsed());
-        if (remaining <= 0)
-            break;
-
-        QTcpSocket socket;
-        socket.connectToHost(QHostAddress::LocalHost, socksPort);
-        if (!socket.waitForConnected(qMin(remaining, 700))) {
-            QThread::msleep(150);
-            continue;
-        }
-
-        socket.write((user.isEmpty() || password.isEmpty())
-                     ? QByteArray::fromHex("050100")
-                     : QByteArray::fromHex("05020002"));
-        if (!socket.waitForBytesWritten(qMin(remaining, 500)) ||
-            !waitForSocketBytes(socket, 2, qMin(remaining, 700))) {
-            socket.disconnectFromHost();
-            QThread::msleep(150);
-            continue;
-        }
-        const QByteArray authReply = socket.read(2);
-        if (authReply.size() < 2 || quint8(authReply.at(0)) != 0x05) {
-            socket.disconnectFromHost();
-            QThread::msleep(150);
-            continue;
-        }
-        const quint8 chosenMethod = quint8(authReply.at(1));
-        if (chosenMethod == 0x02) {
-            const QByteArray userBytes = user.toUtf8();
-            const QByteArray passBytes = password.toUtf8();
-            if (userBytes.isEmpty() || passBytes.isEmpty() || userBytes.size() > 255 || passBytes.size() > 255) {
-                socket.disconnectFromHost();
-                QThread::msleep(150);
-                continue;
-            }
-            QByteArray authReq;
-            authReq.append(char(0x01));
-            authReq.append(char(userBytes.size()));
-            authReq.append(userBytes);
-            authReq.append(char(passBytes.size()));
-            authReq.append(passBytes);
-            socket.write(authReq);
-            if (!socket.waitForBytesWritten(qMin(remaining, 500)) ||
-                !waitForSocketBytes(socket, 2, qMin(remaining, 700))) {
-                socket.disconnectFromHost();
-                QThread::msleep(150);
-                continue;
-            }
-            const QByteArray authResp = socket.read(2);
-            if (authResp.size() < 2 || quint8(authResp.at(1)) != 0x00) {
-                socket.disconnectFromHost();
-                QThread::msleep(150);
-                continue;
-            }
-        } else if (chosenMethod != 0x00) {
-            socket.disconnectFromHost();
-            QThread::msleep(150);
-            continue;
-        }
-
-        QByteArray request;
-        request.append(char(0x05));
-        request.append(char(0x01));
-        request.append(char(0x00));
-        request.append(char(0x03));
-        request.append(char(hostBytes.size()));
-        request.append(hostBytes);
-        request.append(char((targetPort >> 8) & 0xff));
-        request.append(char(targetPort & 0xff));
-        socket.write(request);
-        if (!socket.waitForBytesWritten(qMin(remaining, 500)) ||
-            !waitForSocketBytes(socket, 5, qMin(remaining, 2000))) {
-            socket.disconnectFromHost();
-            QThread::msleep(200);
-            continue;
-        }
-
-        const QByteArray connectReply = socket.peek(5);
-        if (connectReply.size() >= 5 && quint8(connectReply.at(0)) == 0x05 && quint8(connectReply.at(1)) == 0x00) {
-            socket.disconnectFromHost();
-            qDebug() << "AnyTLS SOCKS probe succeeded for" << targetHost << targetPort;
-            return true;
-        }
-        socket.disconnectFromHost();
-        QThread::msleep(200);
-    }
-
-    qWarning() << "AnyTLS SOCKS probe failed for" << targetHost << targetPort;
-    return false;
+    return SocksProbe::connect(targetHost, targetPort, timeoutMs, quint16(socksPort), user, password);
 }
 
 ErrorCode AnyTlsProtocol::setupRouting()
@@ -552,6 +452,29 @@ ErrorCode AnyTlsProtocol::setupRouting()
 
         if (m_routeMode == Settings::RouteMode::VpnAllSites ||
             m_routeMode == Settings::RouteMode::VpnAllExceptSites) {
+            // Exclude the AnyTLS server's own IP from the TUN via the physical
+            // gateway BEFORE the catch-all subnets. Those subnets (1.0.0.0/8 ...
+            // 128.0.0.0/1) otherwise capture the server endpoint (e.g. 203.0.113.10
+            // sits inside 32.0.0.0/3) into the tunnel, so the AnyTLS client's outer
+            // TCP would loop into the TUN. A /32 via the
+            // physical gateway is more specific, so server traffic bypasses the TUN.
+            // Mirrors XrayProtocol::setupRouting. by vovankrot
+            if (NetworkUtilities::checkIPv4Format(m_remoteAddress)
+                && NetworkUtilities::checkIPv4Format(m_routeGateway)) {
+                const QStringList serverExclusion = { m_remoteAddress + "/32" };
+                auto excludeServer = iface->routeAddList(m_routeGateway, serverExclusion);
+                if (!excludeServer.waitForFinished() || excludeServer.returnValue() != serverExclusion.count()) {
+                    qWarning() << "AnyTLS setupRouting: failed to add server exclusion route for"
+                               << m_remoteAddress << "via" << m_routeGateway;
+                } else {
+                    qDebug() << "AnyTLS setupRouting: excluded server" << m_remoteAddress
+                             << "via" << m_routeGateway;
+                }
+            } else {
+                qWarning() << "AnyTLS setupRouting: cannot exclude server, invalid address/gateway"
+                           << m_remoteAddress << m_routeGateway;
+            }
+
             static const QStringList subnets = { "1.0.0.0/8", "2.0.0.0/7", "4.0.0.0/6", "8.0.0.0/5",
                                                  "16.0.0.0/4", "32.0.0.0/3", "64.0.0.0/2", "128.0.0.0/1" };
             auto routeAddList = iface->routeAddList(m_vpnGateway, subnets);
@@ -561,33 +484,41 @@ ErrorCode AnyTlsProtocol::setupRouting()
             }
         }
 
+#ifdef Q_OS_WIN
+        // Per-app IPv6 filtering is installed by enablePeerTraffic. Global
+        // blackhole routes would also cut off excluded Firefox/CDN connections.
+        if (!appSplitTunnelActive) {
+#endif
         auto StopRoutingIpv6 = iface->StopRoutingIpv6();
         if (!StopRoutingIpv6.waitForFinished() || !StopRoutingIpv6.returnValue()) {
             qCritical() << "AnyTLS: failed to disable IPv6 routing";
             return ErrorCode::InternalError;
         }
+#ifdef Q_OS_WIN
+        }
+#endif
 
 #ifdef Q_OS_WIN
-        if (killSwitchEnabled && appSplitTunnelActive) {
-            qDebug() << "AnyTLS: skipping peer traffic killswitch block while app split tunneling is active";
-        } else if (killSwitchEnabled && inetAdapterIndex != -1 && vpnAdapterIndex != -1) {
+        if (killSwitchEnabled || appSplitTunnelActive) {
+            if (inetAdapterIndex <= 0 || vpnAdapterIndex <= 0) return ErrorCode::InternalError;
             QJsonObject config = m_rawConfig;
             config.insert("inetAdapterIndex", inetAdapterIndex);
             config.insert("vpnAdapterIndex", vpnAdapterIndex);
             config.insert("vpnGateway", m_vpnGateway);
             config.insert("vpnServer", m_remoteAddress);
+            config.insert(amnezia::config_key::killSwitchOption,
+                          (killSwitchEnabled && !appSplitTunnelActive) ? "true" : "false");
             auto enablePeerTraffic = iface->enablePeerTraffic(config);
-            if (!enablePeerTraffic.waitForFinished() || !enablePeerTraffic.returnValue()) {
-                qCritical() << "AnyTLS: failed to enable peer traffic";
+            if (!enablePeerTraffic.waitForFinished() || !enablePeerTraffic.returnValue()) return ErrorCode::InternalError;
+        }
+        if (appSplitTunnelActive) {
+            auto restoreIpv6 = iface->StartRoutingIpv6();
+            if (!restoreIpv6.waitForFinished() || !restoreIpv6.returnValue()) {
+                qCritical() << "Failed to restore physical IPv6 routes for excluded apps";
                 return ErrorCode::InternalError;
             }
-        } else if (killSwitchEnabled) {
-            qWarning() << "AnyTLS: split-tunnel adapter indices unknown, skipped";
         }
 #endif
         return ErrorCode::NoError;
-    },
-    [] () {
-        return ErrorCode::AmneziaServiceConnectionFailed;
-    });
+    }, [] () { return ErrorCode::AmneziaServiceConnectionFailed; });
 }

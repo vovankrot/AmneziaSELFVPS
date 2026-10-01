@@ -4,16 +4,16 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
-            <SolidColorBrush x:Key="BgDeep" Color="#0C131A"/>
-            <SolidColorBrush x:Key="BgPanel" Color="#121A23"/>
-            <SolidColorBrush x:Key="BgPanel2" Color="#182330"/>
-            <SolidColorBrush x:Key="Stroke" Color="#273548"/>
-            <SolidColorBrush x:Key="Text" Color="#F3F6F8"/>
-            <SolidColorBrush x:Key="TextDim" Color="#B5C1CE"/>
-            <SolidColorBrush x:Key="Accent" Color="#E99749"/>
-            <SolidColorBrush x:Key="AccentHi" Color="#F2B36E"/>
-            <SolidColorBrush x:Key="Success" Color="#59B88A"/>
-            <SolidColorBrush x:Key="Danger" Color="#D96D6D"/>
+            <SolidColorBrush x:Key="BgDeep" Color="#071019"/>
+            <SolidColorBrush x:Key="BgPanel" Color="#0B1621"/>
+            <SolidColorBrush x:Key="BgPanel2" Color="#101D29"/>
+            <SolidColorBrush x:Key="Stroke" Color="#1D2C3B"/>
+            <SolidColorBrush x:Key="Text" Color="#EDF4FA"/>
+            <SolidColorBrush x:Key="TextDim" Color="#8E9CAA"/>
+            <SolidColorBrush x:Key="Accent" Color="#2F7DF6"/>
+            <SolidColorBrush x:Key="AccentHi" Color="#4B91FA"/>
+            <SolidColorBrush x:Key="Success" Color="#2DCE76"/>
+            <SolidColorBrush x:Key="Danger" Color="#EF5A67"/>
 
             <Style x:Key="PrimaryButton" TargetType="Button">
                 <Setter Property="Foreground" Value="White"/>
@@ -40,7 +40,7 @@
                                     <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentHi}"/>
                                 </Trigger>
                                 <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="bd" Property="Background" Value="#D48435"/>
+                                    <Setter TargetName="bd" Property="Background" Value="#2469D4"/>
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter TargetName="bd" Property="Background" Value="#2A313A"/>
@@ -68,10 +68,10 @@
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="bd" Property="Background" Value="#17212C"/>
+                                    <Setter TargetName="bd" Property="Background" Value="#152534"/>
                                 </Trigger>
                                 <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="bd" Property="Background" Value="#101821"/>
+                                    <Setter TargetName="bd" Property="Background" Value="#0D1924"/>
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter Property="Foreground" Value="#7F8A95"/>
@@ -98,7 +98,7 @@
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="bd" Property="Background" Value="#17212C"/>
+                                    <Setter TargetName="bd" Property="Background" Value="#152534"/>
                                     <Setter Property="Foreground" Value="White"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>

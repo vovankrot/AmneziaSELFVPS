@@ -40,12 +40,18 @@ public:
 
     ClientManagementModel(std::shared_ptr<Settings> settings, QObject *parent = nullptr);
 
+    QJsonArray snapshot() const { return m_clientsTable; }
+    void replaceSnapshot(const QJsonArray &clients);
+
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
-public slots:
+public:
     ErrorCode updateModel(const DockerContainer container, const ServerCredentials &credentials,
-                          const QSharedPointer<ServerController> &serverController);
+                          const QSharedPointer<ServerController> &serverController,
+                          const std::function<void(const QJsonArray &)> &onClientsLoaded = {});
+
+public slots:
     ErrorCode appendClient(const DockerContainer container, const ServerCredentials &credentials, const QJsonObject &containerConfig,
                            const QString &clientName, const QSharedPointer<ServerController> &serverController);
     ErrorCode appendClient(QJsonObject &protocolConfig, const QString &clientName,const DockerContainer container,

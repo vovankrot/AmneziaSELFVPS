@@ -25,6 +25,8 @@ set(HEADERS ${HEADERS}
     ${CLIENT_ROOT_DIR}/protocols/vpnprotocol.h
     ${CMAKE_CURRENT_BINARY_DIR}/version.h
     ${CLIENT_ROOT_DIR}/core/sshclient.h
+    ${CLIENT_ROOT_DIR}/core/sshHostTrust.h
+    ${CLIENT_ROOT_DIR}/core/appUpdater.h
     ${CLIENT_ROOT_DIR}/core/networkUtilities.h
     ${CLIENT_ROOT_DIR}/core/serialization/serialization.h
     ${CLIENT_ROOT_DIR}/core/serialization/transfer.h
@@ -65,6 +67,8 @@ set(SOURCES ${SOURCES}
     ${CLIENT_ROOT_DIR}/ui/qautostart.cpp
     ${CLIENT_ROOT_DIR}/protocols/vpnprotocol.cpp
     ${CLIENT_ROOT_DIR}/core/sshclient.cpp
+    ${CLIENT_ROOT_DIR}/core/sshHostTrust.cpp
+    ${CLIENT_ROOT_DIR}/core/appUpdater.cpp
     ${CLIENT_ROOT_DIR}/core/networkUtilities.cpp
     ${CLIENT_ROOT_DIR}/core/serialization/outbound.cpp
     ${CLIENT_ROOT_DIR}/core/serialization/inbound.cpp

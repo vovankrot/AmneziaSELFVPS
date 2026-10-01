@@ -40,6 +40,10 @@ QString errorString(ErrorCode code) {
     case(ErrorCode::SshPrivateKeyFormatError): errorMessage = QObject::tr("The selected private key format is not supported, use openssh ED25519 key types or PEM key types"); break;
     case(ErrorCode::SshTimeoutError): errorMessage = QObject::tr("Timeout connecting to server"); break;
     case(ErrorCode::SshCommandTimeoutError): errorMessage = QObject::tr("SSH command timed out"); break;
+    case(ErrorCode::SshHostKeyChangedError): errorMessage = QObject::tr("SSH server key changed. Connection blocked before authentication. Verify the new key with your VPS provider before resetting server trust."); break;
+    case(ErrorCode::SshHostKeyUntrustedError): errorMessage = QObject::tr("SSH server key was not confirmed. No authentication data was sent."); break;
+    case(ErrorCode::TlsCertificateTrustMissing): errorMessage = QObject::tr("Server certificate pin is missing. Regenerate the connection configuration using the verified SSH connection; an older AnyTLS server must first be updated."); break;
+    case(ErrorCode::UnsupportedAwgBackend): errorMessage = QObject::tr("This build includes AWG 3.0 native libraries. RandomTrailers and DisableCookies require AWG 3.1; these parameters cannot be silently discarded."); break;
 
     // Ssh scp errors
     case(ErrorCode::SshScpFailureError): errorMessage = QObject::tr("SCP error: Generic failure"); break;

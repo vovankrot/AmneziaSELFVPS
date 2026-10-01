@@ -17,16 +17,15 @@ PageType {
 
     property bool isControlsDisabled: false
     property bool isTabBarDisabled: false
-    readonly property bool useSideNavigation: GC.isDesktop() && tabBar.visible
-    readonly property int sideNavigationWidth: useSideNavigation ? 210 : 0
+    readonly property bool useDesktopNavigation: GC.isDesktop() && tabBar.visible
 
     function switchRootTab(page, index) {
         tabBarStackView.goToTabBarPage(page)
         tabBar.currentIndex = index
     }
 
-    // Tracks the currently shown page so the side rail can highlight
-    // destinations that are pushed (not root tabs), e.g. the Servers list.
+    // Tracks the currently shown page so the desktop header can keep the
+    // owning root destination selected while child pages are pushed.
     readonly property string currentPagePath: tabBarStackView.currentItem ? tabBarStackView.currentItem.objectName : ""
 
     // Navigate to the Servers list as a pushed page on top of the Home root
@@ -223,21 +222,9 @@ PageType {
 
         target: SettingsController
 
-        function onLoggingDisableByWatcher() {
-            PageController.showNotificationMessage(qsTr("Logging was disabled after 14 days, log files were deleted"))
-        }
-
         function onRestoreBackupFinished() {
             PageController.showNotificationMessage(qsTr("Settings restored from backup file"))
             PageController.goToPageHome()
-        }
-
-        function onLoggingStateChanged() {
-            if (SettingsController.isLoggingEnabled) {
-                var message = qsTr("Logging is enabled. Note that logs will be automatically" +
-                                   "disabled after 14 days, and all log files will be deleted.")
-                PageController.showNotificationMessage(message)
-            }
         }
     }
 
@@ -277,234 +264,35 @@ PageType {
         }
     }
 
-    component SideNavigationButton: Rectangle {
-        id: navigationButton
-
-        property string text
-        property string image
-        property bool selected: false
-        property bool navigationEnabled: true
-        property var clickedFunc: function() {}
-
-        Layout.fillWidth: true
-        Layout.preferredHeight: 42
-        radius: 8
-        color: selected ? AmneziaStyle.color.deepBrown
-                        : (navigationMouse.containsMouse ? AmneziaStyle.color.translucentWhite : "transparent")
-        border.width: selected ? 1 : 0
-        border.color: selected ? AmneziaStyle.color.slateGray : "transparent"
-        opacity: navigationEnabled ? 1.0 : 0.44
-
-        MouseArea {
-            id: navigationMouse
-            anchors.fill: parent
-            enabled: navigationButton.navigationEnabled && root.useSideNavigation && !root.isControlsDisabled && !root.isTabBarDisabled
-            cursorShape: Qt.PointingHandCursor
-
-            onClicked: navigationButton.clickedFunc()
-        }
-
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 12
-            anchors.rightMargin: 12
-            spacing: 10
-
-            Image {
-                Layout.preferredWidth: 17
-                Layout.preferredHeight: 17
-                source: navigationButton.image
-                opacity: navigationButton.selected ? 1.0 : 0.78
-            }
-
-            Text {
-                Layout.fillWidth: true
-                text: navigationButton.text
-                color: navigationButton.selected ? AmneziaStyle.color.paleGray : AmneziaStyle.color.mutedGray
-                font.pixelSize: 13
-                font.weight: navigationButton.selected ? 600 : 500
-                elide: Text.ElideRight
-            }
-        }
-    }
-
-    Rectangle {
-        id: sideNavigation
-
-        visible: root.useSideNavigation
+    DesktopTopNavigation {
+        id: desktopNavigation
+        objectName: "desktopNavigation"
+        visible: root.useDesktopNavigation
         anchors.top: parent.top
         anchors.left: parent.left
-        anchors.bottom: parent.bottom
-        width: root.sideNavigationWidth
-        color: AmneziaStyle.color.accentGradientBottom
+        anchors.right: parent.right
+        height: 104 + SettingsController.safeAreaTopMargin
 
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: AmneziaStyle.color.accentGradientTop }
-            GradientStop { position: 0.56; color: AmneziaStyle.color.accentGradientMid }
-            GradientStop { position: 1.0; color: AmneziaStyle.color.accentGradientBottom }
+        currentIndex: tabBar.currentIndex
+        navigationEnabled: !root.isControlsDisabled && !root.isTabBarDisabled
+        clientsVisible: !SettingsController.isOnTv() && ServersModel.hasServerWithWriteAccess()
+
+        onHomeClicked: {
+            root.switchRootTab(PageEnum.PageHome, 0)
+            ServersModel.processedIndex = ServersModel.defaultIndex
         }
-
-        Rectangle {
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            width: 1
-            color: AmneziaStyle.color.slateGray
-        }
-
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.topMargin: 30 + SettingsController.safeAreaTopMargin
-            anchors.leftMargin: 24
-            anchors.rightMargin: 24
-            anchors.bottomMargin: 24
-            spacing: 0
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.bottomMargin: 30
-                spacing: 9
-
-                Image {
-                    Layout.preferredWidth: 27
-                    Layout.preferredHeight: 27
-                    fillMode: Image.PreserveAspectFit
-                    source: "qrc:/images/controls/amnezia.svg"
-                }
-
-                Text {
-                    Layout.fillWidth: true
-                    text: "AmneziaVPN"
-                    color: AmneziaStyle.color.paleGray
-                    font.family: "Inter"
-                    font.pixelSize: 14
-                    font.weight: 600
-                    elide: Text.ElideRight
-                }
-            }
-
-            SideNavigationButton {
-                text: qsTr("Home")
-                image: "qrc:/images/controls/home.svg"
-                // Highlight Home only when its root tab is active and no
-                // overlay page (e.g. the Servers list) is pushed on top.
-                selected: tabBar.currentIndex === 0
-                          && root.currentPagePath === PageController.getPagePath(PageEnum.PageHome)
-                clickedFunc: function() {
-                    root.switchRootTab(PageEnum.PageHome, 0)
-                    ServersModel.processedIndex = ServersModel.defaultIndex
-                }
-            }
-
-            SideNavigationButton {
-                Layout.topMargin: 8
-                text: qsTr("Servers")
-                image: "qrc:/images/controls/server.svg"
-                selected: root.currentPagePath === PageController.getPagePath(PageEnum.PageSettingsServersList)
-                clickedFunc: function() {
-                    root.goToServersList()
-                }
-            }
-
-            SideNavigationButton {
-                Layout.topMargin: 8
-                text: qsTr("Clients")
-                image: "qrc:/images/controls/share-2.svg"
-                // Clients page can only create configs on a FULL-ACCESS server
-                // (added via SSH), not on an imported read-only config — so hide
-                // it when no such server exists (otherwise the page is empty).
-                visible: !SettingsController.isOnTv() && ServersModel.hasServerWithWriteAccess()
-                navigationEnabled: visible
-                selected: tabBar.currentIndex === 1
-                clickedFunc: function() {
-                    root.switchRootTab(PageEnum.PageShare, 1)
-                }
-            }
-
-            SideNavigationButton {
-                Layout.topMargin: 8
-                text: qsTr("Settings")
-                image: (ServersModel.hasServersFromGatewayApi && NewsModel.hasUnread && SettingsController.isNewsNotificationsEnabled()) ? "qrc:/images/controls/settings-news.svg" : "qrc:/images/controls/settings.svg"
-                // Don't light Settings when the Servers list (a settings sub-page)
-                // is on top — that's owned by the Servers item. Avoids two items
-                // highlighting at once. by vovankrot
-                selected: tabBar.currentIndex === 2
-                          && root.currentPagePath !== PageController.getPagePath(PageEnum.PageSettingsServersList)
-                clickedFunc: function() {
-                    root.switchRootTab(PageEnum.PageSettings, 2)
-                }
-            }
-
-            SideNavigationButton {
-                Layout.topMargin: 8
-                text: qsTr("Add server")
-                image: "qrc:/images/controls/plus.svg"
-                visible: false
-                selected: tabBar.currentIndex === 3
-                clickedFunc: function() {
-                    root.switchRootTab(PageEnum.PageSetupWizardConfigSource, 3)
-                }
-            }
-
-            Item {
-                Layout.fillHeight: true
-            }
-
-            // Connection status — small shield, shown on every page via the rail.
-            // by vovankrot
-            RowLayout {
-                Layout.leftMargin: 4
-                Layout.bottomMargin: 6
-                Layout.topMargin: 8
-                spacing: 8
-                visible: root.useSideNavigation
-
-                TintedIconType {
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.preferredWidth: 16
-                    Layout.preferredHeight: 16
-                    source: "qrc:/images/controls/shield.svg"
-                    tintColor: ConnectionController.isConnected
-                               ? AmneziaStyle.color.vibrantGreen
-                               : (ConnectionController.isConnectionInProgress
-                                  ? AmneziaStyle.color.goldenApricot
-                                  : AmneziaStyle.color.charcoalGray)
-                    iconWidth: 16
-                    iconHeight: 16
-                }
-
-                Text {
-                    text: ConnectionController.connectionStateText
-                    color: ConnectionController.isConnected
-                           ? AmneziaStyle.color.vibrantGreen
-                           : AmneziaStyle.color.mutedGray
-                    font.family: "Inter"
-                    font.pixelSize: 12
-                    font.weight: 600
-                }
-            }
-
-            Text {
-                Layout.leftMargin: 4
-                Layout.bottomMargin: 2
-                text: "v" + SettingsController.getAppVersion()
-                color: AmneziaStyle.color.charcoalGray
-                font.family: "Inter"
-                font.pixelSize: 10
-                elide: Text.ElideRight
-                Layout.fillWidth: true
-            }
-        }
+        onClientsClicked: root.switchRootTab(PageEnum.PageShare, 1)
+        onSettingsClicked: root.switchRootTab(PageEnum.PageSettings, 2)
     }
 
     StackViewType {
         id: tabBarStackView
         objectName: "tabBarStackView"
 
-        anchors.top: parent.top
+        anchors.top: root.useDesktopNavigation ? desktopNavigation.bottom : parent.top
         anchors.right: parent.right
-        anchors.left: root.useSideNavigation ? sideNavigation.right : parent.left
-        anchors.bottom: root.useSideNavigation ? parent.bottom : tabBar.top
+        anchors.left: parent.left
+        anchors.bottom: root.useDesktopNavigation ? parent.bottom : tabBar.top
 
         enabled: !root.isControlsDisabled
 
@@ -563,10 +351,10 @@ PageType {
         leftPadding: 96
         rightPadding: 96
 
-        height: visible && !root.useSideNavigation ? homeTabButton.implicitHeight + tabBar.topPadding + tabBar.bottomPadding : 0
-        opacity: root.useSideNavigation ? 0 : 1
+        height: visible && !root.useDesktopNavigation ? homeTabButton.implicitHeight + tabBar.topPadding + tabBar.bottomPadding : 0
+        opacity: root.useDesktopNavigation ? 0 : 1
 
-        enabled: !root.useSideNavigation && !root.isControlsDisabled && !root.isTabBarDisabled
+        enabled: !root.useDesktopNavigation && !root.isControlsDisabled && !root.isTabBarDisabled
 
         background: Shape {
             objectName: "backgroundShape"

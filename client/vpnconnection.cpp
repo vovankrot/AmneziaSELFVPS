@@ -369,19 +369,19 @@ void VpnConnection::onConnectionStateChanged(Vpn::ConnectionState state)
             case Vpn::ConnectionState::Disconnected:
             case Vpn::ConnectionState::Error: {
                 auto restoreDns = iface->restoreResolvers();
-                if (restoreDns.waitForFinished() && restoreDns.returnValue())
+                if (restoreDns.waitForFinished(2000) && restoreDns.returnValue())
                     qDebug() << "VpnConnection::onConnectionStateChanged: Successfully restored DNS resolvers";
                 else
                     qWarning() << "VpnConnection::onConnectionStateChanged: Failed to restore DNS resolvers";
 
                 auto flushDns = iface->flushDns();
-                if (flushDns.waitForFinished() && flushDns.returnValue())
+                if (flushDns.waitForFinished(2000) && flushDns.returnValue())
                     qDebug() << "VpnConnection::onConnectionStateChanged: Successfully flushed DNS";
                 else
                     qWarning() << "VpnConnection::onConnectionStateChanged: Failed to flush DNS";
 
                 auto clearSavedRoutes = iface->clearSavedRoutes();
-                if (clearSavedRoutes.waitForFinished() && clearSavedRoutes.returnValue())
+                if (clearSavedRoutes.waitForFinished(2000) && clearSavedRoutes.returnValue())
                     qDebug() << "VpnConnection::onConnectionStateChanged: Successfully cleared saved routes";
                 else
                     qWarning() << "VpnConnection::onConnectionStateChanged: Failed to clear saved routes";
@@ -516,6 +516,11 @@ void VpnConnection::connectToVpn(int serverIndex, const ServerCredentials &crede
     m_remoteAddress = NetworkUtilities::getIPAddress(credentials.hostName);
     setConnectionState(Vpn::ConnectionState::Connecting);
 
+#ifdef AMNEZIA_DESKTOP
+    IpcClient::withInterface([this](QSharedPointer<IpcInterfaceReplica> rep) {
+        connect(rep.data(), &IpcInterfaceReplica::networkPolicyWarning, this, &VpnConnection::siteSplitTunnelingWarning, Qt::UniqueConnection);
+    });
+#endif
     m_container = container;
     m_vpnConfigurationBase = vpnConfiguration;
     m_vpnConfiguration = vpnConfiguration;
@@ -571,6 +576,7 @@ void VpnConnection::createProtocolConnections()
     // no traffic through the SOCKS inbound). QueuedConnection so the emitting
     // slot fully returns before we start tearing the protocol down. by vovankrot
     connect(m_vpnProtocol.data(), &VpnProtocol::reconnectRequested, this, &VpnConnection::reconnectToVpn, Qt::QueuedConnection);
+    connect(m_vpnProtocol.data(), &VpnProtocol::networkPolicyWarning, this, &VpnConnection::siteSplitTunnelingWarning, Qt::QueuedConnection);
     // Surface a silent tunnel rather than reconnecting into it. The usual cause is a
     // client config that drifted from the server -- a changed port, obfuscation added
     // later -- and no amount of retrying fixes that. Tell the user what to do instead.
@@ -580,6 +586,7 @@ void VpnConnection::createProtocolConnections()
 
 #ifdef AMNEZIA_DESKTOP
     IpcClient::withInterface([this](QSharedPointer<IpcInterfaceReplica> rep) {
+        connect(rep.data(), &IpcInterfaceReplica::networkPolicyWarning, this, &VpnConnection::siteSplitTunnelingWarning, Qt::UniqueConnection);
         connect(rep.data(), &IpcInterfaceReplica::networkChanged, this, &VpnConnection::reconnectToVpn, Qt::QueuedConnection);
         connect(rep.data(), &IpcInterfaceReplica::wakeup, this, &VpnConnection::reconnectToVpn, Qt::QueuedConnection);
     });
@@ -589,6 +596,11 @@ void VpnConnection::createProtocolConnections()
 void VpnConnection::appendKillSwitchConfig()
 {
     m_vpnConfiguration.insert(config_key::killSwitchOption, QVariant(m_settings->isKillSwitchEnabled()).toString());
+    if (m_settings->isKillSwitchEnabled() && m_settings->isAppsSplitTunnelingEnabled()
+        && !m_settings->getVpnApps(Settings::VpnAllExceptApps).isEmpty()
+        && (m_container == DockerContainer::Hysteria2 || m_container == DockerContainer::AnyTls)) {
+        emit siteSplitTunnelingWarning(tr("При исключениях приложений строгий Kill Switch этого протокола отключён. Исключённые приложения могут использовать обычное подключение."));
+    }
     m_vpnConfiguration.insert(config_key::allowedDnsServers, QVariant(m_settings->allowedDnsServers()).toJsonValue());
 }
 

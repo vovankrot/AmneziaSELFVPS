@@ -1,5 +1,6 @@
 #include "blocklistUpdater.h"
 #include "settings.h"
+#include "listValidation.h"
 
 #include <QDir>
 #include <QFile>
@@ -57,6 +58,8 @@ void BlocklistUpdater::checkAndUpdate()
 
 void BlocklistUpdater::download()
 {
+    if (m_updating) return;
+    m_updating = true;
     qDebug() << "BlocklistUpdater: downloading RKN blocked domains from" << DownloadUrl;
 
     QNetworkRequest request(QUrl(QString::fromLatin1(DownloadUrl)));
@@ -65,6 +68,7 @@ void BlocklistUpdater::download()
     request.setTransferTimeout(30000);
 
     QNetworkReply *reply = m_nam->get(request);
+    ListValidation::limitDownload(reply);
     connect(reply, &QNetworkReply::finished, this, [this, reply]() {
         handleReply(reply);
     });
@@ -72,6 +76,7 @@ void BlocklistUpdater::download()
 
 void BlocklistUpdater::handleReply(QNetworkReply *reply)
 {
+    m_updating = false;
     reply->deleteLater();
 
     if (reply->error() != QNetworkReply::NoError) {
@@ -87,18 +92,12 @@ void BlocklistUpdater::handleReply(QNetworkReply *reply)
         return;
     }
 
-    // Validate: each non-empty line must look like a domain (contain '.')
-    const QList<QByteArray> lines = data.split('\n');
+    QByteArray normalized;
     int validCount = 0;
-    for (const QByteArray &line : lines) {
-        const QByteArray trimmed = line.trimmed();
-        if (trimmed.isEmpty()) continue;
-        if (!trimmed.contains('.')) {
-            qWarning() << "BlocklistUpdater: invalid domain line, aborting:" << trimmed.left(80);
-            emit updateFinished(false, 0);
-            return;
-        }
-        ++validCount;
+    if (!ListValidation::normalize(data, false, normalized, validCount)) {
+        qWarning() << "BlocklistUpdater: invalid or oversized domain list";
+        emit updateFinished(false, 0);
+        return;
     }
 
     if (validCount < 50) {
@@ -107,24 +106,9 @@ void BlocklistUpdater::handleReply(QNetworkReply *reply)
         return;
     }
 
-    // Write atomically: write to temp, then rename
     const QString cachePath = localCachePath();
-    const QString tempPath = cachePath + QStringLiteral(".tmp");
-
-    QFile tempFile(tempPath);
-    if (!tempFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        qWarning() << "BlocklistUpdater: cannot write temp file:" << tempFile.errorString();
-        emit updateFinished(false, 0);
-        return;
-    }
-    tempFile.write(data);
-    tempFile.close();
-
-    // Remove old cache, rename temp → cache
-    QFile::remove(cachePath);
-    if (!QFile::rename(tempPath, cachePath)) {
-        qWarning() << "BlocklistUpdater: rename failed";
-        QFile::remove(tempPath);
+    if (!ListValidation::save(cachePath, normalized)) {
+        qWarning() << "BlocklistUpdater: atomic cache replacement failed";
         emit updateFinished(false, 0);
         return;
     }

@@ -22,6 +22,8 @@ public:
 
     QByteArray backupAppConfig() const;
     bool restoreAppConfig(const QByteArray &json);
+    QByteArray protectSnapshot(const QByteArray &plain) const;
+    QByteArray openSnapshot(const QByteArray &sealed) const;
 
     void clearSettings();
 

@@ -1,4 +1,5 @@
 #include "ipcserver.h"
+#include "localPeerAuth.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -50,7 +51,9 @@ int IpcServer::createPrivilegedProcess()
     QObject::connect(pd.localServer.data(), &QLocalServer::newConnection, this, [pd]() {
         qDebug() << "IpcServer new connection";
         if (pd.serverNode) {
-            pd.serverNode->addHostSideConnection(pd.localServer->nextPendingConnection());
+            auto *socket = pd.localServer->nextPendingConnection();
+            if (!amnezia::authorizeLocalPeer(socket)) return;
+            pd.serverNode->addHostSideConnection(socket);
             pd.serverNode->enableRemoting(pd.ipcProcess.data());
         }
     });

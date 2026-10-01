@@ -41,6 +41,7 @@ private:
     QString m_serverAddress;
     QString m_password;
     QString m_sni;
+    QString m_certificatePin;
     int m_socksPort = 10810;
 
     QJsonObject m_xrayRouterConfig;

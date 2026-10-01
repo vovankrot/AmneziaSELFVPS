@@ -653,11 +653,19 @@ ErrorCode XrayProtocol::setupRouting() {
             }
         }
 
+#ifdef Q_OS_WIN
+        // Per-app IPv6 filtering is installed by enablePeerTraffic. Global
+        // blackhole routes would also cut off excluded Firefox/CDN connections.
+        if (!appSplitTunnelActive) {
+#endif
         auto StopRoutingIpv6 = iface->StopRoutingIpv6();
         if (!StopRoutingIpv6.waitForFinished() || !StopRoutingIpv6.returnValue()) {
             qCritical() << "Failed to disable IPv6 routing";
             return ErrorCode::InternalError;
         }
+#ifdef Q_OS_WIN
+        }
+#endif
 
 #ifdef Q_OS_WIN
         // enablePeerTraffic drives TWO things inside KillSwitch::enablePeerTraffic: the
@@ -693,8 +701,16 @@ ErrorCode XrayProtocol::setupRouting() {
                     return ErrorCode::InternalError;
                 }
             } else {
+                if (appSplitTunnelActive) return ErrorCode::InternalError;
                 qWarning() << "XRay: split-tunnel adapter indices unknown, app-split/killswitch skipped"
                            << "inet=" << inetAdapterIndex << "vpn=" << vpnAdapterIndex;
+            }
+        }
+        if (appSplitTunnelActive) {
+            auto restoreIpv6 = iface->StartRoutingIpv6();
+            if (!restoreIpv6.waitForFinished() || !restoreIpv6.returnValue()) {
+                qCritical() << "Failed to restore physical IPv6 routes for excluded apps";
+                return ErrorCode::InternalError;
             }
         }
 #endif
@@ -791,6 +807,9 @@ void XrayProtocol::runHealthCheck()
         return;
     }
 
+    // Report the threshold once, then keep probing without flooding warnings
+    // or repeatedly rebuilding routes/WFP while excluded applications stream.
+    if (m_healthCheckFailures >= kHealthCheckFailuresBeforeReset) return;
     ++m_healthCheckFailures;
     qWarning() << "XRay healthcheck failed" << m_healthCheckFailures << "/"
                << kHealthCheckFailuresBeforeReset;
@@ -806,8 +825,11 @@ void XrayProtocol::runHealthCheck()
     // into Error state: that would leave the user staring at an error banner
     // and require a manual retry, whereas the whole point here is to recover
     // silently from the post-boot "ghost connected" case. by vovankrot
-    qCritical() << "XRay healthcheck: tunnel is Connected but not carrying traffic,"
-                << "forcing reconnect (failed" << m_healthCheckFailures << "probes in a row)";
-    cancelHealthCheck();
-    emit reconnectRequested();
+    // Failure of an external probe does not prove that local helpers or the
+    // whole tunnel are dead. Rebuilding WFP/routes here also interrupts bypass
+    // video sessions. Keep the session; helper exits still use the error path.
+    if (m_healthCheckFailures == kHealthCheckFailuresBeforeReset) {
+        qWarning() << "XRay healthcheck unavailable; preserving session and app bypass flows";
+        emit networkPolicyWarning(tr("XRay: проверочный сайт недоступен. Соединение сохранено, чтобы не прерывать исключённые приложения. Если VPN не работает, переподключите его вручную."));
+    }
 }

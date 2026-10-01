@@ -48,6 +48,7 @@ class IpcInterface
     // sections, or an "ERROR: <reason>" string on failure.
     SLOT( QString runNetworkDiagnostics() );
 
+    SIGNAL( networkPolicyWarning(const QString &message) );
     SIGNAL( connectionLose() );
     SIGNAL( wakeup() );
     SIGNAL( networkChanged() );

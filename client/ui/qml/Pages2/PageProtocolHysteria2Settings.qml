@@ -16,6 +16,25 @@ import "../Components"
 PageType {
     id: root
 
+    property string updateLogText: ""
+    property bool updateSessionActive: false
+
+    Component.onCompleted: InstallController.checkHysteria2Version()
+
+    Connections {
+        target: InstallController
+        function onInstallLogMessage(line) {
+            if (root.updateSessionActive) {
+                root.updateLogText += line + "\n"
+            }
+        }
+        function onHysteria2UpdateFinished(success, message) {
+            root.updateSessionActive = false
+            root.updateLogText += (success ? "\n✓ " : "\n⚠ ") + message + "\n"
+            PageController.showNotificationMessage(message)
+        }
+    }
+
     BackButtonType {
         id: backButton
 
@@ -52,6 +71,87 @@ PageType {
                 Layout.leftMargin: 16
                 Layout.rightMargin: 16
                 headerText: qsTr("Hysteria 2 settings")
+            }
+
+            ParagraphTextType {
+                Layout.fillWidth: true
+                Layout.margins: 16
+                text: {
+                    if (InstallController.hysteria2VersionChecking) {
+                        return qsTr("Checking the Hysteria version installed on the VPS...")
+                    }
+                    if (!InstallController.hysteria2UpdateAvailable && InstallController.hysteria2InstalledVersion !== "") {
+                        return qsTr("Hysteria %1 is installed on this VPS. The protocol is up to date.").arg(InstallController.hysteria2InstalledVersion)
+                    }
+                    if (InstallController.hysteria2InstalledVersion !== "") {
+                        return qsTr("Hysteria %1 is installed. Version 2.12.2 is available; keys and clients will be preserved.").arg(InstallController.hysteria2InstalledVersion)
+                    }
+                    return qsTr("Could not check the server version. Check the SSH connection and retry.")
+                }
+            }
+
+            BasicButtonType {
+                objectName: "hysteriaUpdateButton"
+                Layout.fillWidth: true
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+                visible: InstallController.hysteria2UpdateAvailable || InstallController.hysteria2Updating
+                text: InstallController.hysteria2Updating ? qsTr("Updating Hysteria…") : qsTr("Update Hysteria on VPS")
+                enabled: !InstallController.hysteria2VersionChecking && !InstallController.hysteria2Updating && !ConnectionController.isConnected && !ConnectionController.isConnectionInProgress
+                onClicked: {
+                    root.updateLogText = ""
+                    root.updateSessionActive = true
+                    InstallController.updateHysteria2()
+                }
+            }
+
+            Rectangle {
+                objectName: "hysteriaUpdateLogPanel"
+                Layout.fillWidth: true
+                Layout.preferredHeight: 190
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+                Layout.topMargin: 12
+                visible: root.updateLogText !== ""
+                color: AmneziaStyle.color.onyxBlack
+                radius: 10
+                border.color: AmneziaStyle.color.charcoalGray
+                border.width: 1
+
+                ScrollView {
+                    anchors.fill: parent
+                    anchors.margins: 8
+                    clip: true
+
+                    TextArea {
+                        id: updateLogArea
+                        readOnly: true
+                        wrapMode: TextArea.Wrap
+                        text: root.updateLogText
+                        color: AmneziaStyle.color.pearlGray
+                        font.family: "Consolas"
+                        font.pixelSize: 11
+                        background: null
+                        selectByMouse: true
+                        onTextChanged: cursorPosition = length
+                    }
+                }
+            }
+
+            BasicButtonType {
+                Layout.fillWidth: true
+                Layout.margins: 16
+                text: qsTr("Check version")
+                visible: !InstallController.hysteria2Updating
+                enabled: !InstallController.hysteria2VersionChecking
+                onClicked: InstallController.checkHysteria2Version()
+            }
+
+            ParagraphTextType {
+                Layout.fillWidth: true
+                Layout.margins: 16
+                visible: ConnectionController.isConnected || ConnectionController.isConnectionInProgress
+                text: qsTr("Disconnect the VPN before updating the server protocol.")
             }
 
             TextFieldWithHeaderType {

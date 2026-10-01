@@ -14,9 +14,11 @@
 #include <QStandardPaths>
 #include <QTcpSocket>
 #include <QThread>
+#include <QTemporaryFile>
 
 #include "core/ipcclient.h"
 #include "core/networkUtilities.h"
+#include "core/socksProbe.h"
 #include "core/serialization/serialization.h"
 #include "ipc.h"
 #include "protocols/protocols_defs.h"
@@ -29,20 +31,6 @@ static const QString tunName = "tun2";
 #endif
 
 namespace {
-bool waitForSocketBytes(QTcpSocket &socket, qint64 minBytes, int timeoutMs)
-{
-    QElapsedTimer timer;
-    timer.start();
-
-    while (socket.bytesAvailable() < minBytes) {
-        const int remaining = timeoutMs - static_cast<int>(timer.elapsed());
-        if (remaining <= 0 || !socket.waitForReadyRead(qMin(remaining, 250))) {
-            return false;
-        }
-    }
-    return true;
-}
-
 bool isAppSplitTunnelActive(const QJsonObject &config)
 {
     const auto appsRouteMode = static_cast<Settings::AppsRouteMode>(
@@ -147,16 +135,16 @@ QString Hysteria2Protocol::writeConfigToTempFile()
     const QString tmpDir = QDir::tempPath();
     QDir().mkpath(tmpDir);
 
-    const QString name = QStringLiteral("hysteria2_%1.yaml")
-                             .arg(QString::number(QCoreApplication::applicationPid()));
-    const QString path = QDir(tmpDir).absoluteFilePath(name);
-
-    QFile f(path);
-    if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        qWarning() << "Hysteria2Protocol: failed to open config file for writing:" << path;
+    QTemporaryFile f(QDir(tmpDir).absoluteFilePath("hysteria2_XXXXXX.yaml"));
+    if (!f.open()) {
+        qWarning() << "Hysteria2Protocol: failed to create private configuration file";
         return {};
     }
-    f.write(m_yamlConfig.toUtf8());
+    const QByteArray bytes = m_yamlConfig.toUtf8();
+    if (!f.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner)
+        || f.write(bytes) != bytes.size() || !f.flush()) return {};
+    const QString path = f.fileName();
+    f.setAutoRemove(false); // Removed by stop() after the helper exits.
     f.close();
     return path;
 }
@@ -172,6 +160,8 @@ ErrorCode Hysteria2Protocol::start()
     }
 
     const QString hysteriaExe = Utils::hysteriaPath();
+    static const QRegularExpression pinPattern(QStringLiteral("(?m)^[ \\t]+pinSHA256:[ \\t]*[0-9a-fA-F:]{64,95}[ \\t]*$"));
+    if (!pinPattern.match(m_yamlConfig).hasMatch()) return ErrorCode::TlsCertificateTrustMissing;
     if (!QFileInfo::exists(hysteriaExe)) {
         qCritical() << "Hysteria2Protocol::start(): hysteria executable not found at" << hysteriaExe;
         return ErrorCode::InternalError;
@@ -303,6 +293,7 @@ ErrorCode Hysteria2Protocol::startHysteriaProcess()
 
 void Hysteria2Protocol::stop()
 {
+    if (m_stopping) return;
     qDebug() << "Hysteria2Protocol::stop()";
     m_stopping = true;
 
@@ -452,107 +443,9 @@ bool Hysteria2Protocol::ensureXrayRouterReachable()
 }
 
 bool Hysteria2Protocol::performSocks5Probe(const QString &targetHost, quint16 targetPort, int timeoutMs, int socksPort,
-                                           const QString &user, const QString &password)
+                                        const QString &user, const QString &password)
 {
-    const QByteArray hostBytes = targetHost.toUtf8();
-    if (hostBytes.isEmpty() || hostBytes.size() > 255) {
-        qWarning() << "Hysteria2 probe: invalid target host" << targetHost;
-        return false;
-    }
-
-    QElapsedTimer timer;
-    timer.start();
-
-    while (timer.elapsed() < timeoutMs) {
-        const int remaining = timeoutMs - static_cast<int>(timer.elapsed());
-        if (remaining <= 0)
-            break;
-
-        QTcpSocket socket;
-        socket.connectToHost(QHostAddress::LocalHost, socksPort);
-        if (!socket.waitForConnected(qMin(remaining, 700))) {
-            QThread::msleep(150);
-            continue;
-        }
-
-        socket.write((user.isEmpty() || password.isEmpty())
-                     ? QByteArray::fromHex("050100")
-                     : QByteArray::fromHex("05020002"));
-        if (!socket.waitForBytesWritten(qMin(remaining, 500)) ||
-            !waitForSocketBytes(socket, 2, qMin(remaining, 700))) {
-            socket.disconnectFromHost();
-            QThread::msleep(150);
-            continue;
-        }
-        const QByteArray authReply = socket.read(2);
-        if (authReply.size() < 2 || quint8(authReply.at(0)) != 0x05) {
-            socket.disconnectFromHost();
-            QThread::msleep(150);
-            continue;
-        }
-        const quint8 chosenMethod = quint8(authReply.at(1));
-        if (chosenMethod == 0x02) {
-            const QByteArray userBytes = user.toUtf8();
-            const QByteArray passBytes = password.toUtf8();
-            if (userBytes.isEmpty() || passBytes.isEmpty() || userBytes.size() > 255 || passBytes.size() > 255) {
-                socket.disconnectFromHost();
-                QThread::msleep(150);
-                continue;
-            }
-            QByteArray authReq;
-            authReq.append(char(0x01));
-            authReq.append(char(userBytes.size()));
-            authReq.append(userBytes);
-            authReq.append(char(passBytes.size()));
-            authReq.append(passBytes);
-            socket.write(authReq);
-            if (!socket.waitForBytesWritten(qMin(remaining, 500)) ||
-                !waitForSocketBytes(socket, 2, qMin(remaining, 700))) {
-                socket.disconnectFromHost();
-                QThread::msleep(150);
-                continue;
-            }
-            const QByteArray authResp = socket.read(2);
-            if (authResp.size() < 2 || quint8(authResp.at(1)) != 0x00) {
-                socket.disconnectFromHost();
-                QThread::msleep(150);
-                continue;
-            }
-        } else if (chosenMethod != 0x00) {
-            socket.disconnectFromHost();
-            QThread::msleep(150);
-            continue;
-        }
-
-        QByteArray request;
-        request.append(char(0x05));
-        request.append(char(0x01));
-        request.append(char(0x00));
-        request.append(char(0x03));
-        request.append(char(hostBytes.size()));
-        request.append(hostBytes);
-        request.append(char((targetPort >> 8) & 0xff));
-        request.append(char(targetPort & 0xff));
-        socket.write(request);
-        if (!socket.waitForBytesWritten(qMin(remaining, 500)) ||
-            !waitForSocketBytes(socket, 5, qMin(remaining, 2000))) {
-            socket.disconnectFromHost();
-            QThread::msleep(200);
-            continue;
-        }
-
-        const QByteArray connectReply = socket.peek(5);
-        if (connectReply.size() >= 5 && quint8(connectReply.at(0)) == 0x05 && quint8(connectReply.at(1)) == 0x00) {
-            socket.disconnectFromHost();
-            qDebug() << "Hysteria2 SOCKS probe succeeded for" << targetHost << targetPort;
-            return true;
-        }
-        socket.disconnectFromHost();
-        QThread::msleep(200);
-    }
-
-    qWarning() << "Hysteria2 SOCKS probe failed for" << targetHost << targetPort;
-    return false;
+    return SocksProbe::connect(targetHost, targetPort, timeoutMs, quint16(socksPort), user, password);
 }
 
 ErrorCode Hysteria2Protocol::setupRouting()
@@ -639,11 +532,19 @@ ErrorCode Hysteria2Protocol::setupRouting()
             }
         }
 
+#ifdef Q_OS_WIN
+        // Per-app IPv6 filtering is installed by enablePeerTraffic. Global
+        // blackhole routes would also cut off excluded Firefox/CDN connections.
+        if (!appSplitTunnelActive) {
+#endif
         auto StopRoutingIpv6 = iface->StopRoutingIpv6();
         if (!StopRoutingIpv6.waitForFinished() || !StopRoutingIpv6.returnValue()) {
             qCritical() << "Hysteria2: failed to disable IPv6 routing";
             return ErrorCode::InternalError;
         }
+#ifdef Q_OS_WIN
+        }
+#endif
 
 #ifdef Q_OS_WIN
         // enablePeerTraffic drives TWO things inside KillSwitch::enablePeerTraffic: the
@@ -678,8 +579,16 @@ ErrorCode Hysteria2Protocol::setupRouting()
                     return ErrorCode::InternalError;
                 }
             } else {
+                if (appSplitTunnelActive) return ErrorCode::InternalError;
                 qWarning() << "Hysteria2: split-tunnel adapter indices unknown, app-split/killswitch skipped"
                            << "inet=" << inetAdapterIndex << "vpn=" << vpnAdapterIndex;
+            }
+        }
+        if (appSplitTunnelActive) {
+            auto restoreIpv6 = iface->StartRoutingIpv6();
+            if (!restoreIpv6.waitForFinished() || !restoreIpv6.returnValue()) {
+                qCritical() << "Failed to restore physical IPv6 routes for excluded apps";
+                return ErrorCode::InternalError;
             }
         }
 #endif

@@ -1,4 +1,5 @@
 #include "settingsController.h"
+#include "core/sshHostTrust.h"
 
 #include <QStandardPaths>
 #include <QOperatingSystemVersion>
@@ -8,6 +9,16 @@
 #include "ui/qautostart.h"
 #include "amnezia_application.h"
 #include "version.h"
+
+void SettingsController::resetProcessedServerSshTrust()
+{
+    const auto credentials = m_serversModel->getProcessedServerCredentials();
+    if (credentials.hostName.isEmpty()) return;
+    if (SshHostTrust::forget(credentials.hostName, credentials.port))
+        emit changeSettingsFinished(tr("Сохранённый ключ SSH сброшен. При следующем подключении проверьте новый отпечаток через провайдера VPS."));
+    else
+        emit changeSettingsErrorOccurred(tr("Нельзя сбросить доверие к SSH во время подтверждения ключа."));
+}
 #ifdef Q_OS_ANDROID
     #include "platforms/android/android_controller.h"
 #endif
@@ -105,19 +116,18 @@ void SettingsController::setSecondaryDns(const QString &dns)
 
 bool SettingsController::isLoggingEnabled()
 {
-    return m_settings->isSaveLogs();
+    return true;
 }
 
 void SettingsController::toggleLogging(bool enable)
 {
-    m_settings->setSaveLogs(enable);
+    Q_UNUSED(enable);
+    m_settings->setSaveLogs(true);
 #if defined(Q_OS_IOS)
-    AmneziaVPN::toggleLogging(enable);
+    AmneziaVPN::toggleLogging(true);
 #endif
-    if (enable == true) {
-        qInfo().noquote() << QString("Logging has enabled on %1 version %2 %3").arg(APPLICATION_NAME, APP_VERSION, GIT_COMMIT_HASH);
-        qInfo().noquote() << QString("%1 (%2)").arg(QSysInfo::prettyProductName(), QSysInfo::currentCpuArchitecture());
-    }
+    qInfo().noquote() << QString("Logging is permanently enabled on %1 version %2 %3").arg(APPLICATION_NAME, APP_VERSION, GIT_COMMIT_HASH);
+    qInfo().noquote() << QString("%1 (%2)").arg(QSysInfo::prettyProductName(), QSysInfo::currentCpuArchitecture());
     emit loggingStateChanged();
 }
 
@@ -368,14 +378,8 @@ bool SettingsController::isCameraPresent()
 
 void SettingsController::checkIfNeedDisableLogs()
 {
-    if (m_settings->isSaveLogs()) {
-        m_loggingDisableDate = m_settings->getLogEnableDate().addDays(14);
-        if (m_loggingDisableDate <= QDateTime::currentDateTime()) {
-            toggleLogging(false);
-            clearLogs();
-            emit loggingDisableByWatcher();
-        }
-    }
+    // Logging is mandatory and must not expire or delete its diagnostic history.
+    m_settings->setSaveLogs(true);
 }
 
 bool SettingsController::isKillSwitchEnabled()

@@ -87,12 +87,8 @@ function Get-RelaunchArgumentList {
     return ,$argumentList
 }
 
-if (-not $NoElevate -and -not (Test-IsAdministrator)) {
-    $relaunchArgumentList = Get-RelaunchArgumentList -BoundParameters $PSBoundParameters -UnboundArguments $MyInvocation.UnboundArguments
-    $process = Start-Process -FilePath 'powershell.exe' -ArgumentList $relaunchArgumentList -Verb RunAs -Wait -PassThru
-    $exitCode = if ($null -ne $process.ExitCode) { $process.ExitCode } else { 1 }
-    exit $exitCode
-}
+# Compilation and packaging do not need administrator rights. Keep -NoElevate
+# accepted for existing callers, but never elevate or install the generated setup.
 
 $ErrorActionPreference = "Stop"
 
@@ -104,6 +100,7 @@ $ErrorActionPreference = "Stop"
 # the tool checks below see reality, not the launcher's stale snapshot.
 try {
     $regParts = @(
+        [System.Environment]::GetEnvironmentVariable('Path', 'Process'),
         [System.Environment]::GetEnvironmentVariable('Path', 'Machine'),
         [System.Environment]::GetEnvironmentVariable('Path', 'User')
     ) | Where-Object { $_ }
@@ -119,6 +116,7 @@ try {
 } catch {}
 
 $ProjectDir = $PSScriptRoot
+& (Join-Path $ProjectDir 'tools\verify-prebuilts.ps1') -Root $ProjectDir
 if (-not $BuildDir) {
     $BuildDir = Join-Path $ProjectDir "build-installer"
 } elseif (-not [System.IO.Path]::IsPathRooted($BuildDir)) {
@@ -142,7 +140,10 @@ if (-not $AndroidBuildRoot) {
 # Derived paths
 $ClientRelease = Join-Path $BuildDir "client\Release"
 $ServiceRelease = Join-Path $BuildDir "service\server\Release"
-$StageDir = Join-Path $BuildDir "installer_stage"
+# A fixed staging path can be held by the previous installer process, antivirus,
+# or Explorer preview while a new build is packaging it. Give each build an
+# isolated tree so concurrent/previous runs cannot lock its payload files.
+$StageDir = Join-Path $BuildDir ("installer_stage_{0}" -f $PID)
 $PrebuiltDir = Join-Path $ProjectDir "client\3rd-prebuilt\deploy-prebuilt\windows\x64"
 # Fork-owned binaries, layered over the submodule's copies during staging.
 # client\3rd-prebuilt is a submodule pointing at Amnezia's repository, so anything
@@ -325,6 +326,7 @@ if (Test-Path $StageDir) {
     Remove-Item $StageDir -Recurse -Force
 }
 New-Item $StageDir -ItemType Directory -Force | Out-Null
+try {
 
 # Copy main executables
 Copy-Item $clientExe $StageDir -Force
@@ -620,8 +622,10 @@ Write-Host "  Total staged: $stageFileCount files" -ForegroundColor Gray
 Write-Host ""
 Write-Step 6 "Building custom WPF installer..."
 
-$outputExe = "AmneziaVPN_${AppVersionShort}_x64_setup.exe"
-$outputPath = Join-Path $ProjectDir $outputExe
+$outputExe = "AmneziaVPN_${AppVersion}_x64_setup.exe"
+$ReleaseDir = Join-Path $ProjectDir "dist"
+New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null
+$outputPath = Join-Path $ReleaseDir $outputExe
 
 if (Test-Path $InstallerPublishDir) {
         Remove-Item $InstallerPublishDir -Recurse -Force
@@ -633,11 +637,30 @@ if (Test-Path $InstallerPayloadZip) {
 }
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::CreateFromDirectory(
-        $StageDir,
-        $InstallerPayloadZip,
-        [System.IO.Compression.CompressionLevel]::Optimal,
-        $false)
+$payloadCandidate = Join-Path $BuildDir ("payload_{0}.zip" -f $PID)
+$packaged = $false
+for ($attempt = 1; $attempt -le 6; $attempt++) {
+    try {
+        if (Test-Path $payloadCandidate) {
+            Remove-Item $payloadCandidate -Force
+        }
+        [System.IO.Compression.ZipFile]::CreateFromDirectory(
+            $StageDir,
+            $payloadCandidate,
+            [System.IO.Compression.CompressionLevel]::Optimal,
+            $false)
+        Move-Item -LiteralPath $payloadCandidate -Destination $InstallerPayloadZip -Force
+        $packaged = $true
+        break
+    } catch [System.IO.IOException] {
+        if ($attempt -eq 6) { throw }
+        Write-Warning "A staged file is temporarily locked; retrying payload packaging ($attempt/6)..."
+        Start-Sleep -Milliseconds (250 * $attempt)
+    }
+}
+if (-not $packaged) {
+    throw "Installer payload packaging did not complete"
+}
 
 Write-Host "  Payload archive: $InstallerPayloadZip" -ForegroundColor Gray
 
@@ -714,9 +737,27 @@ if (-not $SkipAndroidApk) {
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Green
+
+# Staging is per-process, so it is safe to remove only this build's directory.
+# If an antivirus scanner still holds a file, keep the artifact successful and
+# leave the isolated directory for a later cleanup.
+try {
+    Remove-Item -LiteralPath $StageDir -Recurse -Force -ErrorAction Stop
+} catch {
+    Write-Warning "Could not remove temporary staging directory '$StageDir': $($_.Exception.Message)"
+}
 Write-Host "  DONE! Artifacts ready:" -ForegroundColor Green
 foreach ($artifact in $Artifacts) {
     $size = [math]::Round((Get-Item $artifact).Length / 1MB, 1)
     Write-Host "  $artifact (${size} MB)" -ForegroundColor White
 }
 Write-Host "============================================" -ForegroundColor Green
+} finally {
+    # Only this run's staging directory is disposable on failure. Keep failed
+    # packaging output for diagnosis; shared payload/publish paths are removed
+    # only after a complete successful build.
+    if (Test-Path -LiteralPath $StageDir) {
+        try { Remove-Item -LiteralPath $StageDir -Recurse -Force -ErrorAction Stop }
+        catch { Write-Warning "Temporary staging retained: $StageDir" }
+    }
+}

@@ -25,6 +25,8 @@ class Settings : public QObject
 
 public:
     explicit Settings(QObject *parent = nullptr);
+    QByteArray protectSnapshot(const QByteArray &plain) const { return m_settings.protectSnapshot(plain); }
+    QByteArray openSnapshot(const QByteArray &sealed) const { return m_settings.openSnapshot(sealed); }
 
     ServerCredentials defaultServerCredentials() const;
     ServerCredentials serverCredentials(int index) const;
@@ -125,7 +127,7 @@ public:
 
     bool isSaveLogs() const
     {
-        return m_settings.value("Conf/saveLogs", false).toBool();
+        return true;
     }
     void setSaveLogs(bool enabled);
 

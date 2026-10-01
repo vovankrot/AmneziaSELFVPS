@@ -7,6 +7,8 @@ sudo docker run -d \
 --privileged \
 --log-driver json-file --log-opt max-size=10m --log-opt max-file=1 \
 --restart always \
+--memory 512m --memory-swap 1g \
+-e GOMEMLIMIT=256MiB \
 --cap-add=NET_ADMIN \
 -e XRAY_SERVER_PORT="$XRAY_SERVER_PORT" \
 -p $XRAY_SERVER_PORT:$XRAY_SERVER_PORT/udp \

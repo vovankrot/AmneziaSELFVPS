@@ -26,6 +26,7 @@ killall -KILL xray
 
 # start daemons if configured
 if [ -f /opt/amnezia/xray/server.json ]; then
+    export GOMEMLIMIT="${GOMEMLIMIT:-256MiB}"
     exec xray -config /opt/amnezia/xray/server.json
 fi
 

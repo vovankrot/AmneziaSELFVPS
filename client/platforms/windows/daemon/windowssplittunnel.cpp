@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "windowssplittunnel.h"
+#include "core/splitTunnelAddress.h"
+#include "core/splitTunnelDriverProtocol.h"
 
 #include <qassert.h>
 
@@ -31,6 +33,9 @@
 #include <atomic>
 #include <chrono>
 #include <thread>
+#include <mutex>
+#include <set>
+#include <cstring>
 
 #pragma region
 
@@ -94,8 +99,6 @@ using ProcessInfo = struct {
 #endif
 
 // Known ControlCodes
-#define IOCTL_INITIALIZE CTL_CODE(0x8000, 1, METHOD_NEITHER, FILE_ANY_ACCESS)
-
 #define IOCTL_DEQUEUE_EVENT \
   CTL_CODE(0x8000, 2, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
@@ -155,31 +158,47 @@ ProcessInfo getProcessInfo(HANDLE process, const PROCESSENTRY32W& processMeta) {
   return pi;
 }
 
-// The 2026-07-26 incident: DeviceIoControl() to this driver hung indefinitely
-// on the daemon's only thread (the same one that services SERVICE_CONTROL_STOP),
-// which wedged the whole service and, in the worst case, the OS itself hard
-// enough to need a power-cycle. The driver handle was opened WITHOUT
-// FILE_FLAG_OVERLAPPED (see CreateFileW in create()), so a true overlapped
-// cancel isn't available -- instead we run the call on a disposable worker
-// thread and only wait a bounded time on the CALLING thread. If the driver
-// never answers, we abandon that worker (it may never finish) and return
-// failure instead of hanging forever. by vovankrot
-constexpr int kIoctlTimeoutMs = 5000;
+// Synchronous kernel requests can hang. Keep their buffers alive on the worker,
+// bound the caller's wait below the client's 2s teardown timeout, and quarantine
+// failed handles until process exit. Never queue additional requests after timeout.
+constexpr int kIoctlTimeoutMs = 1500;
+// Activating exclusions may reauthorize many existing flows. It has the
+// normal 30s IPC budget; teardown keeps the short deadline above.
+constexpr int kConfigurationIoctlTimeoutMs = 10000;
+std::mutex failedDevicesMutex;
+std::set<HANDLE> failedDevices;
+
+bool driverFailed(HANDLE device) {
+  std::lock_guard<std::mutex> lock(failedDevicesMutex);
+  return failedDevices.count(device) != 0;
+}
 
 BOOL DeviceIoControlWithTimeout(HANDLE device, DWORD code, LPVOID inBuf, DWORD inSize,
                                 LPVOID outBuf, DWORD outSize, DWORD* bytesReturned,
-                                const char* opName) {
+                                const char* opName, int timeoutMs = kIoctlTimeoutMs) {
+  if (driverFailed(device)) {
+    SetLastError(ERROR_DEVICE_NOT_CONNECTED);
+    return FALSE;
+  }
   struct Result {
     std::atomic<bool> done{false};
     BOOL ok = FALSE;
     DWORD err = 0;
     DWORD bytesReturned = 0;
+    std::vector<unsigned char> input;
+    std::vector<unsigned char> output;
   };
   auto result = std::make_shared<Result>();
+  // Detached requests must never retain pointers into the caller's stack or vectors.
+  result->input.resize(inSize);
+  result->output.resize(outSize);
+  if (inSize) std::memcpy(result->input.data(), inBuf, inSize);
 
-  std::thread worker([device, code, inBuf, inSize, outBuf, outSize, result]() {
+  std::thread worker([device, code, inSize, outSize, result]() {
     DWORD bytes = 0;
-    BOOL ok = DeviceIoControl(device, code, inBuf, inSize, outBuf, outSize, &bytes, nullptr);
+    BOOL ok = DeviceIoControl(device, code,
+        inSize ? result->input.data() : nullptr, inSize,
+        outSize ? result->output.data() : nullptr, outSize, &bytes, nullptr);
     result->err = ok ? 0 : GetLastError();
     result->bytesReturned = bytes;
     result->ok = ok;
@@ -187,17 +206,28 @@ BOOL DeviceIoControlWithTimeout(HANDLE device, DWORD code, LPVOID inBuf, DWORD i
   });
   worker.detach();
 
-  const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(kIoctlTimeoutMs);
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
   while (!result->done.load(std::memory_order_acquire)) {
     if (std::chrono::steady_clock::now() >= deadline) {
+      {
+        std::lock_guard<std::mutex> lock(failedDevicesMutex);
+        failedDevices.insert(device);
+      }
       logger.error() << "DeviceIoControl(" << opName << ") did not return within"
-                     << kIoctlTimeoutMs << "ms -- driver appears stuck, giving up on this call";
+                     << timeoutMs << "ms -- request timed out; quarantining the handle";
       SetLastError(ERROR_TIMEOUT);
       return FALSE;
     }
     QThread::msleep(20);
   }
 
+  if (result->ok && outSize) {
+    if (result->bytesReturned > outSize) {
+      SetLastError(ERROR_INVALID_DATA);
+      return FALSE;
+    }
+    std::memcpy(outBuf, result->output.data(), result->bytesReturned);
+  }
   if (bytesReturned) {
     *bytesReturned = result->bytesReturned;
   }
@@ -303,6 +333,7 @@ std::unique_ptr<WindowsSplitTunnel> WindowsSplitTunnel::create(
   }
   if (!initDriver(driverFile)) {
     logger.error() << "Failed to init driver";
+    if (!driverFailed(driverFile)) CloseHandle(driverFile);
     return nullptr;
   }
   // We're ready to talk to the driver, it's alive and setup.
@@ -319,28 +350,37 @@ bool WindowsSplitTunnel::initDriver(HANDLE driverIO) {
   if (state >= STATE_INITIALIZED) {
     logger.debug() << "Driver already initialized: " << state;
     // Reset Driver as it has wfp handles probably >:(
-    resetDriver(driverIO);
+    if (!resetDriver(driverIO)) return false;
 
     auto newState = getState(driverIO);
     logger.debug() << "New state after reset:" << newState;
-    if (newState >= STATE_INITIALIZED) {
+    if (newState != STATE_STARTED) {
       logger.debug() << "Reset unsuccesfull";
       return false;
     }
   }
 
-  DWORD bytesReturned;
-  auto ok = DeviceIoControlWithTimeout(driverIO, IOCTL_INITIALIZE, nullptr, 0, nullptr, 0,
-                                       &bytesReturned, "IOCTL_INITIALIZE");
-  if (!ok) {
-    auto err = GetLastError();
-    logger.error() << "Driver init failed err -" << err;
-    logger.error() << "State:" << getState(driverIO);
+  // This fork enforces both its DNS and baseline policy in the same WFP
+  // sublayer. Supply that existing layer for both entries, rather than referring
+  // to Mullvad's separate DNS sublayer which our firewall does not create.
+  const auto& sublayer = WindowsFirewall::baselineSublayerKey();
+  const auto result = SplitTunnelDriverProtocol::initializeDriver(sublayer, sublayer,
+      [driverIO](DWORD code, const void* input, DWORD size) {
+        DWORD bytesReturned = 0;
+        return DeviceIoControlWithTimeout(driverIO, code, const_cast<void*>(input), size,
+            nullptr, 0, &bytesReturned, "IOCTL_INITIALIZE");
+      });
+  if (!result.ok) {
+    logger.error() << "Driver init failed err -" << result.error;
+    const auto failedState = getState(driverIO);
+    logger.error() << "State:" << failedState;
 
     return false;
   }
-  logger.debug() << "Driver initialized" << getState(driverIO);
-  return true;
+  const auto initializedState = getState(driverIO);
+  logger.debug() << "Driver initialized" << initializedState << "API:"
+                 << (result.api == SplitTunnelDriverProtocol::Api::Legacy ? "legacy" : "1.3 sublayer GUIDs");
+  return initializedState == STATE_INITIALIZED;
 }
 
 WindowsSplitTunnel::WindowsSplitTunnel(HANDLE driverIO) : m_driver(driverIO) {
@@ -350,6 +390,9 @@ WindowsSplitTunnel::WindowsSplitTunnel(HANDLE driverIO) : m_driver(driverIO) {
 }
 
 WindowsSplitTunnel::~WindowsSplitTunnel() {
+  // CloseHandle / driver unload can block on an abandoned synchronous IRP.
+  // A quarantined handle remains owned by this process until OS process cleanup.
+  if (driverFailed(m_driver)) return;
   CloseHandle(m_driver);
   uninstallDriver();
 }
@@ -372,15 +415,16 @@ bool WindowsSplitTunnel::excludeApps(const QStringList& appPaths) {
   DWORD bytesReturned;
   auto ok = DeviceIoControlWithTimeout(m_driver, IOCTL_SET_CONFIGURATION, &config[0],
                                        (DWORD)config.size(), nullptr, 0, &bytesReturned,
-                                       "IOCTL_SET_CONFIGURATION");
+                                       "IOCTL_SET_CONFIGURATION", kConfigurationIoctlTimeoutMs);
   if (!ok) {
     auto err = GetLastError();
     WindowsUtils::windowsLog("Set Config Failed:");
     logger.error() << "Failed to set Config err code " << err;
     return false;
   }
+  const auto configuredState = getState();
   logger.debug() << "New Configuration applied: " << stateString();
-  return true;
+  return configuredState == STATE_RUNNING;
 }
 
 bool WindowsSplitTunnel::start(int inetAdapterIndex, int vpnAdapterIndex) {
@@ -391,10 +435,7 @@ bool WindowsSplitTunnel::start(int inetAdapterIndex, int vpnAdapterIndex) {
 
   if (getState() == STATE_STARTED) {
     logger.debug() << "Driver needs Init Call";
-    DWORD bytesReturned;
-    auto ok = DeviceIoControlWithTimeout(m_driver, IOCTL_INITIALIZE, nullptr, 0, nullptr,
-                                         0, &bytesReturned, "IOCTL_INITIALIZE");
-    if (!ok) {
+    if (!initDriver(m_driver)) {
       logger.error() << "Driver init failed. Error:" << GetLastError();
       return false;
     }
@@ -455,8 +496,9 @@ bool WindowsSplitTunnel::start(int inetAdapterIndex, int vpnAdapterIndex) {
     logger.error() << "Failed to set Network Config. Error:" << GetLastError();
     return false;
   }
+  const auto networkState = getState();
   logger.debug() << "New Network Config Applied || new State:" << stateString();
-  return true;
+  return networkState == STATE_READY || networkState == STATE_RUNNING;
 }
 
 bool WindowsSplitTunnel::stop() {
@@ -466,6 +508,10 @@ bool WindowsSplitTunnel::stop() {
   }
 
   const auto stateBeforeStop = getState();
+  if (stateBeforeStop == STATE_UNKNOWN || stateBeforeStop == STATE_ZOMBIE) {
+    logger.error() << "Cannot stop split tunnel: driver state is unavailable";
+    return false;
+  }
   if (stateBeforeStop != STATE_READY && stateBeforeStop != STATE_RUNNING) {
     logger.debug() << "Split tunnel already passive, current state:" << stateString();
     return true;
@@ -474,7 +520,8 @@ bool WindowsSplitTunnel::stop() {
   DWORD bytesReturned;
   auto ok = DeviceIoControlWithTimeout(m_driver, IOCTL_CLEAR_CONFIGURATION, nullptr, 0,
                                        nullptr, 0, &bytesReturned, "IOCTL_CLEAR_CONFIGURATION");
-  if (ok && !isRunning()) {
+  const auto stateAfterClear = ok ? getState() : STATE_UNKNOWN;
+  if (ok && (SplitTunnelDriverProtocol::isPassiveState(stateAfterClear))) {
     logger.debug() << "Stopping Split tunnel successfull, new state:" << stateString();
     return true;
   }
@@ -492,7 +539,7 @@ bool WindowsSplitTunnel::stop() {
   }
 
   const auto stateAfterReset = getState();
-  const bool stopped = stateAfterReset != STATE_RUNNING;
+  const bool stopped = SplitTunnelDriverProtocol::isPassiveState(stateAfterReset);
   if (!stopped) {
     logger.error() << "Split tunnel is still running after reset, state:" << stateString();
     return false;
@@ -535,7 +582,8 @@ WindowsSplitTunnel::DRIVER_STATE WindowsSplitTunnel::getState(HANDLE driverIO) {
   return static_cast<WindowsSplitTunnel::DRIVER_STATE>(outBuffer);
 }
 WindowsSplitTunnel::DRIVER_STATE WindowsSplitTunnel::getState() {
-  return getState(m_driver);
+  m_lastState = getState(m_driver);
+  return m_lastState;
 }
 
 std::vector<uint8_t> WindowsSplitTunnel::generateAppConfiguration(
@@ -638,34 +686,21 @@ bool WindowsSplitTunnel::getAddress(int adapterIndex, IN_ADDR* out_ipv4,
   logger.debug() << "Getting adapter info for:" << target.humanReadableName()
                  << "index:" << adapterIndex;
 
-  auto get = [&target](QAbstractSocket::NetworkLayerProtocol protocol) {
-    for (auto address : target.addressEntries()) {
-      if (address.ip().protocol() != protocol) {
-        continue;
-      }
-      return address.ip().toString().toStdWString();
-    }
-    return std::wstring{};
-  };
-  auto ipv4 = get(QAbstractSocket::IPv4Protocol);
-  auto ipv6 = get(QAbstractSocket::IPv6Protocol);
-
-  if (ipv4.empty()) {
-    logger.debug() << "No IPv4 address found for adapter index" << adapterIndex;
+  QList<QHostAddress> addresses;
+  for (const auto& entry : target.addressEntries()) addresses.append(entry.ip());
+  const auto ipv4 = SplitTunnelAddress::ipv4(addresses);
+  const auto ipv6 = SplitTunnelAddress::ipv6(addresses);
+  std::memset(out_ipv4, 0, sizeof(*out_ipv4));
+  std::memset(out_ipv6, 0, sizeof(*out_ipv6));
+  if (ipv4.isNull()) {
+    logger.warning() << "No usable IPv4 source for split tunnel adapter" << adapterIndex;
     return false;
   }
-
-  if (InetPtonW(AF_INET, ipv4.c_str(), out_ipv4) != 1) {
-    logger.debug() << "Ipv4 Conversation error" << WSAGetLastError()
-                   << "for" << QString::fromStdWString(ipv4);
-    return false;
-  }
-  if (ipv6.empty()) {
-    std::memset(out_ipv6, 0x00, sizeof(IN6_ADDR));
-    return true;
-  }
-  if (InetPtonW(AF_INET6, ipv6.c_str(), out_ipv6) != 1) {
-    logger.debug() << "Ipv6 Conversation error" << WSAGetLastError();
+  out_ipv4->S_un.S_addr = htonl(ipv4.toIPv4Address());
+  if (!ipv6.isNull()) {
+    const auto raw = ipv6.toIPv6Address();
+    static_assert(sizeof(raw.c) == sizeof(*out_ipv6));
+    std::memcpy(out_ipv6, raw.c, sizeof(*out_ipv6));
   }
   return true;
 }
@@ -913,8 +948,10 @@ bool WindowsSplitTunnel::detectConflict() {
 }
 
 bool WindowsSplitTunnel::isRunning() { return getState() == STATE_RUNNING; }
+bool WindowsSplitTunnel::isUnresponsive() const { return driverFailed(m_driver); }
 QString WindowsSplitTunnel::stateString() {
-  switch (getState()) {
+  // Formatting a log line must not issue IO or recursively enter the logger.
+  switch (m_lastState) {
     case STATE_UNKNOWN:
       return "STATE_UNKNOWN";
     case STATE_NONE:

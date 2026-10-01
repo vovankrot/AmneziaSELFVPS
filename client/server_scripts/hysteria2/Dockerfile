@@ -1,11 +1,11 @@
-FROM alpine:3.20
+FROM alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
 LABEL maintainer="AmneziaVPN"
 
 # Hysteria 2 — QUIC-based censorship-resistant VPN protocol.
-# Upstream: https://github.com/apernet/hysteria
+# Upstream: https://github.com/HyNetworks/hysteria
 # We pin a known-good release tag. To bump, update HYSTERIA_VERSION and the
 # matching SHA in the verification step below.
-ARG HYSTERIA_VERSION="v2.9.1"
+ARG HYSTERIA_VERSION="v2.12.2"
 
 RUN apk add --no-cache curl bash openssl ca-certificates dumb-init iptables ip6tables tzdata
 RUN apk --update upgrade --no-cache
@@ -20,14 +20,15 @@ RUN chmod a+x /opt/amnezia/start.sh
 RUN set -eux; \
   arch="$(uname -m)"; \
   case "$arch" in \
-    x86_64)  asset="hysteria-linux-amd64" ;; \
-    aarch64) asset="hysteria-linux-arm64" ;; \
-    armv7l)  asset="hysteria-linux-arm" ;; \
+    x86_64)  asset="hysteria-linux-amd64"; sha="6493dfffd55b5883f64c76c63880ecc32988f0c568c9ca9014907877b4d55f94" ;; \
+    aarch64) asset="hysteria-linux-arm64"; sha="ebfacc1ec3a0edfd742cd68ce17f292a6092e606b9d11f99b035c1d888f3d709" ;; \
+    armv7l)  asset="hysteria-linux-arm"; sha="274a0de7e2d145aa03fac017a7c7e9a995620f4eaf8db41656d37eddf2764f03" ;; \
     *) echo "Unsupported arch: $arch" >&2; exit 1 ;; \
   esac; \
   curl -fL --retry 3 --retry-delay 2 --connect-timeout 20 --max-time 180 \
-    "https://github.com/apernet/hysteria/releases/download/app/${HYSTERIA_VERSION}/${asset}" \
+    "https://github.com/HyNetworks/hysteria/releases/download/app/${HYSTERIA_VERSION}/${asset}" \
     -o /usr/bin/hysteria; \
+  echo "$sha  /usr/bin/hysteria" | sha256sum -c -; \
   chmod +x /usr/bin/hysteria; \
   /usr/bin/hysteria version
 

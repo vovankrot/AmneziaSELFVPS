@@ -78,6 +78,7 @@ signals:
     // Wired to VpnConnection::reconnectToVpn() so a stuck "ghost connected" tunnel
     // gets rebuilt without user intervention. by vovankrot
     void reconnectRequested();
+    void networkPolicyWarning(const QString &message);
 
     // The tunnel reached Connected but never carried a single received byte.
     // Deliberately NOT wired to a reconnect: the usual cause is a config that no

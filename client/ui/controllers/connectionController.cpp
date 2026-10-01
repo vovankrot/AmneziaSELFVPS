@@ -25,7 +25,14 @@ ConnectionController::ConnectionController(const QSharedPointer<ServersModel> &s
       m_settings(settings)
 {
     connect(m_vpnConnection.get(), &VpnConnection::connectionStateChanged, this, &ConnectionController::onConnectionStateChanged);
-    connect(m_vpnConnection.get(), &VpnConnection::siteSplitTunnelingWarning, this, &ConnectionController::splitTunnelingUnsupported);
+    connect(m_vpnConnection.get(), &VpnConnection::siteSplitTunnelingWarning, this, [this](const QString &message) {
+        if (!m_effectivePolicyWarning.contains(message)) {
+            if (!m_effectivePolicyWarning.isEmpty()) m_effectivePolicyWarning += "\n";
+            m_effectivePolicyWarning += message;
+            emit effectivePolicyWarningChanged();
+        }
+        emit splitTunnelingUnsupported(message);
+    });
     // Connected but nothing came back. Name the likely cause and the fix, because the
     // symptom on its own ("connected, nothing opens") sends people looking at their
     // network, their DNS, anywhere but the config. by vovankrot
@@ -43,6 +50,8 @@ ConnectionController::ConnectionController(const QSharedPointer<ServersModel> &s
 
 void ConnectionController::openConnection()
 {
+    m_effectivePolicyWarning.clear();
+    emit effectivePolicyWarningChanged();
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS) && !defined(MACOS_NE)
     if (!Utils::processIsRunning(Utils::executable(SERVICE_NAME, false), true))
     {
@@ -66,6 +75,22 @@ void ConnectionController::openConnection()
 
     QJsonObject containerConfig = m_containersModel->getContainerConfig(container);
     ServerCredentials credentials = m_serversModel->getServerCredentials(serverIndex);
+
+    // Upgrade the local trust envelope using read-only SSH, without reinstalling
+    // or rewriting the VPS. Read-only shared profiles need a new pinned export.
+    if (container == DockerContainer::Hysteria2 || container == DockerContainer::AnyTls) {
+        const Proto protocol = container == DockerContainer::Hysteria2 ? Proto::Hysteria2 : Proto::AnyTls;
+        const QString cached = containerConfig.value(ProtocolProps::protoToString(protocol)).toObject()
+            .value(config_key::last_config).toString();
+        const bool hasPin = container == DockerContainer::Hysteria2 ? cached.contains("pinSHA256:")
+            : !QJsonDocument::fromJson(cached.toUtf8()).object().value("certificate_sha256").toString().isEmpty();
+        if (!hasPin && credentials.isValid()) {
+            const ErrorCode code = vpnConfigurationController.createProtocolConfigForContainer(credentials, container, containerConfig);
+            if (code != ErrorCode::NoError) { emit connectionErrorOccurred(code); return; }
+            m_settings->setContainerConfig(serverIndex, container, containerConfig);
+            m_serversModel->resetModel();
+        }
+    }
 
     auto dns = m_serversModel->getDnsPair(serverIndex);
 
@@ -158,7 +183,10 @@ void ConnectionController::reconnectToVpn()
         return;
     }
 
-    m_vpnConnection->reconnectToVpn();
+    const auto connection = m_vpnConnection;
+    QMetaObject::invokeMethod(connection.get(), [connection]() {
+        connection->reconnectToVpn();
+    }, Qt::QueuedConnection);
 }
 
 ErrorCode ConnectionController::getLastConnectionError()

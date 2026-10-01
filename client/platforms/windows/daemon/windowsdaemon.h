@@ -25,7 +25,8 @@ class WindowsDaemon final : public Daemon {
   ~WindowsDaemon();
 
   void prepareActivation(const InterfaceConfig& config, int inetAdapterIndex = 0) override;
-  void activateSplitTunnel(const InterfaceConfig& config, int vpnAdapterIndex = 0) override;
+  bool activateSplitTunnel(const InterfaceConfig& config, int vpnAdapterIndex = 0) override;
+  bool appBypassActive() const { return m_appBypassActive; }
   
   // Site-based split tunneling: add exclusion routes for specified addresses
   void activateSiteExclusionRoutes(const QStringList& excludedAddresses);
@@ -45,6 +46,8 @@ class WindowsDaemon final : public Daemon {
   bool addExclusionRoute(const QString& ipRange);
   bool deleteExclusionRoute(const QString& ipRange);
   bool getDefaultGateway(quint32& gatewayIp, quint64& interfaceLuid);
+  bool fallBackFromUnresponsiveSplitTunnel(const char* operation);
+  void tryRestoreSplitTunnelManager();
 
  private:
   enum State {
@@ -52,6 +55,8 @@ class WindowsDaemon final : public Daemon {
     Inactive,
   };
 
+  bool m_splitTunnelQuarantined = false;
+  bool m_appBypassActive = false;
   int m_inetAdapterIndex = -1;
   QSet<QString> m_siteExclusionRoutes;  // Track created exclusion routes
   QSet<QString> m_geoExclusionRoutes;   // Track geo (RU) exclusion routes

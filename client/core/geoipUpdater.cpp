@@ -1,5 +1,6 @@
 #include "geoipUpdater.h"
 #include "settings.h"
+#include "listValidation.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -152,6 +153,7 @@ void GeoipUpdater::download()
     request.setTransferTimeout(30000);
 
     QNetworkReply *reply = m_nam->get(request);
+    ListValidation::limitDownload(reply);
     connect(reply, &QNetworkReply::finished, this, [this, reply]() {
         handleReply(reply);
     });
@@ -185,25 +187,11 @@ void GeoipUpdater::handleReply(QNetworkReply *reply)
     // "# Country: ..." lines) would be injected as a bogus route. Keep only real CIDRs, drop
     // blanks and comments, and reject anything else -- that last part is what stops an HTML
     // error page from being saved as a "list". by vovankrot
-    static const QRegularExpression cidrRe(QStringLiteral("^\\d{1,3}(\\.\\d{1,3}){3}/\\d{1,2}$"));
-
     QByteArray normalized;
-    normalized.reserve(data.size());
     int validCount = 0;
-
-    const QList<QByteArray> lines = data.split('\n');
-    for (const QByteArray &line : lines) {
-        const QByteArray trimmed = line.trimmed();
-        if (trimmed.isEmpty() || trimmed.startsWith('#') || trimmed.startsWith(';')) {
-            continue;
-        }
-        if (!cidrRe.match(QString::fromUtf8(trimmed)).hasMatch()) {
-            fail(tr("invalid CIDR line: %1").arg(QString::fromUtf8(trimmed.left(60))));
-            return;
-        }
-        normalized.append(trimmed);
-        normalized.append('\n');
-        ++validCount;
+    if (!ListValidation::normalize(data, true, normalized, validCount)) {
+        fail(tr("Invalid or oversized CIDR list"));
+        return;
     }
 
     if (validCount < 100) {
@@ -211,21 +199,8 @@ void GeoipUpdater::handleReply(QNetworkReply *reply)
         return;
     }
 
-    // Write atomically: write to temp, then rename
     const QString cachePath = localCachePath();
-    const QString tempPath = cachePath + QStringLiteral(".tmp");
-
-    QFile tempFile(tempPath);
-    if (!tempFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        fail(tr("cannot write cache: %1").arg(tempFile.errorString()));
-        return;
-    }
-    tempFile.write(normalized);
-    tempFile.close();
-
-    QFile::remove(cachePath);
-    if (!QFile::rename(tempPath, cachePath)) {
-        QFile::remove(tempPath);
+    if (!ListValidation::save(cachePath, normalized)) {
         fail(tr("cannot replace cache file"));
         return;
     }

@@ -217,7 +217,7 @@ PageType {
                         Layout.bottomMargin: 16
 
                         headerText: qsTr("Username")
-                        textField.placeholderText: "username"
+                        textField.placeholderText: qsTr("username")
                         textField.text: username
                         textField.maximumLength: 32
 
@@ -240,7 +240,7 @@ PageType {
                         Layout.bottomMargin: 16
 
                         headerText: qsTr("Password")
-                        textField.placeholderText: "password"
+                        textField.placeholderText: qsTr("password")
                         textField.text: password
                         textField.maximumLength: 32
 

@@ -31,6 +31,13 @@ open class WireguardConfig protected constructor(
     var i3: String?,
     var i4: String?,
     var i5: String?,
+    val headerProtectionKey: String?,
+    val contentPaddingAddition: String?,
+    val rekeyAfterTime: String?,
+    val rekeyTimeout: String?,
+    val rejectAfterTime: String?,
+    val keepaliveTimeout: String?,
+    val maxHandshakeAttempts: String?,
 ) : ProtocolConfig(protocolConfigBuilder) {
 
     protected constructor(builder: Builder) : this(
@@ -57,6 +64,13 @@ open class WireguardConfig protected constructor(
         builder.i3,
         builder.i4,
         builder.i5,
+        builder.headerProtectionKey,
+        builder.contentPaddingAddition,
+        builder.rekeyAfterTime,
+        builder.rekeyTimeout,
+        builder.rejectAfterTime,
+        builder.keepaliveTimeout,
+        builder.maxHandshakeAttempts,
     )
 
     fun toWgUserspaceString(): String = with(StringBuilder()) {
@@ -86,6 +100,13 @@ open class WireguardConfig protected constructor(
             i3?.let { appendLine("i3=$it") }
             i4?.let { appendLine("i4=$it") }
             i5?.let { appendLine("i5=$it") }
+            headerProtectionKey?.let { appendLine("header_protection_key=${it.base64ToHex()}") }
+            contentPaddingAddition?.let { appendLine("content_padding_addition=$it") }
+            rekeyAfterTime?.let { appendLine("rekey_after_time=$it") }
+            rekeyTimeout?.let { appendLine("rekey_timeout=$it") }
+            rejectAfterTime?.let { appendLine("reject_after_time=$it") }
+            keepaliveTimeout?.let { appendLine("keepalive_timeout=$it") }
+            maxHandshakeAttempts?.let { appendLine("max_handshake_attempts=$it") }
         }
     }
 
@@ -149,6 +170,13 @@ open class WireguardConfig protected constructor(
         internal var i3: String? = null
         internal var i4: String? = null
         internal var i5: String? = null
+        internal var headerProtectionKey: String? = null
+        internal var contentPaddingAddition: String? = null
+        internal var rekeyAfterTime: String? = null
+        internal var rekeyTimeout: String? = null
+        internal var rejectAfterTime: String? = null
+        internal var keepaliveTimeout: String? = null
+        internal var maxHandshakeAttempts: String? = null
 
         fun setEndpoint(endpoint: InetEndpoint) = apply { this.endpoint = endpoint }
 
@@ -178,6 +206,34 @@ open class WireguardConfig protected constructor(
         fun setI3(i3: String) = apply { this.i3 = i3 }
         fun setI4(i4: String) = apply { this.i4 = i4 }
         fun setI5(i5: String) = apply { this.i5 = i5 }
+        fun setHeaderProtectionKey(value: String) = apply {
+            require(!value.contains('\n') && !value.contains('\r') && Base64.decode(value, Base64.DEFAULT).size == 32) { "Invalid AWG header protection key" }
+            this.headerProtectionKey = value
+        }
+        fun setContentPaddingAddition(value: String) = apply {
+            require(!value.contains('\n') && !value.contains('\r')) { "Invalid AWG parameter" }
+            this.contentPaddingAddition = value
+        }
+        fun setRekeyAfterTime(value: String) = apply {
+            require(!value.contains('\n') && !value.contains('\r')) { "Invalid AWG parameter" }
+            this.rekeyAfterTime = value
+        }
+        fun setRekeyTimeout(value: String) = apply {
+            require(!value.contains('\n') && !value.contains('\r')) { "Invalid AWG parameter" }
+            this.rekeyTimeout = value
+        }
+        fun setRejectAfterTime(value: String) = apply {
+            require(!value.contains('\n') && !value.contains('\r')) { "Invalid AWG parameter" }
+            this.rejectAfterTime = value
+        }
+        fun setKeepaliveTimeout(value: String) = apply {
+            require(!value.contains('\n') && !value.contains('\r')) { "Invalid AWG parameter" }
+            this.keepaliveTimeout = value
+        }
+        fun setMaxHandshakeAttempts(value: String) = apply {
+            require(!value.contains('\n') && !value.contains('\r')) { "Invalid AWG parameter" }
+            this.maxHandshakeAttempts = value
+        }
 
         override fun build(): WireguardConfig = configBuild().run { WireguardConfig(this@Builder) }
     }

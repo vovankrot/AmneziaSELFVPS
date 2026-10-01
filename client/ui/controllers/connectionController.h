@@ -12,6 +12,7 @@ class ConnectionController : public QObject
     Q_OBJECT
 
 public:
+    Q_PROPERTY(QString effectivePolicyWarning READ effectivePolicyWarning NOTIFY effectivePolicyWarningChanged)
     Q_PROPERTY(bool isConnected READ isConnected NOTIFY connectionStateChanged)
     Q_PROPERTY(bool isConnectionInProgress READ isConnectionInProgress NOTIFY connectionStateChanged)
     Q_PROPERTY(QString connectionStateText READ connectionStateText NOTIFY connectionStateChanged)
@@ -25,6 +26,7 @@ public:
 
     ~ConnectionController() = default;
 
+    QString effectivePolicyWarning() const { return m_effectivePolicyWarning; }
     bool isConnected() const;
     bool isConnectionInProgress() const;
     QString connectionStateText() const;
@@ -56,6 +58,7 @@ signals:
     void connectionStateChanged();
 
     void connectionErrorOccurred(ErrorCode errorCode);
+    void effectivePolicyWarningChanged();
     void splitTunnelingUnsupported(const QString &message);
     void noTrafficThroughTunnel(const QString &message);
     void reconnectWithUpdatedContainer(const QString &message);
@@ -81,6 +84,7 @@ private:
 
     std::shared_ptr<Settings> m_settings;
 
+    QString m_effectivePolicyWarning;
     bool m_isConnected = false;
     bool m_isConnectionInProgress = false;
     bool m_reconnectAfterDisconnect = false;

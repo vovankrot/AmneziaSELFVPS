@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QFileInfo>
 
 #include "../client/utilities.h"
 
@@ -81,9 +82,15 @@ inline QStringList sanitizeArguments(PermittedProcess proc, const QStringList &a
         // flag (single gVisor netstack).
         break;
     case CertUtil:
-        // certutil arguments are assembled by the IKEv2 client flow. Preserve
-        // compatibility here; all other privileged processes are deny-by-default.
-        return args;
+        // Only the IKEv2 certificate import operation is permitted. Never expose
+        // certutil's download, decode, store deletion or arbitrary output modes.
+        if (args.size() == 6 && args[0] == "-f" && args[1] == "-importpfx"
+                && args[2] == "-p" && args[5] == "NoExport"
+                && QFileInfo(args[4]).isAbsolute() && QFileInfo(args[4]).isFile()
+                && !args[4].contains('\n') && !args[4].contains('\r')) {
+            return args;
+        }
+        return {};
     default:
         return {};
     }

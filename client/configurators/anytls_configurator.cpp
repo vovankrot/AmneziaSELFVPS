@@ -4,6 +4,8 @@
 #include "core/controllers/serverController.h"
 #include "core/scripts_registry.h"
 #include "logger.h"
+#include <QSslCertificate>
+#include <QCryptographicHash>
 
 namespace {
 Logger logger("AnyTlsConfigurator");
@@ -32,7 +34,15 @@ QString AnyTlsConfigurator::createConfig(const ServerCredentials &credentials, D
 
     // genVarsForScript already injects $ANYTLS_SERVER_PORT,
     // $ANYTLS_LOCAL_PROXY_PORT, $ANYTLS_SNI and $SERVER_IP_ADDRESS.
+    const QByteArray certificatePem = m_serverController->getTextFileFromContainer(
+        container, credentials, "/opt/amnezia/anytls/server.crt", errorCode);
+    const QSslCertificate certificate(certificatePem, QSsl::Pem);
+    if (errorCode != ErrorCode::NoError || certificate.isNull()) {
+        errorCode = ErrorCode::TlsCertificateTrustMissing;
+        return {};
+    }
     ServerController::Vars vars = m_serverController->genVarsForScript(credentials, container, containerConfig);
+    vars.append({ QStringLiteral("$ANYTLS_CERT_PIN"), QString::fromLatin1(certificate.digest(QCryptographicHash::Sha256).toHex()) });
     vars.append({ QStringLiteral("$ANYTLS_PASSWORD"), password });
 
     QString config = m_serverController->replaceVars(

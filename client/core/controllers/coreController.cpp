@@ -1,4 +1,6 @@
 #include "coreController.h"
+#include "core/sshHostTrust.h"
+#include "core/appUpdater.h"
 
 #include <QDirIterator>
 #include <QTranslator>
@@ -17,6 +19,8 @@ CoreController::CoreController(const QSharedPointer<VpnConnection> &vpnConnectio
                                QQmlApplicationEngine *engine, QObject *parent)
     : QObject(parent), m_vpnConnection(vpnConnection), m_settings(settings), m_engine(engine)
 {
+    m_engine->rootContext()->setContextProperty("SshHostTrust", new SshHostTrust(this));
+    m_engine->rootContext()->setContextProperty("AppUpdater", new AppUpdater(this));
     initModels();
     initControllers();
     initSignalHandlers();
@@ -206,7 +210,7 @@ void CoreController::initAndroidController()
     if (!AndroidController::initLogging()) {
         qFatal("Android logging initialization failed");
     }
-    AndroidController::instance()->setSaveLogs(m_settings->isSaveLogs());
+    AndroidController::instance()->setSaveLogs(true);
     connect(m_settings.get(), &Settings::saveLogsChanged, AndroidController::instance(), &AndroidController::setSaveLogs);
 
     AndroidController::instance()->setScreenshotsEnabled(m_settings->isScreenshotsEnabled());

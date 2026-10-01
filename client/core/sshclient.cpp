@@ -1,4 +1,5 @@
 #include "sshclient.h"
+#include "sshHostTrust.h"
 
 #include <QElapsedTimer>
 #include <QEventLoop>
@@ -118,6 +119,22 @@ namespace libssh {
             m_socketDescriptor.store(ssh_get_fd(m_session));
             enableTcpKeepalive(m_socketDescriptor.load());
 
+            ssh_key hostKey = nullptr;
+            unsigned char *hash = nullptr;
+            size_t hashLength = 0;
+            const bool keyRead = ssh_get_server_publickey(m_session, &hostKey) == SSH_OK
+                && ssh_get_publickey_hash(hostKey, SSH_PUBLICKEY_HASH_SHA256, &hash, &hashLength) == SSH_OK;
+            const QString fingerprint = keyRead
+                ? QStringLiteral("SHA256:") + QString::fromLatin1(QByteArray(reinterpret_cast<char *>(hash), int(hashLength))
+                    .toBase64(QByteArray::OmitTrailingEquals)) : QString();
+            if (hostKey) ssh_key_free(hostKey);
+            if (hash) ssh_clean_pubkey_hash(&hash);
+            bool changed = false;
+            if (!keyRead || !SshHostTrust::verify(credentials.hostName, port, fingerprint, changed)) {
+                disconnectFromHost();
+                return changed ? ErrorCode::SshHostKeyChangedError : ErrorCode::SshHostKeyUntrustedError;
+            }
+
             std::string authUsername = credentials.userName.toStdString();
 
             int authResult = SSH_ERROR;
@@ -149,12 +166,18 @@ namespace libssh {
                     if (errorCode == ErrorCode::NoError) {
                         errorCode = ErrorCode::SshPrivateKeyFormatError;
                     }
+                    disconnectFromHost();
                     return errorCode;
                 }
             } else {
                 authResult = ssh_userauth_password(m_session, authUsername.c_str(), credentials.secretData.toStdString().c_str());
                 if (authResult != SSH_OK) {
-                    return fromLibsshErrorCode();
+                    ErrorCode errorCode = fromLibsshErrorCode();
+                    if (errorCode == ErrorCode::NoError) {
+                        errorCode = ErrorCode::SshRequestDeniedError;
+                    }
+                    disconnectFromHost();
+                    return errorCode;
                 }
             }
         }

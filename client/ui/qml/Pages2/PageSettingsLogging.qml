@@ -48,27 +48,7 @@ PageType {
                 Layout.rightMargin: 16
 
                 headerText: qsTr("Logging")
-                descriptionText: qsTr("Enabling this function will save application's logs automatically. " +
-                                      "By default, logging functionality is disabled. Enable log saving in case of application malfunction.")
-            }
-
-            SwitcherType {
-                id: switcher
-
-                Layout.fillWidth: true
-                Layout.topMargin: 16
-                Layout.leftMargin: 16
-                Layout.rightMargin: 16
-
-                text: qsTr("Enable logs")
-
-                checked: SettingsController.isLoggingEnabled
-                
-                onToggled: function() {
-                    if (checked !== SettingsController.isLoggingEnabled) {
-                        SettingsController.isLoggingEnabled = checked
-                    }
-                }
+                descriptionText: qsTr("Application and service logs are always saved automatically for diagnostics.")
             }
 
             DividerType {}

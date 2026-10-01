@@ -16,6 +16,13 @@ ANYTLS_PASSWORD="$(openssl rand -hex 16)"
 echo "$ANYTLS_PASSWORD" > "$PASSWORD_PATH"
 chmod 600 "$PASSWORD_PATH"
 
+# Persist a server identity across restarts. The client obtains its pin over verified SSH.
+if [ ! -s "$CONFIG_DIR/server.crt" ] || [ ! -s "$CONFIG_DIR/server.key" ]; then
+    openssl req -x509 -newkey rsa:2048 -nodes -sha256 -days 3650 \
+        -subj '/CN=AnyTLS' -keyout "$CONFIG_DIR/server.key" -out "$CONFIG_DIR/server.crt"
+fi
+chmod 600 "$CONFIG_DIR/server.key" "$CONFIG_DIR/server.crt"
+
 # Sanity check: ensure the binary is actually present.
 if ! command -v anytls-server >/dev/null 2>&1; then
     echo "ERROR: anytls-server not found in container" >&2

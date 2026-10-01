@@ -1,4 +1,5 @@
 #include "amnezia_application.h"
+#include <cstdlib>
 
 #include <QClipboard>
 #include <QDateTime>
@@ -75,17 +76,27 @@ AmneziaApplication::~AmneziaApplication()
 {
 #ifdef AMNEZIA_DESKTOP
     if (m_vpnConnection && m_vpnConnectionThread.isRunning()) {
-        QMetaObject::invokeMethod(m_vpnConnection.get(), "disconnectSlots", Qt::BlockingQueuedConnection);
-        QMetaObject::invokeMethod(m_vpnConnection.get(), "disconnectFromVpn", Qt::BlockingQueuedConnection);
+        const auto connection = m_vpnConnection;
+        QMetaObject::invokeMethod(connection.get(), [connection]() {
+            connection->disconnectSlots();
+            connection->disconnectFromVpn();
+            QThread::currentThread()->quit();
+        }, Qt::QueuedConnection);
+    } else {
+        m_vpnConnectionThread.quit();
     }
+#else
+    m_vpnConnectionThread.quit();
 #endif
 
     m_vpnConnectionThread.requestInterruption();
-    m_vpnConnectionThread.quit();
 
-    if (!m_vpnConnectionThread.wait(3000)) {
-        m_vpnConnectionThread.terminate();
-        m_vpnConnectionThread.wait(500);
+    if (!m_vpnConnectionThread.wait(5000)) {
+        // Killing a Qt worker and then destroying its objects can corrupt locks
+        // and run QProcess destructors on the wrong thread. On application exit,
+        // enforce the deadline without destructing objects still in use.
+        qCritical() << "VPN shutdown exceeded 5 seconds; exiting without unsafe thread termination";
+        std::_Exit(EXIT_FAILURE);
     }
 
     if (m_engine) {
@@ -242,7 +253,7 @@ void AmneziaApplication::init()
         qWarning() << "Initialization of debug subsystem failed";
     }
 #endif
-    Logger::setServiceLogsEnabled(m_settings->isSaveLogs());
+    Logger::setServiceLogsEnabled(true);
 
 #ifdef Q_OS_WIN
     if (m_parser.isSet(m_optAutostart)) {

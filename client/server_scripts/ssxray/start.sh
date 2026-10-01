@@ -38,6 +38,7 @@ sleep 1
 # Start xray with Shadowsocks config
 if [ -f /opt/amnezia/ssxray/server.json ]; then
     echo "Starting XRay Shadowsocks server..."
+    export GOMEMLIMIT="${GOMEMLIMIT:-256MiB}"
     exec /usr/bin/xray run -config /opt/amnezia/ssxray/server.json
 else
     echo "ERROR: Server config not found at /opt/amnezia/ssxray/server.json"

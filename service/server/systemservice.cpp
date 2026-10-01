@@ -145,8 +145,9 @@ void SystemService::stop()
                     // Give the main thread one more second to unwind.
                     r = WaitForSingleObject(doneEvent, 1000);
                     if (r == WAIT_TIMEOUT) {
-                        Logger::flush();
-                        ::ExitProcess(0);
+                        // A driver request can prevent DLL detach from completing.
+                        // Do not enter logging or ExitProcess on this last-resort path.
+                        ::TerminateProcess(::GetCurrentProcess(), 0);
                     }
                 }
             }

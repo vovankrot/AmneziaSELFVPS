@@ -1,4 +1,6 @@
 #include "secure_qsettings.h"
+#include "core/protectedBlob.h"
+#include "core/configFormat.h"
 
 #include "../client/3rd/QSimpleCrypto/src/include/QAead.h"
 #include "../client/3rd/QSimpleCrypto/src/include/QBlockCipher.h"
@@ -8,6 +10,7 @@
 #include <QEventLoop>
 #include <QIODevice>
 #include <QJsonDocument>
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QRandomGenerator>
 #include <QSharedPointer>
@@ -121,6 +124,7 @@ QByteArray SecureQSettings::backupAppConfig() const
     QMutexLocker locker(&m_mutex);
 
     QJsonObject cfg;
+    cfg["formatVersion"] = ConfigFormat::current;
 
     const auto needToBackup = [this](const auto &key) {
       for (const auto &item : m_fieldsToBackup)
@@ -157,10 +161,18 @@ bool SecureQSettings::restoreAppConfig(const QByteArray &json)
     QMutexLocker locker(&m_mutex);
 
     QJsonObject cfg = QJsonDocument::fromJson(json).object();
-    if (cfg.isEmpty())
+    if (cfg.isEmpty() || !ConfigFormat::supported(cfg))
         return false;
 
     for (const QString &key : cfg.keys()) {
+        if (key != "formatVersion" && !key.startsWith("Conf/") && !key.startsWith("Servers/")) return false;
+    }
+    const auto servers = QJsonDocument::fromJson(cfg.value("Servers/serversList").toString().toUtf8());
+    if (!servers.isArray()) return false;
+    for (const auto &server : servers.array())
+        if (!server.isObject() || !ConfigFormat::supported(server.toObject())) return false;
+    for (const QString &key : cfg.keys()) {
+        if (key == "formatVersion") continue;
         if (key == "Conf/installationUuid") {
             continue;
         }
@@ -169,6 +181,18 @@ bool SecureQSettings::restoreAppConfig(const QByteArray &json)
     }
 
     return true;
+}
+
+QByteArray SecureQSettings::protectSnapshot(const QByteArray &plain) const
+{
+    QMutexLocker lock(&m_mutex);
+    return ProtectedBlob::seal(plain, getEncKey());
+}
+
+QByteArray SecureQSettings::openSnapshot(const QByteArray &sealed) const
+{
+    QMutexLocker lock(&m_mutex);
+    return ProtectedBlob::open(sealed, getEncKey());
 }
 
 void SecureQSettings::clearSettings()

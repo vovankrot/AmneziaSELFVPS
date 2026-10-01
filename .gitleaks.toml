@@ -1,0 +1,14 @@
+[extend]
+useDefault = true
+[[rules]]
+id = "selfvps-literal-credential"
+description = "Literal password or token, including low entropy values"
+regex = '''(?i)\b(?:pw|pwd|passwd|password|secret|token|api[_-]?key)\b\s*[:=]\s*["']([A-Za-z0-9_!@#%^&*()+/=.:;?~-]{4,})["']'''
+secretGroup = 1
+entropy = 0
+keywords = ["password", "passwd", "pwd", "pw", "secret", "token", "api_key"]
+
+[[allowlists]]
+description = "Reviewed Windows SDK field identifier, not a credential"
+regexTarget = "secret"
+regexes = ['''^FWPM_CONDITION_L2_FLAGS$''']

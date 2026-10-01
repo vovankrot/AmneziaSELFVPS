@@ -101,6 +101,7 @@ PageType {
     }
 
     property list<QtObject> serverActions: [
+        sshTrustReset,
         check,
         reboot,
         remove,
@@ -108,6 +109,19 @@ PageType {
         cleanup,
         reset,
     ]
+
+    QtObject {
+        id: sshTrustReset
+        property bool isVisible: root.isServerWithWriteAccess
+        readonly property string title: qsTr("Сбросить доверие к ключу SSH")
+        readonly property string description: qsTr("После проверенной переустановки VPS или смены его SSH-ключа")
+        readonly property var tColor: AmneziaStyle.color.paleGray
+        readonly property var clickedHandler: function() {
+            showQuestionDrawer(qsTr("Сбросить сохранённый ключ SSH?"),
+                qsTr("Сначала проверьте смену ключа через панель или консоль провайдера VPS. Новое подключение снова потребует подтверждения отпечатка."),
+                qsTr("Сбросить"), qsTr("Отмена"), function() { SettingsController.resetProcessedServerSshTrust() }, function() {})
+        }
+    }
 
     QtObject {
         id: check

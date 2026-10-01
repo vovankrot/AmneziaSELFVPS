@@ -631,7 +631,6 @@ void WINAPI QtServiceSysPrivate::handler( DWORD code )
             if (instance->available())
                 pSetServiceStatus(instance->serviceStatus, &instance->status);
             instance->mutex.unlock();
-            Logger::flush();
             // ExitProcess() waits for every thread to actually terminate and runs
             // DLL_PROCESS_DETACH on every loaded module -- if the thread that's stuck
             // is blocked inside a kernel driver call (e.g. a wedged DeviceIoControl to
@@ -679,7 +678,6 @@ void WINAPI QtServiceSysPrivate::handler( DWORD code )
             if (instance->available())
                 pSetServiceStatus(instance->serviceStatus, &instance->status);
             instance->mutex.unlock();
-            Logger::flush();
             // See the SERVICE_CONTROL_STOP branch above: TerminateProcess, not
             // ExitProcess, so a thread stuck in a kernel driver call can't block
             // our own emergency exit. by vovankrot

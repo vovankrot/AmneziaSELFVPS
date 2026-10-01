@@ -14,7 +14,32 @@ import "Pages2"
 
 Window  {
     id: root
+
+    AppUpdateDialog {
+        id: updateDialog
+        parent: root.contentItem
+        width: Math.min(520, root.width - 32)
+    }
+
+    Connections {
+        target: typeof AppUpdater !== "undefined" ? AppUpdater : null
+        function onUpdateAvailable() { updateDialog.open() }
+    }
     objectName: "mainWindow"
+
+    SshHostTrustDialog {
+        id: sshTrustDialog
+    }
+    Connections {
+        target: typeof SshHostTrust !== "undefined" ? SshHostTrust : null
+        function onConfirmationRequested(endpoint, fingerprint) {
+            sshTrustDialog.endpoint = endpoint
+            sshTrustDialog.fingerprint = fingerprint
+            sshTrustDialog.open()
+        }
+        function onConfirmationExpired() { sshTrustDialog.close() }
+    }
+
 
     Connections {
         target: Qt.application
@@ -54,10 +79,10 @@ Window  {
     }
 
     visible: true
-    width: GC.isDesktop() ? 960 : GC.screenWidth
-    height: GC.isDesktop() ? 680 : GC.screenHeight
-    minimumWidth: GC.isDesktop() ? 860 : 0
-    minimumHeight: GC.isDesktop() ? 620 : 0
+    width: GC.isDesktop() ? 820 : GC.screenWidth
+    height: GC.isDesktop() ? 640 : GC.screenHeight
+    minimumWidth: GC.isDesktop() ? 760 : 0
+    minimumHeight: GC.isDesktop() ? 600 : 0
     maximumWidth: GC.isDesktop() ? 1180 : 800
     maximumHeight: GC.isDesktop() ? 900 : 1000
 

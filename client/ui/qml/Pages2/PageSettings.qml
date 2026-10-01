@@ -16,6 +16,25 @@ import "../Components"
 PageType {
     id: root
 
+    property int settingsSection: 0
+    readonly property var sectionTitles: [qsTr("General"), qsTr("VPN & Connection"), qsTr("Servers"), qsTr("Maintenance")]
+
+    function resetApplicationSettings() {
+        var headerText = qsTr("Reset settings and remove all data from the application?")
+        var descriptionText = qsTr("All settings will be reset to default. All installed AmneziaVPN services will still remain on the server.")
+        var yesButtonFunction = function() {
+            if (ServersModel.isDefaultServerCurrentlyProcessed() && ConnectionController.isConnected) {
+                PageController.showNotificationMessage(qsTr("Cannot reset settings during active connection"))
+                return
+            }
+            SettingsController.clearSettings()
+            PageController.goToPageHome()
+        }
+        showQuestionDrawer(headerText, descriptionText, qsTr("Continue"), qsTr("Cancel"), yesButtonFunction, function() {})
+    }
+
+    onSettingsSectionChanged: generalSettingsFlickable.contentY = 0
+
     SelectLanguageDrawer {
         id: selectLanguageDrawer
         anchors.fill: parent
@@ -30,12 +49,11 @@ PageType {
         property var clickedFunc: function() {}
 
         Layout.fillWidth: true
-        Layout.preferredHeight: 38
+        Layout.preferredHeight: 44
         radius: 8
-        color: selected ? AmneziaStyle.color.deepBrown
+        color: selected ? AmneziaStyle.color.softGoldenApricot
                         : (settingsNavMouse.containsMouse ? AmneziaStyle.color.translucentWhite : "transparent")
-        border.width: selected ? 1 : 0
-        border.color: AmneziaStyle.color.slateGray
+        border.width: 0
 
         RowLayout {
             anchors.fill: parent
@@ -48,7 +66,7 @@ PageType {
                 Layout.preferredHeight: 15
                 source: settingsNavButton.iconSource
                 tintColor: settingsNavButton.selected
-                           ? AmneziaStyle.color.goldenApricot
+                           ? AmneziaStyle.color.softViolet
                            : AmneziaStyle.color.mutedGray
                 iconWidth: 15
                 iconHeight: 15
@@ -60,7 +78,7 @@ PageType {
                        ? AmneziaStyle.color.paleGray
                        : AmneziaStyle.color.mutedGray
                 font.family: "Inter"
-                font.pixelSize: 12
+                font.pixelSize: 13
                 font.weight: settingsNavButton.selected ? 600 : 500
                 elide: Text.ElideRight
             }
@@ -90,257 +108,234 @@ PageType {
         }
     }
 
-    ColumnLayout {
+    RowLayout {
         id: desktopSettingsView
         anchors.fill: parent
-        anchors.topMargin: 24 + SettingsController.safeAreaTopMargin
+        anchors.topMargin: 20 + SettingsController.safeAreaTopMargin
         anchors.leftMargin: 28
         anchors.rightMargin: 28
-        anchors.bottomMargin: 24
-        spacing: 16
+        anchors.bottomMargin: 20
+        spacing: 0
         visible: GC.isDesktop()
 
-        Text {
-            Layout.fillWidth: true
-            text: qsTr("Settings")
-            color: AmneziaStyle.color.paleGray
-            font.family: "Inter"
-            font.pixelSize: 22
-            font.weight: 600
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
+        Rectangle {
+            Layout.minimumWidth: 232
+            Layout.preferredWidth: 232
+            Layout.maximumWidth: 232
             Layout.fillHeight: true
-            spacing: 16
+            color: "transparent"
 
             ColumnLayout {
-                Layout.minimumWidth: 168
-                Layout.preferredWidth: 168
-                Layout.maximumWidth: 168
-                Layout.fillHeight: true
+                anchors.fill: parent
+                anchors.rightMargin: 24
                 spacing: 3
 
-                SettingsNavButton {
-                    text: qsTr("General")
-                    iconSource: "qrc:/images/controls/app.svg"
-                    selected: true
-                }
-                SettingsNavButton {
-                    text: qsTr("Connection")
-                    iconSource: "qrc:/images/controls/radio.svg"
-                    clickedFunc: function() { PageController.goToPage(PageEnum.PageSettingsConnection) }
-                }
-                SettingsNavButton {
-                    text: qsTr("Servers")
-                    iconSource: "qrc:/images/controls/server.svg"
-                    clickedFunc: function() { PageController.goToPage(PageEnum.PageSettingsServersList) }
-                }
-                SettingsNavButton {
-                    text: qsTr("Split tunneling")
-                    iconSource: "qrc:/images/controls/split-tunneling.svg"
-                    visible: SettingsController.isAdvancedMode
-                    clickedFunc: splitTunneling.clickedHandler
-                }
-                SettingsNavButton {
-                    text: qsTr("Kill Switch")
-                    iconSource: "qrc:/images/controls/settings-2.svg"
-                    visible: SettingsController.isAdvancedMode
-                    clickedFunc: function() { PageController.goToPage(PageEnum.PageSettingsKillSwitch) }
-                }
-                SettingsNavButton {
-                    text: qsTr("DNS")
-                    iconSource: "qrc:/images/controls/globe-2.svg"
-                    visible: SettingsController.isAdvancedMode
-                    clickedFunc: function() { PageController.goToPage(PageEnum.PageSettingsDns) }
-                }
+                SettingsNavButton { objectName: "settingsGeneralNavigation"; text: qsTr("General"); iconSource: "qrc:/images/controls/app.svg"; selected: root.settingsSection === 0; clickedFunc: function() { root.settingsSection = 0 } }
+                SettingsNavButton { objectName: "settingsNetworkNavigation"; text: qsTr("VPN & Connection"); iconSource: "qrc:/images/controls/radio.svg"; selected: root.settingsSection === 1; clickedFunc: function() { root.settingsSection = 1 } }
+                SettingsNavButton { objectName: "desktopServersSettingsNavigation"; text: qsTr("Servers"); iconSource: "qrc:/images/controls/server.svg"; clickedFunc: servers.clickedHandler }
+                SettingsNavButton { objectName: "settingsMaintenanceNavigation"; text: qsTr("Maintenance"); iconSource: "qrc:/images/controls/bug.svg"; selected: root.settingsSection === 3; clickedFunc: function() { root.settingsSection = 3 } }
 
                 Item { Layout.fillHeight: true }
-
-                SettingsNavButton {
-                    text: qsTr("Application")
-                    iconSource: "qrc:/images/controls/app.svg"
-                    clickedFunc: application.clickedHandler
-                }
-                SettingsNavButton {
-                    text: qsTr("Logging")
-                    iconSource: "qrc:/images/controls/bug.svg"
-                    clickedFunc: logging.clickedHandler
-                }
-                SettingsNavButton {
-                    text: qsTr("Notifications")
-                    iconSource: "qrc:/images/controls/news.svg"
-                    visible: news.isVisible
-                    clickedFunc: news.clickedHandler
-                }
-                SettingsNavButton {
-                    text: qsTr("Dev console")
-                    iconSource: "qrc:/images/controls/bug.svg"
-                    visible: devConsole.isVisible
-                    clickedFunc: devConsole.clickedHandler
-                }
-
-                SettingsNavButton {
-                    text: qsTr("Backup")
-                    iconSource: "qrc:/images/controls/save.svg"
-                    clickedFunc: function() { PageController.goToPage(PageEnum.PageSettingsBackup) }
-                }
-                SettingsNavButton {
-                    text: qsTr("About AmneziaVPN")
-                    iconSource: "qrc:/images/controls/amnezia.svg"
-                    clickedFunc: function() { PageController.goToPage(PageEnum.PageSettingsAbout) }
+                Text {
+                    Layout.leftMargin: 12
+                    text: "v" + SettingsController.getAppVersion()
+                    color: AmneziaStyle.color.charcoalGray
+                    font.family: "Inter"
+                    font.pixelSize: 10
                 }
             }
 
             Rectangle {
-                objectName: "generalSettingsPanel"
-                Layout.minimumWidth: 300
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                radius: 10
-                color: AmneziaStyle.color.deepBrown
-                border.width: 1
-                border.color: AmneziaStyle.color.slateGray
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.right: parent.right
+                width: 1
+                color: AmneziaStyle.color.slateGray
+            }
+        }
 
-                Flickable {
-                    id: generalSettingsFlickable
-                    anchors.fill: parent
-                    anchors.margins: 18
-                    contentHeight: generalSettingsColumn.implicitHeight
-                    clip: true
-                    boundsBehavior: Flickable.StopAtBounds
+        Flickable {
+            id: generalSettingsFlickable
+            objectName: "generalSettingsPanel"
+            Layout.minimumWidth: 300
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            contentHeight: (root.settingsSection === 0 ? generalSettingsColumn.implicitHeight : sectionColumn.implicitHeight) + 16
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
 
-                    ColumnLayout {
-                        id: generalSettingsColumn
-                        width: generalSettingsFlickable.width
-                        spacing: 0
+            ColumnLayout {
+                id: generalSettingsColumn
+                visible: root.settingsSection === 0
+                width: generalSettingsFlickable.width - 56
+                x: 44
+                spacing: 0
 
-                        Text {
-                            Layout.fillWidth: true
-                            Layout.bottomMargin: 6
-                            text: qsTr("General")
-                            color: AmneziaStyle.color.paleGray
-                            font.family: "Inter"
-                            font.pixelSize: 17
-                            font.weight: 600
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            Layout.bottomMargin: 14
-                            text: qsTr("Application behavior and startup")
-                            color: AmneziaStyle.color.mutedGray
-                            font.family: "Inter"
-                            font.pixelSize: 11
-                        }
+                Text {
+                    Layout.fillWidth: true
+                    Layout.bottomMargin: 22
+                    text: qsTr("General")
+                    color: AmneziaStyle.color.paleGray
+                    font.family: "Inter"
+                    font.pixelSize: 24
+                    font.weight: 700
+                }
 
-                        SwitcherType {
-                            id: desktopAutoStart
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 46
-                            text: qsTr("Auto start")
-                            descriptionText: qsTr("Launch AmneziaVPN when Windows starts")
-                            checked: SettingsController.isAutoStartEnabled()
-                            onToggled: function() {
-                                if (checked !== SettingsController.isAutoStartEnabled()) SettingsController.toggleAutoStart(checked)
-                            }
-                        }
-                        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: AmneziaStyle.color.slateGray }
-                        SwitcherType {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 46
-                            text: qsTr("Auto connect")
-                            descriptionText: qsTr("Connect to VPN after the application starts")
-                            checked: SettingsController.isAutoConnectEnabled()
-                            onToggled: function() {
-                                if (checked !== SettingsController.isAutoConnectEnabled()) SettingsController.toggleAutoConnect(checked)
-                            }
-                        }
-                        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: AmneziaStyle.color.slateGray }
-                        SwitcherType {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 46
-                            text: qsTr("Start minimized")
-                            descriptionText: qsTr("Keep the app in the notification area on startup")
-                            enabled: desktopAutoStart.checked
-                            checked: SettingsController.startMinimized
-                            onToggled: function() {
-                                if (checked !== SettingsController.startMinimized) SettingsController.toggleStartMinimized(checked)
-                            }
-                        }
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 1
-                            color: AmneziaStyle.color.slateGray
-                            visible: Qt.platform.os === "windows"
-                        }
-                        SwitcherType {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 46
-                            visible: Qt.platform.os === "windows"
-                            text: qsTr("Disable local proxy on connect")
-                            descriptionText: qsTr("Avoid routing conflicts with local proxy applications")
-                            checked: SettingsController.isAutoDisableLoopbackProxyEnabled()
-                            onToggled: function() {
-                                if (checked !== SettingsController.isAutoDisableLoopbackProxyEnabled()) SettingsController.toggleAutoDisableLoopbackProxy(checked)
-                            }
-                        }
+                Text { Layout.fillWidth: true; Layout.bottomMargin: 8; text: qsTr("Startup"); color: AmneziaStyle.color.mutedGray; font.family: "Inter"; font.pixelSize: 13; font.weight: 600 }
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: AmneziaStyle.color.slateGray }
+                SwitcherType {
+                    id: desktopAutoStart
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 54
+                    text: qsTr("Auto start")
+                    descriptionText: qsTr("Launch AmneziaVPN when Windows starts")
+                    checked: SettingsController.isAutoStartEnabled()
+                    onToggled: function() { if (checked !== SettingsController.isAutoStartEnabled()) SettingsController.toggleAutoStart(checked) }
+                }
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: AmneziaStyle.color.slateGray }
+                SwitcherType {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 54
+                    text: qsTr("Auto connect")
+                    descriptionText: qsTr("Connect to VPN after the application starts")
+                    checked: SettingsController.isAutoConnectEnabled()
+                    onToggled: function() { if (checked !== SettingsController.isAutoConnectEnabled()) SettingsController.toggleAutoConnect(checked) }
+                }
 
-                        Text {
-                            Layout.fillWidth: true
-                            Layout.topMargin: 18
-                            Layout.bottomMargin: 7
-                            text: qsTr("INTERFACE")
-                            color: AmneziaStyle.color.charcoalGray
-                            font.family: "Inter"
-                            font.pixelSize: 10
-                            font.weight: 600
-                        }
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: AmneziaStyle.color.slateGray }
+                SwitcherType {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 54
+                    text: qsTr("Start minimized")
+                    descriptionText: qsTr("Keep the app in the notification area on startup")
+                    enabled: desktopAutoStart.checked
+                    checked: SettingsController.startMinimized
+                    onToggled: function() { if (checked !== SettingsController.startMinimized) SettingsController.toggleStartMinimized(checked) }
+                }
+                Text { Layout.fillWidth: true; Layout.topMargin: 22; Layout.bottomMargin: 8; text: qsTr("Language and interface"); color: AmneziaStyle.color.mutedGray; font.family: "Inter"; font.pixelSize: 13; font.weight: 600 }
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: AmneziaStyle.color.slateGray }
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 48
+                    color: languageMouse.containsMouse ? AmneziaStyle.color.translucentWhite : "transparent"
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        Text { Layout.fillWidth: true; text: qsTr("Language"); color: AmneziaStyle.color.paleGray; font.family: "Inter"; font.pixelSize: 13 }
+                        Text { text: LanguageModel.currentLanguageName; color: AmneziaStyle.color.mutedGray; font.family: "Inter"; font.pixelSize: 12 }
+                        TintedIconType { Layout.preferredWidth: 14; Layout.preferredHeight: 14; source: "qrc:/images/controls/chevron-right.svg"; tintColor: AmneziaStyle.color.charcoalGray; iconWidth: 14; iconHeight: 14 }
+                    }
+                    MouseArea { id: languageMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: selectLanguageDrawer.openTriggered() }
+                }
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: AmneziaStyle.color.slateGray }
+                SwitcherType {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 54
+                    text: qsTr("Advanced mode")
+                    descriptionText: qsTr("Show expert network settings")
+                    checked: SettingsController.isAdvancedMode
+                    onToggled: function() { if (checked !== SettingsController.isAdvancedMode) SettingsController.isAdvancedMode = checked }
+                }
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: AmneziaStyle.color.slateGray }
 
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 42
-                            radius: 8
-                            color: languageMouse.containsMouse
-                                   ? AmneziaStyle.color.onyxBlack
-                                   : AmneziaStyle.color.translucentOnyxBlack
-                            border.width: 1
-                            border.color: AmneziaStyle.color.slateGray
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.topMargin: 14
+                    spacing: 8
+                    BasicButtonType {
+                        objectName: "resetSettingsButton"
+                        text: qsTr("Reset settings")
+                        defaultColor: AmneziaStyle.color.transparent
+                        hoveredColor: Qt.rgba(239/255, 68/255, 68/255, 0.10)
+                        pressedColor: Qt.rgba(239/255, 68/255, 68/255, 0.18)
+                        textColor: AmneziaStyle.color.vibrantRed
+                        borderWidth: 0
+                        clickedFunc: root.resetApplicationSettings
+                    }
+                    BasicButtonType {
+                        text: qsTr("Close application")
+                        defaultColor: AmneziaStyle.color.transparent
+                        hoveredColor: AmneziaStyle.color.translucentWhite
+                        textColor: AmneziaStyle.color.mutedGray
+                        borderWidth: 0
+                        clickedFunc: function() { PageController.closeApplication() }
+                    }
+                    Item { Layout.fillWidth: true }
+                }
+            }
+            ColumnLayout {
+                id: sectionColumn
+                objectName: "settingsSectionPanel"
+                visible: root.settingsSection !== 0
+                width: generalSettingsColumn.width
+                x: generalSettingsColumn.x
+                spacing: 12
 
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 12
-                                anchors.rightMargin: 12
-                                Text { Layout.fillWidth: true; text: qsTr("Language"); color: AmneziaStyle.color.paleGray; font.family: "Inter"; font.pixelSize: 13 }
-                                Text { text: LanguageModel.currentLanguageName; color: AmneziaStyle.color.mutedGray; font.family: "Inter"; font.pixelSize: 12 }
-                                TintedIconType { Layout.preferredWidth: 14; Layout.preferredHeight: 14; source: "qrc:/images/controls/chevron-right.svg"; tintColor: AmneziaStyle.color.charcoalGray; iconWidth: 14; iconHeight: 14 }
-                            }
-                            MouseArea { id: languageMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: selectLanguageDrawer.openTriggered() }
-                        }
+                Text {
+                    Layout.fillWidth: true
+                    text: root.sectionTitles[root.settingsSection]
+                    color: AmneziaStyle.color.paleGray
+                    font.family: "Inter"
+                    font.pixelSize: 24
+                    font.weight: 700
+                }
+                ParagraphTextType {
+                    Layout.fillWidth: true
+                    Layout.bottomMargin: 10
+                    color: AmneziaStyle.color.mutedGray
+                    text: root.settingsSection === 1 ? qsTr("Choose where traffic goes and how the connection is protected. These settings apply to the selected VPN connection.")
+                        : root.settingsSection === 2 ? qsTr("Manage your VPS, installed protocols and server services. Application preferences are in General.")
+                        : qsTr("Updates, backups and logs in one place.")
+                }
+                SwitcherType {
+                    Layout.fillWidth: true
+                    visible: root.settingsSection === 1
+                    text: qsTr("Use AmneziaDNS")
+                    descriptionText: qsTr("If AmneziaDNS is installed on the server")
+                    checked: SettingsController.isAmneziaDnsEnabled()
+                    onToggled: function() { if (checked !== SettingsController.isAmneziaDnsEnabled()) SettingsController.toggleAmneziaDns(checked) }
+                }
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: AmneziaStyle.color.slateGray; visible: root.settingsSection === 1 && Qt.platform.os === "windows" }
+                SwitcherType {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 54
+                    visible: root.settingsSection === 1 && Qt.platform.os === "windows"
+                    text: qsTr("Disable local proxy on connect")
+                    descriptionText: qsTr("Avoid routing conflicts with local proxy applications")
+                    checked: SettingsController.isAutoDisableLoopbackProxyEnabled()
+                    onToggled: function() { if (checked !== SettingsController.isAutoDisableLoopbackProxyEnabled()) SettingsController.toggleAutoDisableLoopbackProxy(checked) }
+                }
 
-                        SwitcherType {
-                            Layout.fillWidth: true
-                            Layout.topMargin: 12
-                            Layout.preferredHeight: 42
-                            text: qsTr("Advanced mode")
-                            descriptionText: qsTr("Show expert network settings")
-                            checked: SettingsController.isAdvancedMode
-                            onToggled: function() {
-                                if (checked !== SettingsController.isAdvancedMode) SettingsController.isAdvancedMode = checked
-                            }
-                        }
-
-                        BasicButtonType {
-                            Layout.alignment: Qt.AlignLeft
-                            Layout.topMargin: 16
-                            implicitWidth: Math.max(150, buttonTextLabel.implicitWidth + 52)
-                            text: qsTr("Close application")
-                            leftImageSource: "qrc:/images/controls/x-circle.svg"
-                            defaultColor: AmneziaStyle.color.transparent
-                            hoveredColor: Qt.rgba(239/255, 68/255, 68/255, 0.12)
-                            textColor: AmneziaStyle.color.vibrantRed
-                            borderWidth: 1
-                            borderColor: Qt.rgba(239/255, 68/255, 68/255, 0.45)
-                            clickedFunc: function() { PageController.closeApplication() }
+                Repeater {
+                    model: root.settingsSection === 1 ? [
+                        { title: qsTr("App-based split tunneling"), description: qsTr("Choose which applications use VPN or connect directly"), handler: function() { PageController.goToPage(PageEnum.PageSettingsAppSplitTunneling) }, shown: Qt.platform.os === "windows" || Qt.platform.os === "android" },
+                        { title: qsTr("Site-based split tunneling"), description: qsTr("Routing rules for websites and IP addresses"), handler: splitTunneling.clickedHandler, shown: true },
+                        { title: qsTr("DNS servers"), description: qsTr("Addresses used when AmneziaDNS is unavailable"), handler: dns.clickedHandler, shown: true },
+                        { title: qsTr("Kill Switch"), description: qsTr("Blocks network connections without VPN"), handler: killSwitch.clickedHandler, shown: true }
+                    ] : root.settingsSection === 2 ? [
+                        { title: qsTr("Servers"), description: qsTr("Select a VPS to manage protocols, services and access"), handler: servers.clickedHandler, shown: true }
+                    ] : root.settingsSection === 3 ? [
+                        { title: qsTr("Backup"), description: qsTr("Save or restore application settings and connections"), handler: backup.clickedHandler, shown: true },
+                        { title: qsTr("Logging"), description: qsTr("View and export application logs"), handler: logging.clickedHandler, shown: true },
+                        { title: qsTr("About AmneziaVPN"), description: qsTr("Application version and update checks"), handler: function() { PageController.goToPage(PageEnum.PageSettingsAbout) }, shown: true }
+                    ] : []
+                    delegate: Rectangle {
+                        required property var modelData
+                        Layout.fillWidth: true
+                        implicitHeight: entryLabel.implicitHeight + 8
+                        visible: modelData.shown
+                        radius: 8
+                        color: AmneziaStyle.color.onyxBlack
+                        border.color: AmneziaStyle.color.slateGray
+                        LabelWithButtonType {
+                            id: entryLabel
+                            width: parent.width
+                            y: 4
+                            text: modelData.title
+                            descriptionText: modelData.description
+                            rightImageSource: "qrc:/images/controls/chevron-right.svg"
+                            clickedFunction: modelData.handler
                         }
                     }
                 }

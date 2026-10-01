@@ -1,4 +1,5 @@
 #include "clientManagementModel.h"
+#include "core/wgShowParser.h"
 
 #include <algorithm>
 
@@ -177,7 +178,7 @@ namespace
         }
 
         ips.sort();
-        const int maxReverseDnsLookups = 64;
+        const int maxReverseDnsLookups = 8;
         if (ips.size() > maxReverseDnsLookups) {
             ips = ips.mid(0, maxReverseDnsLookups);
         }
@@ -191,16 +192,22 @@ namespace
             quotedIps.append(shellQuote(ip));
         }
 
+        // PTR names only improve display. Bound each lookup and run four at a
+        // time, so an unreachable resolver cannot hold the client refresh open.
+        // Without timeout, keep the IP address rather than doing unbounded DNS.
         const QString script = QStringLiteral(
-            "lookup_timeout=\"\"\n"
-            "if command -v timeout >/dev/null 2>&1; then lookup_timeout=\"timeout 1\"; fi\n"
-            "for ip in %1; do\n"
-            "  name=\"\"\n"
-            "  if command -v getent >/dev/null 2>&1; then name=$($lookup_timeout getent hosts \"$ip\" 2>/dev/null | awk '{print $2; exit}'); fi\n"
-            "  if [ -z \"$name\" ] && command -v host >/dev/null 2>&1; then name=$($lookup_timeout host \"$ip\" 2>/dev/null | awk '/domain name pointer/ {print $5; exit}'); fi\n"
-            "  if [ -z \"$name\" ] && command -v nslookup >/dev/null 2>&1; then name=$($lookup_timeout nslookup \"$ip\" 2>/dev/null | awk '/name =/ {print $4; exit} /^Name:/ {print $2; exit}'); fi\n"
+            "command -v timeout >/dev/null 2>&1 || exit 0\n"
+            "lookup() {\n"
+            "  ip=\"$1\"; name=\"\"\n"
+            "  if command -v getent >/dev/null 2>&1; then name=$(timeout 1 getent hosts \"$ip\" 2>/dev/null | awk '{print $2; exit}');\n"
+            "  elif command -v host >/dev/null 2>&1; then name=$(timeout 1 host \"$ip\" 2>/dev/null | awk '/domain name pointer/ {print $5; exit}');\n"
+            "  elif command -v nslookup >/dev/null 2>&1; then name=$(timeout 1 nslookup \"$ip\" 2>/dev/null | awk '/name =/ {print $4; exit} /^Name:/ {print $2; exit}'); fi\n"
             "  if [ -n \"$name\" ]; then name=${name%.}; printf 'AMNEZIA_RDNS\\t%s\\t%s\\n' \"$ip\" \"$name\"; fi\n"
-            "done\n").arg(quotedIps.join(QLatin1Char(' ')));
+            "}\n"
+            "n=0\n"
+            "for ip in %1; do lookup \"$ip\" & n=$((n + 1)); if [ $((n % 4)) -eq 0 ]; then wait; fi; done\n"
+            "wait\n").arg(quotedIps.join(QLatin1Char(' ')));
+
 
         QString output;
         auto cbReadStdOut = [&](const QString &data, libssh::Client &) {
@@ -208,7 +215,7 @@ namespace
             return ErrorCode::NoError;
         };
 
-        const ErrorCode error = serverController->runScript(credentials, script, cbReadStdOut, cbReadStdOut, 8000, 15000);
+        const ErrorCode error = serverController->runScript(credentials, script, cbReadStdOut, cbReadStdOut, 5000, 7000);
         if (error != ErrorCode::NoError) {
             logger.warning() << "Reverse DNS lookup for XRay history failed" << error;
             return {};
@@ -307,8 +314,16 @@ void ClientManagementModel::migration(const QByteArray &clientsTableString)
     }
 }
 
+void ClientManagementModel::replaceSnapshot(const QJsonArray &clients)
+{
+    beginResetModel();
+    m_clientsTable = clients;
+    endResetModel();
+}
+
 ErrorCode ClientManagementModel::updateModel(const DockerContainer container, const ServerCredentials &credentials,
-                                             const QSharedPointer<ServerController> &serverController)
+                                             const QSharedPointer<ServerController> &serverController,
+                                             const std::function<void(const QJsonArray &)> &onClientsLoaded)
 {
     beginResetModel();
     m_clientsTable = QJsonArray();
@@ -374,6 +389,8 @@ ErrorCode ClientManagementModel::updateModel(const DockerContainer container, co
             }
         }
     }
+
+    if (onClientsLoaded) onClientsLoaded(m_clientsTable);
 
     if (container == DockerContainer::Xray) {
         const ErrorCode runtimeError = refreshXrayRuntimeData(container, credentials, serverController);
@@ -803,48 +820,8 @@ ErrorCode ClientManagementModel::wgShow(const DockerContainer container, const S
         return error;
     }
 
-    const auto getStrValue = [](const auto str) { return str.mid(str.indexOf(":") + 1).trimmed(); };
-
-    const auto parts = stdOut.split('\n');
-    const auto peerList = parts.filter("peer:");
-    const auto latestHandshakeList = parts.filter("latest handshake:");
-    const auto transferredDataList = parts.filter("transfer:");
-    const auto allowedIpsList = parts.filter("allowed ips:");
-    const auto endpointList = parts.filter("endpoint:");
-
-    if (allowedIpsList.isEmpty() || latestHandshakeList.isEmpty() || transferredDataList.isEmpty() || peerList.isEmpty()) {
-        return error;
-    }
-
-    const auto changeHandshakeFormat = [](QString &latestHandshake) {
-        const std::vector<std::pair<QString, QString>> replaceMap = { { " days", "d" },    { " hours", "h" }, { " minutes", "m" },
-                                                                      { " seconds", "s" }, { " day", "d" },   { " hour", "h" },
-                                                                      { " minute", "m" },  { " second", "s" } };
-
-        for (const auto &item : replaceMap) {
-            latestHandshake.replace(item.first, item.second);
-        }
-    };
-
-    for (int i = 0; i < peerList.size() && i < transferredDataList.size() && i < latestHandshakeList.size() && i < allowedIpsList.size(); ++i) {
-
-        const auto transferredData = getStrValue(transferredDataList[i]).split(",");
-        auto latestHandshake = getStrValue(latestHandshakeList[i]);
-        auto serverBytesReceived = transferredData.front().trimmed();
-        auto serverBytesSent = transferredData.back().trimmed();
-        auto allowedIps = getStrValue(allowedIpsList[i]);
-        QString endpoint;
-        if (i < endpointList.size()) {
-            endpoint = getStrValue(endpointList[i]);
-        }
-
-        changeHandshakeFormat(latestHandshake);
-
-        serverBytesReceived.chop(QStringLiteral(" received").length());
-        serverBytesSent.chop(QStringLiteral(" sent").length());
-
-        data.push_back({ getStrValue(peerList[i]), latestHandshake, serverBytesSent, serverBytesReceived, allowedIps, endpoint });
-    }
+    const auto peers = parseWgShow<WgShowData>(stdOut);
+    data.insert(data.end(), peers.begin(), peers.end());
 
     return error;
 }

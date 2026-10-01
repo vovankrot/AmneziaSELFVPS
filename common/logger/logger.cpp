@@ -1,4 +1,5 @@
 #include "logger.h"
+#include "logRedaction.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -89,7 +90,7 @@ void Logger::writeEmergencyCrashFile(const QString &reason, const QString &detai
     if (hFile != INVALID_HANDLE_VALUE) {
         QByteArray data = QString("[%1] %2: %3\r\nPID=%4 TID=%5\r\n")
             .arg(QDateTime::currentDateTime().toString(Qt::ISODate),
-                 reason, details,
+                 reason, LogRedaction::hideProxyCredentials(details),
                  QString::number(GetCurrentProcessId()),
                  QString::number(GetCurrentThreadId()))
             .toUtf8();
@@ -406,7 +407,7 @@ Logger::LogStreamer::~LogStreamer()
 
     const QString message = QString("%1 %2 Amnezia %3 : %4")
                                     .arg(QDateTime::currentDateTimeUtc().toString("[yyyy-MM-dd hh:mm:ss.zzzZ]"),
-                                         logLevelString, m_logger->className(), m_data->m_buffer.trimmed());
+                                         logLevelString, m_logger->className(), LogRedaction::hideProxyCredentials(m_data->m_buffer.trimmed()));
 
     if (m_file.isOpen()) {
         QTextStream logToFile(&m_file);

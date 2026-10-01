@@ -11,6 +11,10 @@
 #include <QRandomGenerator>
 #include <QStandardPaths>
 #include <QtConcurrent>
+#include <QFutureWatcher>
+#include <QPointer>
+#include <QRegularExpression>
+#include <QVersionNumber>
 
 #include "core/api/apiUtils.h"
 #include "core/controllers/serverController.h"
@@ -30,6 +34,14 @@
 namespace
 {
     Logger logger("InstallController");
+    constexpr auto Hysteria2TargetVersion = "v2.12.2";
+
+    QString hysteriaVersionFromOutput(const QString &output)
+    {
+        static const QRegularExpression versionPattern(QStringLiteral("\\bv?(\\d+\\.\\d+\\.\\d+)\\b"));
+        const auto match = versionPattern.match(output);
+        return match.hasMatch() ? QStringLiteral("v") + match.captured(1) : QString();
+    }
 
     QString sshTargetLabel(const ServerCredentials &credentials)
     {
@@ -1048,6 +1060,103 @@ ErrorCode InstallController::getAlreadyInstalledContainers(const ServerCredentia
     return ErrorCode::NoError;
 }
 
+void InstallController::checkHysteria2Version()
+{
+    if (m_hysteria2Updating || m_hysteria2VersionChecking) return;
+
+    const int index = m_serversModel->getProcessedServerIndex();
+    if (index < 0 || !m_serversModel->isProcessedServerHasWriteAccess()) {
+        m_hysteria2InstalledVersion.clear();
+        m_hysteria2UpdateAvailable = false;
+        emit hysteria2VersionStateChanged();
+        return;
+    }
+
+    const auto credentials = qvariant_cast<ServerCredentials>(m_serversModel->data(index, ServersModel::Roles::CredentialsRole));
+    m_hysteria2VersionChecking = true;
+    m_hysteria2InstalledVersion.clear();
+    m_hysteria2UpdateAvailable = false;
+    emit hysteria2VersionStateChanged();
+
+    auto *watcher = new QFutureWatcher<QPair<bool, QString>>(this);
+    connect(watcher, &QFutureWatcher<QPair<bool, QString>>::finished, this, [this, watcher, index]() {
+        const auto result = watcher->result();
+        watcher->deleteLater();
+        m_hysteria2VersionChecking = false;
+        if (index != m_serversModel->getProcessedServerIndex()) {
+            checkHysteria2Version();
+            return;
+        }
+        m_hysteria2InstalledVersion = result.first ? hysteriaVersionFromOutput(result.second) : QString();
+        m_hysteria2UpdateAvailable = result.first && QVersionNumber::fromString(m_hysteria2InstalledVersion.mid(1))
+                < QVersionNumber::fromString(QString::fromLatin1(Hysteria2TargetVersion).mid(1));
+        emit hysteria2VersionStateChanged();
+    });
+
+    watcher->setFuture(QtConcurrent::run([settings = m_settings, credentials]() {
+        ServerController controller(settings);
+        QString output;
+        auto read = [&output](const QString &line, libssh::Client &) {
+            output += line + '\n';
+            return ErrorCode::NoError;
+        };
+        const QString script = QStringLiteral(
+            "set -e\n"
+            "docker inspect amnezia-hysteria2 >/dev/null 2>&1\n"
+            "docker exec amnezia-hysteria2 /usr/bin/hysteria version 2>&1\n");
+        const auto error = controller.runHostScript(credentials, script, read, read, 30000, 90000);
+        return qMakePair(error == ErrorCode::NoError && !hysteriaVersionFromOutput(output).isEmpty(), output);
+    }));
+}
+
+void InstallController::updateHysteria2()
+{
+    if (m_hysteria2Updating) return;
+    const int index = m_serversModel->getProcessedServerIndex();
+    const auto credentials = qvariant_cast<ServerCredentials>(m_serversModel->data(index, ServersModel::Roles::CredentialsRole));
+    QFile file(":/server_scripts/update_hysteria2.sh");
+    if (!m_serversModel->isProcessedServerHasWriteAccess() || !file.open(QIODevice::ReadOnly)) {
+        emit hysteria2UpdateFinished(false, tr("Cannot update Hysteria: server administrator access is required."));
+        return;
+    }
+    m_hysteria2Updating = true;
+    emit hysteria2UpdatingChanged();
+    emit installLogMessage(tr("Starting Hysteria update on the VPS..."));
+    auto *watcher = new QFutureWatcher<QPair<bool, QString>>(this);
+    connect(watcher, &QFutureWatcher<QPair<bool, QString>>::finished, this, [this, watcher]() {
+        const auto result = watcher->result();
+        watcher->deleteLater();
+        m_hysteria2Updating = false;
+        emit hysteria2UpdatingChanged();
+        if (result.first) {
+            m_hysteria2InstalledVersion = QString::fromLatin1(Hysteria2TargetVersion);
+            m_hysteria2UpdateAvailable = false;
+        } else {
+            m_hysteria2UpdateAvailable = true;
+        }
+        emit hysteria2VersionStateChanged();
+        emit hysteria2UpdateFinished(result.first, result.first
+            ? tr("Hysteria updated to 2.12.2 on the VPS. Existing connections and clients are preserved.")
+            : tr("Hysteria update failed. Check the installation log for rollback status."));
+    });
+    const QPointer<InstallController> self(this);
+    watcher->setFuture(QtConcurrent::run([settings = m_settings, credentials, script = QString::fromUtf8(file.readAll()), self]() {
+        ServerController controller(settings);
+        QString output;
+        auto read = [&output, self](const QString &line, libssh::Client &) {
+            output += line + '\n';
+            if (self) {
+                QMetaObject::invokeMethod(self, [self, line]() {
+                    if (self) emit self->installLogMessage(line);
+                }, Qt::QueuedConnection);
+            }
+            return ErrorCode::NoError;
+        };
+        const auto error = controller.runHostScript(credentials, script, read, read, 60000, 600000);
+        return qMakePair(error == ErrorCode::NoError && output.contains(QStringLiteral("SELFVPS_HYSTERIA_UPDATE_OK ") + QString::fromLatin1(Hysteria2TargetVersion)), output);
+    }));
+}
+
 void InstallController::updateContainer(QJsonObject config)
 {
     int serverIndex = m_serversModel->getProcessedServerIndex();
@@ -1566,9 +1675,12 @@ void InstallController::hotReconfigureContainer(int serverIndex)
             if (snapshotOk) {
                 emit installLogMessage(tr("Snapshot saved successfully"));
             } else {
-                emit installLogMessage(tr("Warning: snapshot save failed, continuing anyway"));
+                emit installLogMessage(tr("Snapshot save failed; server configuration was not changed"));
+                emit hotReconfigureFinished(tr("A complete protected snapshot is required before changing the server"), false);
             }
         }, Qt::QueuedConnection);
+
+        if (!snapshotOk) return;
 
         QMetaObject::invokeMethod(this, [this]() {
             emit installLogMessage(tr("Running hot_reconfigure_xray.sh script..."));
@@ -1667,13 +1779,20 @@ void InstallController::restoreSnapshot(int serverIndex, int containerIndex, con
     ServerCredentials credentials = m_serversModel->getServerCredentials(serverIndex);
     QSharedPointer<ServerController> serverController(new ServerController(m_settings));
 
-    [[maybe_unused]] auto snapshotRestoreFuture = QtConcurrent::run([this, credentials, container, serverController, snapshotId]() {
+    [[maybe_unused]] auto snapshotRestoreFuture = QtConcurrent::run([this, credentials, container, serverController, snapshotId, serverIndex]() {
         QJsonObject restoredClientConfig;
         bool ok = m_snapshotManager->restoreSnapshot(credentials, container, snapshotId,
                                                        restoredClientConfig, serverController);
 
-        QMetaObject::invokeMethod(this, [this, ok]() {
+        QMetaObject::invokeMethod(this, [this, ok, restoredClientConfig, serverIndex, container, credentials]() {
             if (ok) {
+                if (serverIndex >= m_settings->serversCount()
+                    || ConfigSnapshotManager::serverHash(m_settings->serverCredentials(serverIndex)) != ConfigSnapshotManager::serverHash(credentials)) {
+                    emit snapshotRestoreFinished(tr("Server restored, but the local server entry changed during restoration. Re-import its configuration."), false);
+                    return;
+                }
+                m_settings->setContainerConfig(serverIndex, container, restoredClientConfig);
+                m_serversModel->resetModel();
                 emit snapshotRestoreFinished(tr("Configuration restored from snapshot"), true);
             } else {
                 emit snapshotRestoreFinished(tr("Failed to restore snapshot"), false);

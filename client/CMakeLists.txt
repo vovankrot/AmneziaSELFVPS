@@ -58,6 +58,7 @@ qt6_add_resources(QRC ${QRC} ${CMAKE_CURRENT_LIST_DIR}/resources.qrc)
 set(CMAKE_AUTORCC ON)
 
 set(AMNEZIAVPN_TS_FILES
+    ${CMAKE_CURRENT_LIST_DIR}/translations/amneziavpn_en_US.ts
     ${CMAKE_CURRENT_LIST_DIR}/translations/amneziavpn_ru_RU.ts
     ${CMAKE_CURRENT_LIST_DIR}/translations/amneziavpn_zh_CN.ts
     ${CMAKE_CURRENT_LIST_DIR}/translations/amneziavpn_fa_IR.ts
@@ -68,11 +69,13 @@ set(AMNEZIAVPN_TS_FILES
     ${CMAKE_CURRENT_LIST_DIR}/translations/amneziavpn_hi_IN.ts
 )
 
-file(GLOB_RECURSE AMNEZIAVPN_TS_SOURCES *.qrc *.cpp *.h *.ui)
-list(FILTER AMNEZIAVPN_TS_SOURCES EXCLUDE REGEX "qtgamepad/examples")
-list(FILTER AMNEZIAVPN_TS_SOURCES EXCLUDE REGEX "(^|/)3rd-prebuilt/")
-
-qt_create_translation(AMNEZIAVPN_QM_FILES ${AMNEZIAVPN_TS_SOURCES} ${AMNEZIAVPN_TS_FILES})
+# Compile committed translations during normal builds. Updating TS source files is
+# an explicit localization task; doing it as a build side effect dirtied every
+# language file and raced with parallel builds.
+qt_add_lrelease(
+    TS_FILES ${AMNEZIAVPN_TS_FILES}
+    QM_FILES_OUTPUT_VARIABLE AMNEZIAVPN_QM_FILES
+)
 
 set(QM_FILE_LIST "")
 foreach(FILE ${AMNEZIAVPN_QM_FILES})

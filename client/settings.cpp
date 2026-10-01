@@ -325,14 +325,12 @@ QString Settings::nextAvailableServerName() const
 
 void Settings::setSaveLogs(bool enabled)
 {
-    m_settings.setValue("Conf/saveLogs", enabled);
-    // Client file logging is always on; only service logs are toggled
-    Logger::setServiceLogsEnabled(enabled);
-
-    if (enabled) {
-        setLogEnableDate(QDateTime::currentDateTime());
-    }
-    emit saveLogsChanged(enabled);
+    Q_UNUSED(enabled);
+    // Diagnostics logging is mandatory. Keep the legacy setter for config
+    // compatibility, but never allow callers or old UI state to disable logs.
+    m_settings.setValue("Conf/saveLogs", true);
+    Logger::setServiceLogsEnabled(true);
+    emit saveLogsChanged(true);
 }
 
 QDateTime Settings::getLogEnableDate()

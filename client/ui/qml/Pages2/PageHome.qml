@@ -192,6 +192,311 @@ PageType {
         ]
     }
 
+    component DesktopSelectorRow: Rectangle {
+        id: selectorRow
+        property string label
+        property string value
+        property var clickedFunc: function() {}
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: 52
+        color: selectorMouse.containsMouse ? AmneziaStyle.color.translucentWhite : "transparent"
+        border.width: 1
+        border.color: AmneziaStyle.color.slateGray
+        radius: 8
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 16
+            anchors.rightMargin: 14
+            spacing: 16
+
+            Text {
+                Layout.preferredWidth: 88
+                text: selectorRow.label
+                color: AmneziaStyle.color.mutedGray
+                font.family: "Inter"
+                font.pixelSize: 13
+            }
+            Text {
+                Layout.fillWidth: true
+                text: selectorRow.value
+                color: AmneziaStyle.color.paleGray
+                font.family: "Inter"
+                font.pixelSize: 14
+                font.weight: 600
+                elide: Text.ElideRight
+            }
+            TintedIconType {
+                Layout.preferredWidth: 15
+                Layout.preferredHeight: 15
+                source: "qrc:/images/controls/chevron-down.svg"
+                tintColor: AmneziaStyle.color.mutedGray
+                iconWidth: 15
+                iconHeight: 15
+            }
+        }
+
+        MouseArea {
+            id: selectorMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: selectorRow.clickedFunc()
+        }
+    }
+
+    Flickable {
+        id: desktopHomeFlickable
+        objectName: "desktopHomeView"
+        visible: GC.isDesktop()
+        anchors.fill: parent
+        contentHeight: desktopHomeColumn.implicitHeight + 52
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+
+        ColumnLayout {
+            id: desktopHomeColumn
+            Label {
+                Layout.fillWidth: true
+                visible: typeof ConnectionController.effectivePolicyWarning === "string"
+                    && ConnectionController.effectivePolicyWarning.length > 0
+                text: typeof ConnectionController.effectivePolicyWarning === "string"
+                    ? ConnectionController.effectivePolicyWarning : ""
+                wrapMode: Text.Wrap
+                textFormat: Text.PlainText
+                color: "#f6bb62"
+                padding: 12
+            }
+
+            width: Math.min(620, desktopHomeFlickable.width - 64)
+            x: (desktopHomeFlickable.width - width) / 2
+            y: 34
+            spacing: 0
+
+            RowLayout {
+                Layout.alignment: Qt.AlignHCenter
+                spacing: 12
+
+                Rectangle {
+                    Layout.preferredWidth: 12
+                    Layout.preferredHeight: 12
+                    radius: 6
+                    color: ConnectionController.isConnected
+                           ? AmneziaStyle.color.vibrantGreen
+                           : (ConnectionController.isConnectionInProgress
+                              ? AmneziaStyle.color.goldenApricot
+                              : AmneziaStyle.color.charcoalGray)
+                }
+                Text {
+                    text: ConnectionController.connectionStateText
+                    color: AmneziaStyle.color.paleGray
+                    font.family: "Inter"
+                    font.pixelSize: 27
+                    font.weight: 700
+                }
+            }
+
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.topMargin: 6
+                Layout.bottomMargin: 28
+                text: ConnectionController.isConnected
+                      ? qsTr("Your connection is protected")
+                      : qsTr("Choose a server and connect")
+                color: AmneziaStyle.color.mutedGray
+                font.family: "Inter"
+                font.pixelSize: 14
+            }
+
+            DesktopSelectorRow {
+                objectName: "desktopServerSelector"
+                label: qsTr("Server")
+                value: ServersModel.getServersCount() > 0 ? ServersModel.defaultServerName : qsTr("Add a server")
+                clickedFunc: function() {
+                    if (ServersModel.getServersCount() > 0) desktopServerDrawer.openTriggered()
+                    else PageController.goToPage(PageEnum.PageSettingsServersList)
+                }
+            }
+
+            DesktopSelectorRow {
+                objectName: "desktopProtocolSelector"
+                Layout.topMargin: 10
+                visible: ServersModel.getServersCount() > 0
+                label: qsTr("Protocol")
+                value: ServersModel.defaultServerDefaultContainerName
+                clickedFunc: function() { desktopProtocolDrawer.openTriggered() }
+            }
+
+            ConnectButton {
+                id: desktopConnectButton
+                objectName: "desktopConnectButton"
+                Layout.fillWidth: true
+                Layout.preferredHeight: 48
+                Layout.topMargin: 26
+            }
+
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.topMargin: 20
+                visible: ServersModel.getServersCount() > 0
+                text: qsTr("IP") + "  " + ServersModel.getDefaultServerData("hostName")
+                      + ((SpeedTestController.downloadSpeed > 0 || SpeedTestController.uploadSpeed > 0)
+                         ? ("    ·    ↓ " + SpeedTestController.downloadSpeed.toFixed(1)
+                            + " Mbit/s    ↑ " + SpeedTestController.uploadSpeed.toFixed(1) + " Mbit/s") : "")
+                color: AmneziaStyle.color.mutedGray
+                font.family: "Inter"
+                font.pixelSize: 12
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.topMargin: 20
+                implicitHeight: desktopDiagnosticsColumn.implicitHeight + 22
+                radius: 8
+                color: Qt.rgba(245/255, 158/255, 11/255, 0.08)
+                border.width: 1
+                border.color: Qt.rgba(245/255, 158/255, 11/255, 0.45)
+                visible: DiagnosticsController.hasIssues
+
+                ColumnLayout {
+                    id: desktopDiagnosticsColumn
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.leftMargin: 14
+                    anchors.rightMargin: 14
+                    spacing: 8
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: DiagnosticsController.isResolving
+                              ? qsTr("Applying fix...")
+                              : ((DiagnosticsController.currentIssue && DiagnosticsController.currentIssue.message) || "")
+                        color: AmneziaStyle.color.burntOrange
+                        font.family: "Inter"
+                        font.pixelSize: 12
+                        wrapMode: Text.WordWrap
+                    }
+                    BasicButtonType {
+                        Layout.alignment: Qt.AlignRight
+                        implicitWidth: 110
+                        implicitHeight: 30
+                        enabled: !DiagnosticsController.isResolving
+                        text: (DiagnosticsController.currentIssue && DiagnosticsController.currentIssue.actionText) || qsTr("Fix")
+                        clickedFunc: function() { DiagnosticsController.resolveCurrentIssue() }
+                    }
+                }
+            }
+
+            Rectangle {
+                id: desktopDetailsToggle
+                objectName: "desktopDetailsToggle"
+                Layout.alignment: Qt.AlignHCenter
+                Layout.topMargin: 26
+                implicitWidth: desktopDetailsRow.implicitWidth + 22
+                implicitHeight: 34
+                radius: 7
+                color: desktopDetailsMouse.containsMouse ? AmneziaStyle.color.translucentWhite : "transparent"
+
+                RowLayout {
+                    id: desktopDetailsRow
+                    anchors.centerIn: parent
+                    spacing: 8
+                    Text {
+                        text: qsTr("Connection details")
+                        color: AmneziaStyle.color.mutedGray
+                        font.family: "Inter"
+                        font.pixelSize: 12
+                    }
+                    TintedIconType {
+                        Layout.preferredWidth: 14
+                        Layout.preferredHeight: 14
+                        source: root.desktopAdvancedExpanded
+                                ? "qrc:/images/controls/chevron-up.svg"
+                                : "qrc:/images/controls/chevron-down.svg"
+                        tintColor: AmneziaStyle.color.mutedGray
+                        iconWidth: 14
+                        iconHeight: 14
+                    }
+                }
+                MouseArea {
+                    id: desktopDetailsMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.desktopAdvancedExpanded = !root.desktopAdvancedExpanded
+                }
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.topMargin: 8
+                visible: root.desktopAdvancedExpanded
+                spacing: 0
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 1
+                    color: AmneziaStyle.color.slateGray
+                }
+                LabelWithButtonType {
+                    Layout.fillWidth: true
+                    text: qsTr("Connection settings")
+                    descriptionText: qsTr("DNS, routing and automatic reconnection")
+                    hideDescription: false
+                    rightImageSource: "qrc:/images/controls/chevron-right.svg"
+                    clickedFunction: function() { PageController.goToPage(PageEnum.PageSettingsConnection) }
+                }
+                DividerType {}
+                LabelWithButtonType {
+                    Layout.fillWidth: true
+                    text: qsTr("Split tunneling")
+                    rightImageSource: "qrc:/images/controls/chevron-right.svg"
+                    clickedFunction: function() { PageController.goToPage(PageEnum.PageSettingsSplitTunneling) }
+                }
+                DividerType {}
+                LabelWithButtonType {
+                    id: appSplitTunnelingDetailsButton
+                    objectName: "appSplitTunnelingDetailsButton"
+                    Layout.fillWidth: true
+                    visible: Qt.platform.os === "windows" || Qt.platform.os === "android"
+                    text: qsTr("App-based split tunneling")
+                    rightImageSource: "qrc:/images/controls/chevron-right.svg"
+                    clickedFunction: function() { PageController.goToPage(PageEnum.PageSettingsAppSplitTunneling) }
+                }
+                DividerType {
+                    visible: Qt.platform.os === "windows" || Qt.platform.os === "android"
+                }
+                LabelWithButtonType {
+                    Layout.fillWidth: true
+                    text: qsTr("Manage servers")
+                    rightImageSource: "qrc:/images/controls/chevron-right.svg"
+                    clickedFunction: function() { PageController.goToPage(PageEnum.PageSettingsServersList) }
+                }
+            }
+        }
+    }
+
+    HomeServerListDrawer {
+        id: desktopServerDrawer
+        objectName: "desktopServerDrawer"
+        parent: root
+        visible: GC.isDesktop()
+        z: 20
+    }
+
+    HomeProtocolListDrawer {
+        id: desktopProtocolDrawer
+        objectName: "desktopProtocolDrawer"
+        parent: root
+        visible: GC.isDesktop()
+        z: 20
+        protocolsModel: installedProtocolsModel
+        currentContainer: root.defaultContainer()
+        switchFunction: function(container) { root.switchXrayRealityVariant(container) }
+    }
+
     Connections {
         target: Qt.application
 
@@ -237,6 +542,8 @@ PageType {
         id: homeFlickable
         objectName: "homeColumnItem"
 
+        visible: !GC.isDesktop()
+
         anchors.fill: parent
         anchors.bottomMargin: 0
         contentHeight: homeColumnLayout.height + homeColumnLayout.y + 16
@@ -247,9 +554,21 @@ PageType {
         ColumnLayout {
             id: homeColumnLayout
             objectName: "homeColumnLayout"
+            Label {
+                Layout.fillWidth: true
+                visible: typeof ConnectionController.effectivePolicyWarning === "string"
+                    && ConnectionController.effectivePolicyWarning.length > 0
+                text: typeof ConnectionController.effectivePolicyWarning === "string"
+                    ? ConnectionController.effectivePolicyWarning : ""
+                wrapMode: Text.Wrap
+                textFormat: Text.PlainText
+                color: "#f6bb62"
+                padding: 12
+            }
 
-            y: (GC.isDesktop() ? 18 : 12) + SettingsController.safeAreaTopMargin
-            width: GC.isDesktop() ? Math.min(homeFlickable.width, 480) : homeFlickable.width
+
+            y: 12 + SettingsController.safeAreaTopMargin
+            width: homeFlickable.width
             x: (homeFlickable.width - width) / 2
             height: implicitHeight
             spacing: 8

@@ -22,6 +22,8 @@ self-contained.
 
 | File | Source | Why it is here |
 |------|--------|----------------|
+| `windows/x64/mullvad-split-tunnel.sys`, `.inf`, `.cat` | Official Mullvad 1.3.0.0, source `0a0eb97f67d1dbcb3d08bda66d3b24f465d95475` | Signed driver update; client uses the 32-byte sublayer initialization ABI. Installer resets/unloads the old driver before replacement and stages the unchanged catalog through PnPUtil. Licenses and corresponding source URL are bundled in `licenses/mullvad-split-tunnel`. |
+| `windows/x64/mullvad-split-tunnel.sys`, `.inf`, `.cat` | Official signed Mullvad 1.3.0.0 | Client supports the new initialization ABI; installer resets and unloads the previous driver before replacement. Bundled licenses and source reference: `licenses/mullvad-split-tunnel`. |
 | `windows/x64/tunnel.dll` | [`amneziawg-windows`](https://github.com/amnezia-vpn/amneziawg-windows) v3.0.2 | AmneziaWG 3 support. The submodule's copy is an April 2026 build that predates AWG3 and **rejects** a config containing `HeaderProtectionKey` or `ContentPaddingAddition` outright, killing the tunnel rather than ignoring the keys. |
 | `windows/x64/hysteria/hysteria.exe` | Hysteria 2 | Protocol this fork added; never existed upstream. |
 | `windows/x64/anytls/anytls-client.exe` | AnyTLS | Protocol this fork added; never existed upstream. |
@@ -93,9 +95,15 @@ Only `arm64-v8a` is built today, matching the APK this fork ships. The other ABI
 still fall back to the submodule's pre-AWG3 prebuilts, and `android.cmake` emits
 a CMake warning when that happens.
 
-## Still missing from a clean clone
+## Link libraries and release verification
 
-- `3rd-prebuilt/openssl/lib/libcrypto.lib`, `libssl.lib` (~38 MB)
+The current `client/3rd-prebuilt` revision includes tracked Windows OpenSSL
+`libcrypto.lib` and `libssl.lib` files. Initialize the submodules before building;
+the old note that a clean clone necessarily lacks these libraries is obsolete.
 
-These are needed at **link** time, before staging runs, so this mechanism does not
-cover them; a clean clone still cannot link the Windows client without them.
+`manifest.json` records the actual SHA-256, source revision, architecture and
+available toolchain information for each shipped executable/native library.
+`tools/verify-prebuilts.ps1` runs before packaging and rejects changed, missing
+or unrecorded binaries. Updating the manifest is a deliberate review step,
+not an automatic part of the build. The hardened AnyTLS rebuild procedure is
+documented in `tools/anytls-security/README.md`.

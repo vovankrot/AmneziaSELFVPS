@@ -73,6 +73,10 @@ namespace amnezia
         SshPrivateKeyFormatError = 304,
         SshTimeoutError = 305,
         SshCommandTimeoutError = 306,
+        SshHostKeyChangedError = 307,
+        SshHostKeyUntrustedError = 308,
+        TlsCertificateTrustMissing = 309,
+        UnsupportedAwgBackend = 310,
 
         // Ssh scp errors
         SshScpFailureError = 400,

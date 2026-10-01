@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -50,6 +50,7 @@ public partial class MainWindow : Window
     private Step _step;
     private readonly bool _isInstalled;
     private readonly bool _hasTraces;
+    private readonly bool _updateMode;
 
     public MainWindow()
     {
@@ -60,6 +61,8 @@ public partial class MainWindow : Window
 
         _isInstalled = IsInstalled();
         _hasTraces = HasAmneziaTraces();
+        _updateMode = Environment.GetCommandLineArgs().Any(argument =>
+            string.Equals(argument, "/update", StringComparison.OrdinalIgnoreCase));
 
         ChkCleanInstall.Visibility = _hasTraces ? Visibility.Visible : Visibility.Collapsed;
         CleanInstallDescription.Visibility = _hasTraces ? Visibility.Visible : Visibility.Collapsed;
@@ -67,6 +70,18 @@ public partial class MainWindow : Window
         bool forceUninstall = Environment.GetCommandLineArgs().Any(argument =>
             string.Equals(argument, "/uninstall", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(argument, "--uninstall", StringComparison.OrdinalIgnoreCase));
+
+        if (_updateMode)
+        {
+            ChkCleanInstall.IsChecked = false;
+            ChkCleanInstall.Visibility = Visibility.Collapsed;
+            CleanInstallDescription.Visibility = Visibility.Collapsed;
+            ShowReady();
+            HeaderTitle.Text = "Обновление SELFVPS";
+            HeaderSubtitle.Text = "Обновление клиента и службы с сохранением настроек. Текущее VPN-соединение будет отключено.";
+            BtnPrimary.Content = "Обновить";
+            return;
+        }
 
         if (forceUninstall && !_isInstalled)
         {
@@ -222,7 +237,7 @@ public partial class MainWindow : Window
 
         bool createStartMenuShortcut = ChkStartMenu.IsChecked == true;
         bool createDesktopShortcut = ChkDesktop.IsChecked == true;
-        bool cleanInstall = ChkCleanInstall.IsChecked == true;
+        bool cleanInstall = !_updateMode && ChkCleanInstall.IsChecked == true;
 
         try
         {
@@ -238,7 +253,7 @@ public partial class MainWindow : Window
             await Task.Run(() =>
             {
                 TryRun("sc.exe", $"config {ServiceName} start= auto");
-                TryRun("sc.exe", $"start {ServiceName}");
+                if (!DriverUpdateGuard.RequiresReboot) TryRun("sc.exe", $"start {ServiceName}");
             });
 
             ShowError(FormatExceptionMessage(ex));
@@ -264,11 +279,31 @@ public partial class MainWindow : Window
     private void Install(bool createStartMenuShortcut, bool createDesktopShortcut, bool cleanInstall)
     {
         string extractDir = Path.Combine(Path.GetTempPath(), "amnezia-payload-" + Guid.NewGuid().ToString("N"));
+        InstallFileTransaction? files = null;
+        bool stopped = false;
 
         try
         {
+            Report(2, "Проверяем пакет обновления...");
+            Directory.CreateDirectory(extractDir);
+            ExtractPayload(extractDir);
+            foreach (string required in new[] { ClientExeName, ServiceExeName, "Qt6Core.dll", "tunnel.dll" })
+            {
+                if (!File.Exists(Path.Combine(extractDir, required))) throw new IOException("В пакете отсутствует " + required);
+            }
+            if (_updateMode && File.Exists(ClientExePath))
+            {
+                var installed = FileVersionInfo.GetVersionInfo(ClientExePath).FileVersion;
+                var candidate = FileVersionInfo.GetVersionInfo(Path.Combine(extractDir, ClientExeName)).FileVersion;
+                if (!Version.TryParse(installed, out var oldVersion) || !Version.TryParse(candidate, out var newVersion) || newVersion <= oldVersion)
+                    throw new InvalidOperationException("Обновление должно иметь версию выше установленной.");
+            }
             Report(6, "Останавливаем процессы и службы...");
             StopProcessesAndServices();
+            stopped = true;
+            DriverUpdateGuard.Prepare(Path.Combine(extractDir, DriverFileName), Path.Combine(InstallDir, DriverFileName));
+            DriverUpdateGuard.StageCatalog(extractDir);
+            files = new InstallFileTransaction(InstallDir);
 
             if (cleanInstall)
             {
@@ -278,13 +313,13 @@ public partial class MainWindow : Window
 
             Report(22, "Распаковываем полезную нагрузку...");
             Directory.CreateDirectory(extractDir);
-            ExtractPayload(extractDir);
 
             Report(38, "Копируем файлы установки...");
             Directory.CreateDirectory(InstallDir);
-            CopyPayload(extractDir, InstallDir);
+            files.Apply(extractDir);
 
             Report(56, "Готовим удаление и скрипты...");
+            files.TrackWrite(UninstallerPath);
             CopySelfTo(UninstallerPath);
             RunBundledScript(Path.Combine(InstallDir, "post_install.cmd"), true);
 
@@ -316,10 +351,29 @@ public partial class MainWindow : Window
             WriteLaunchBypassRegistry();
             WriteUninstallEntry();
 
+            files.Commit();
             Report(100, "Готово.");
+        }
+        catch
+        {
+            if (files != null)
+            {
+                Report(0, "Возвращаем предыдущие файлы...");
+                StopProcessesAndServices();
+                files.Rollback();
+                if (File.Exists(ServiceExePath))
+                {
+                    CreateOrUpdateService();
+                    StartAndConfigureService();
+                    WriteUninstallEntry(FileVersionInfo.GetVersionInfo(ClientExePath).FileVersion);
+                }
+            }
+            else if (stopped) TryRun("sc.exe", $"config {ServiceName} start= auto");
+            throw;
         }
         finally
         {
+            files?.Dispose();
             TryDeleteDirectory(extractDir);
         }
     }
@@ -362,7 +416,7 @@ public partial class MainWindow : Window
         }
 
         string[] parts = version.Split('.');
-        return string.Join('.', parts.Take(Math.Min(parts.Length, 3)));
+        return string.Join('.', parts.Take(Math.Min(parts.Length, 4)));
     }
 
     private static bool IsInstalled()
@@ -397,9 +451,31 @@ public partial class MainWindow : Window
         runKey?.DeleteValue(AppName, false);
     }
 
+    private static void StopInstalledProcess(string filename)
+    {
+        string prefix = Path.GetFullPath(InstallDir).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        foreach (Process process in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(filename)))
+        {
+            using (process)
+            {
+                try
+                {
+                    string? path = process.MainModule?.FileName;
+                    if (path == null || !Path.GetFullPath(path).StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                    process.Kill(entireProcessTree: true);
+                    process.WaitForExit(3000);
+                }
+                catch (InvalidOperationException) { /* Process already exited. */ }
+                catch (System.ComponentModel.Win32Exception) { /* Unlock checks report a remaining lock. */ }
+            }
+        }
+    }
+
     private static void StopProcessesAndServices()
     {
-        TryRun("taskkill.exe", $"/F /IM {ClientExeName}");
+        TryRun("sc.exe", $"config {ServiceName} start= disabled");
+        TryRun("sc.exe", $"failure {ServiceName} reset= 0 actions= ////");
+        StopInstalledProcess(ClientExeName);
         Thread.Sleep(400);
 
         foreach (string helper in new[]
@@ -409,11 +485,12 @@ public partial class MainWindow : Window
                      "openvpn.exe",
                      "tun2socks.exe",
                      "hysteria.exe",
+                     "anytls-client.exe",
                      "ck-client.exe",
                      "ss-local.exe"
                  })
         {
-            TryRun("taskkill.exe", $"/F /IM {helper}");
+            StopInstalledProcess(helper);
         }
 
         Thread.Sleep(600);
@@ -428,12 +505,12 @@ public partial class MainWindow : Window
         TryRun("sc.exe", $"delete {WireGuardServiceName}");
         TryRun("net.exe", $"stop {ServiceName}");
         Thread.Sleep(1500);
-        TryRun("taskkill.exe", $"/F /IM {ServiceExeName}");
+        StopInstalledProcess(ServiceExeName);
 
         // The tunnel-daemon child (same exe) may briefly outlive the service stop;
         // give it a moment and kill again so the exe is really unlocked.
         Thread.Sleep(400);
-        TryRun("taskkill.exe", $"/F /IM {ServiceExeName}");
+        StopInstalledProcess(ServiceExeName);
 
         WaitForFilesUnlocked();
     }
@@ -457,7 +534,7 @@ public partial class MainWindow : Window
 
             if (attempt == 20)
             {
-                TryRun("taskkill.exe", $"/F /IM {ServiceExeName}");
+                StopInstalledProcess(ServiceExeName);
             }
 
             Thread.Sleep(500);
@@ -659,7 +736,7 @@ public partial class MainWindow : Window
         Registry.ClassesRoot.DeleteSubKeyTree(@"*\shell\AmneziaLaunchBypass", false);
     }
 
-    private static void WriteUninstallEntry()
+    private static void WriteUninstallEntry(string? restoredVersion = null)
     {
         using RegistryKey? uninstallKey = OpenLocalMachineKey(readOnly: false)?.CreateSubKey(UninstallRegPath, true);
         if (uninstallKey == null)
@@ -668,7 +745,7 @@ public partial class MainWindow : Window
         }
 
         uninstallKey.SetValue("DisplayName", AppName);
-        uninstallKey.SetValue("DisplayVersion", GetDisplayVersion());
+        uninstallKey.SetValue("DisplayVersion", restoredVersion ?? GetDisplayVersion());
         uninstallKey.SetValue("Publisher", AppPublisher);
         uninstallKey.SetValue("InstallLocation", InstallDir);
         uninstallKey.SetValue("DisplayIcon", ClientExePath);

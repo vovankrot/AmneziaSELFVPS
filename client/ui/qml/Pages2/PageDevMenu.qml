@@ -40,7 +40,7 @@ PageType {
                 Layout.rightMargin: 16
                 Layout.leftMargin: 16
 
-                headerText: "Dev menu"
+                headerText: qsTr("Dev menu")
             }
         }
         
