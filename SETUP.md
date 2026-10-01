@@ -2,6 +2,8 @@
 
 Есть два пути: **графический** (Build Studio) и **консольный** (скрипты).
 
+![SELFVPS Build Studio](docs/screenshots/build-studio.png)
+
 ---
 
 ## 🖥️ Быстрый путь — Build Studio (кросс-платформенный, Avalonia)
@@ -25,6 +27,8 @@
 ```powershell
 # Windows-бинарь
 .\launcher\publish.ps1 -Rid win-x64
+# Для запуска через Windows-обёртку разместите EXE рядом с ней
+Copy-Item .\launcher\dist\SelfvpsBuildStudio.exe .\launcher\SelfvpsBuildStudio.exe
 # Linux-бинарь (можно и с Windows кросс-собрать, но запускать на Linux)
 .\launcher\publish.ps1 -Rid linux-x64
 ```
