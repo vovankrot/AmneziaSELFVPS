@@ -532,8 +532,6 @@ void InstallController::installContainer(const DockerContainer container, const 
             // Protocol configs already prepared by bg thread (createProtocolConfigForContainer)
             containerConfig = iterator.value();
 
-            m_serversModel->addContainerConfig(iterator.key(), containerConfig);
-
             if (ContainerProps::isSupportedByCurrentPlatform(iterator.key())) {
                 auto errorCode = m_clientManagementModel->appendClient(iterator.key(), serverCredentials, containerConfig,
                                                                   QString("Admin [%1]").arg(QSysInfo::prettyProductName()), serverController);
@@ -542,6 +540,8 @@ void InstallController::installContainer(const DockerContainer container, const 
                     return;
                 }
             }
+
+            m_serversModel->addContainerConfig(iterator.key(), containerConfig);
 
             if (container != iterator.key()) { // skip the newly installed container
                 isInstalledContainerAddedToGui = true;

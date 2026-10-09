@@ -157,7 +157,7 @@ int Settings::serversCount() const
 QJsonObject Settings::server(int index) const
 {
     const QJsonArray &servers = serversArray();
-    if (index >= servers.size())
+    if (index < 0 || index >= servers.size())
         return QJsonObject();
 
     return servers.at(index).toObject();
@@ -173,7 +173,7 @@ void Settings::addServer(const QJsonObject &server)
 void Settings::removeServer(int index)
 {
     QJsonArray servers = serversArray();
-    if (index >= servers.size())
+    if (index < 0 || index >= servers.size())
         return;
 
     servers.removeAt(index);
@@ -184,7 +184,7 @@ void Settings::removeServer(int index)
 bool Settings::editServer(int index, const QJsonObject &server)
 {
     QJsonArray servers = serversArray();
-    if (index >= servers.size())
+    if (index < 0 || index >= servers.size())
         return false;
 
     servers.replace(index, server);

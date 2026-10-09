@@ -44,7 +44,7 @@ internal sealed class InstallFileTransaction : IDisposable
                 string previous = Path.Combine(_backup, Path.GetRelativePath(_target, path));
                 if (File.Exists(previous))
                 {
-                    if (!EqualFiles(previous, path)) File.Copy(previous, path, true);
+                    if (!EqualFiles(previous, path)) RetrySharingViolation(() => { File.Copy(previous, path, true); return true; });
                 }
                 else if (File.Exists(path)) File.Delete(path);
             }
@@ -60,9 +60,25 @@ internal sealed class InstallFileTransaction : IDisposable
     }
     private static bool EqualFiles(string left, string right)
     {
-        if (!File.Exists(right) || new FileInfo(left).Length != new FileInfo(right).Length) return false;
-        using var a = File.OpenRead(left); using var b = File.OpenRead(right);
-        return SHA256.HashData(a).AsSpan().SequenceEqual(SHA256.HashData(b));
+        return RetrySharingViolation(() =>
+        {
+            if (!File.Exists(right) || new FileInfo(left).Length != new FileInfo(right).Length) return false;
+            using var a = File.OpenRead(left); using var b = File.OpenRead(right);
+            return SHA256.HashData(a).AsSpan().SequenceEqual(SHA256.HashData(b));
+        });
+    }
+    // Files can be briefly locked by scanners immediately after extraction.
+    // Retry only sharing/lock violations; permanent failures still trigger rollback.
+    internal static T RetrySharingViolation<T>(Func<T> operation)
+    {
+        for (int attempt = 0; ; attempt++)
+        {
+            try { return operation(); }
+            catch (IOException ex) when (attempt < 50 && ((ex.HResult & 0xffff) == 32 || (ex.HResult & 0xffff) == 33))
+            {
+                System.Threading.Thread.Sleep(100);
+            }
+        }
     }
     internal static void CopyTree(string source, string destination,
         Action<string>? beforeCopy = null, Action<string>? beforeDirectory = null)
@@ -77,7 +93,7 @@ internal sealed class InstallFileTransaction : IDisposable
             string target = Path.Combine(destination, file.Name);
             if (EqualFiles(file.FullName, target)) continue;
             beforeCopy?.Invoke(target);
-            file.CopyTo(target, true);
+            RetrySharingViolation(() => file.CopyTo(target, true));
         }
         foreach (var folder in sourceInfo.EnumerateDirectories()) CopyTree(folder.FullName, Path.Combine(destination, folder.Name), beforeCopy, beforeDirectory);
     }

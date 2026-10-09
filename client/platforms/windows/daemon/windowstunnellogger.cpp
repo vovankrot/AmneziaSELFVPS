@@ -38,15 +38,15 @@ Logger logger("tunnel.dll");
 }  // namespace
 
 WindowsTunnelLogger::WindowsTunnelLogger(const QString& filename,
-                                         QObject* parent)
-    : QObject(parent), m_timer(this), m_logfile(filename, this) {
+                                         QObject* parent, const QString& attemptId)
+    : QObject(parent), m_timer(this), m_logfile(filename, this), m_attemptId(attemptId) {
   MZ_COUNT_CTOR(WindowsTunnelLogger);
 
   m_startTime = QDateTime::currentMSecsSinceEpoch() * 1000000;
   m_logindex = -1;
 
   connect(&m_timer, SIGNAL(timeout()), this, SLOT(timeout()));
-  m_timer.start(RINGLOG_POLL_MSEC);
+  if (!filename.isEmpty()) m_timer.start(RINGLOG_POLL_MSEC);
 }
 
 WindowsTunnelLogger::~WindowsTunnelLogger() {
@@ -63,7 +63,7 @@ bool WindowsTunnelLogger::openLogData() {
   if (m_logdata) {
     return true;
   }
-  if (!m_logfile.open(QIODevice::ReadOnly)) {
+  if (m_logfile.fileName().isEmpty() || !m_logfile.open(QIODevice::ReadOnly)) {
     return false;
   }
 
@@ -89,7 +89,7 @@ bool WindowsTunnelLogger::openLogData() {
 }
 
 int WindowsTunnelLogger::nextIndex() {
-  qint32 value;
+  quint32 value;
   memcpy(&value, m_logdata + RINGLOG_INDEX_OFFSET, 4);
   return value % RINGLOG_MAX_ENTRIES;
 }
@@ -112,7 +112,7 @@ void WindowsTunnelLogger::process(int index) {
   if (nullIndex >= 0) {
     message.truncate(nullIndex);
   }
-  logger.info() << QString::fromUtf8(message);
+  logger.info() << "Tunnel attempt" << m_attemptId << QString::fromUtf8(message);
 }
 
 void WindowsTunnelLogger::timeout() {
@@ -128,7 +128,8 @@ void WindowsTunnelLogger::timeout() {
   }
 
   /* Report new messages. */
-  while (m_logindex != nextIndex()) {
+  const int endIndex = nextIndex();
+  for (int processed = 0; m_logindex != endIndex && processed < int(RINGLOG_MAX_ENTRIES); ++processed) {
     process(m_logindex);
     m_logindex = (m_logindex + 1) % RINGLOG_MAX_ENTRIES;
   }

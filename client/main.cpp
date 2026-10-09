@@ -8,6 +8,8 @@
 #include "core/osSignalHandler.h"
 #include "migrations.h"
 #include "version.h"
+#include "core/serviceHealthProbe.h"
+#include <cstring>
 
 #include <QTimer>
 
@@ -60,6 +62,15 @@ bool isAnotherInstanceRunning(const QStringList &arguments)
 
 int main(int argc, char *argv[])
 {
+#ifdef Q_OS_WIN
+    if (argc == 2 && std::strcmp(argv[1],"--service-health-check") == 0) {
+        // Run under the installed client identity accepted by IPC admission,
+        // before GUI, settings, single-instance forwarding and auto-connect.
+        QCoreApplication check(argc,argv);
+        return serviceHealthProbe() ? 0 : 603;
+    }
+#endif
+
     Migrations migrationsManager;
     migrationsManager.doMigrations();
 

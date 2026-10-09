@@ -12,7 +12,11 @@ cd "$CONFIG_DIR"
 PASSWORD_PATH="$CONFIG_DIR/anytls_password.key"
 
 # 32-byte hex password. AnyTLS uses this verbatim as the shared secret.
-ANYTLS_PASSWORD="$(openssl rand -hex 16)"
+if [ -s "$PASSWORD_PATH" ]; then
+    ANYTLS_PASSWORD="$(cat "$PASSWORD_PATH")"
+else
+    ANYTLS_PASSWORD="$(openssl rand -hex 16)"
+fi
 echo "$ANYTLS_PASSWORD" > "$PASSWORD_PATH"
 chmod 600 "$PASSWORD_PATH"
 

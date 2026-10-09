@@ -1,16 +1,16 @@
 #include "networkUtilities.h"
+#include "defaultRouteSelection.h"
 #include <QtNetwork/qnetworkinterface.h>
 #include <cstddef>
 
 #ifdef Q_OS_WIN
+    #include <WinSock2.h>
     #include <windows.h>
     #include <Ipexport.h>
     #include <Ws2tcpip.h>
     #include <ws2ipdef.h>
     #include <Iphlpapi.h>
     #include <Iptypes.h>
-    #include <WinSock2.h>
-    #include <winsock.h>
     #include <QNetworkInterface>
     #include "qendian.h"
     #include <QSettings>
@@ -70,7 +70,7 @@ QRegExp NetworkUtilities::ipNetwork24RegExp()
 
 QRegExp NetworkUtilities::ipPortRegExp()
 {
-    return QRegExp("^()([1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])$");
+    return QRegExp("^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$");
 }
 
 QRegExp NetworkUtilities::domainRegExp()
@@ -84,12 +84,13 @@ QString NetworkUtilities::netMaskFromIpWithSubnet(const QString ip)
     if (!ip.contains("/"))
         return "255.255.255.255";
 
-    bool ok;
-    int prefix = ip.split("/").at(1).toInt(&ok);
-    if (!ok)
+    const auto parts = ip.split('/');
+    bool ok = false;
+    const int prefix = parts.value(1).toInt(&ok);
+    if (parts.size() != 2 || !ok || prefix < 0 || prefix > 32)
         return "255.255.255.255";
 
-    unsigned long mask = (0xFFFFFFFF << (32 - prefix)) & 0xFFFFFFFF;
+    const quint32 mask = prefix == 0 ? 0 : quint32(0xffffffffu << (32 - prefix));
 
     return QString("%1.%2.%3.%4").arg(mask >> 24).arg((mask >> 16) & 0xFF).arg((mask >> 8) & 0xFF).arg(mask & 0xFF);
 }
@@ -252,44 +253,37 @@ DWORD GetAdaptersAddressesWrapper(const ULONG Family,
 QPair<QString, QNetworkInterface> NetworkUtilities::getGatewayAndIface()
 {
 #ifdef Q_OS_WIN
-    constexpr int BUFF_LEN = 100;
-    char buff[BUFF_LEN] = {'\0'};
-
-    QString resGateway;
-    int resIndex = -1;
-
-    PIP_ADAPTER_ADDRESSES pAdapterAddresses = nullptr;
-    DWORD dwRetVal =
-            GetAdaptersAddressesWrapper(AF_INET, GAA_FLAG_INCLUDE_GATEWAYS, NULL, pAdapterAddresses);
-
-    if (dwRetVal != NO_ERROR) {
-        qDebug() << "ipv4 stack detect GetAdaptersAddresses failed.";
+    MIB_IPFORWARD_TABLE2 *table = nullptr;
+    const auto status = GetIpForwardTable2(AF_INET, &table);
+    if (status != NO_ERROR) {
+        qWarning() << "Unable to read Windows default routes, error" << status;
         return {};
     }
-
-    PIP_ADAPTER_ADDRESSES pCurAddress = pAdapterAddresses;
-    while (pCurAddress) {
-        PIP_ADAPTER_GATEWAY_ADDRESS_LH gateway = pCurAddress->FirstGatewayAddress;
-        if (gateway) {
-            SOCKET_ADDRESS gateway_address = gateway->Address;
-            if (gateway->Address.lpSockaddr->sa_family == AF_INET) {
-                sockaddr_in* sa_in = (sockaddr_in*)gateway->Address.lpSockaddr;
-                QString gw = inet_ntop(AF_INET, &(sa_in->sin_addr), buff, BUFF_LEN);
-                qDebug() <<  "gateway IPV4:" << gw;
-                struct sockaddr_in addr;
-                if (inet_pton(AF_INET, buff, &addr.sin_addr) == 1) {
-                    qDebug() <<  "this is true v4 !";
-                    
-                    resGateway = gw;
-                    resIndex = pCurAddress->IfIndex;
-                }
-            }
-        }
-        pCurAddress = pCurAddress->Next;
+    std::vector<DefaultRouteSelection::Route> candidates;
+    for (ULONG i = 0; i < table->NumEntries; ++i) {
+        const auto &route = table->Table[i];
+        if (route.DestinationPrefix.PrefixLength != 0 || route.NextHop.si_family != AF_INET
+            || route.NextHop.Ipv4.sin_addr.s_addr == 0 || route.ValidLifetime == 0) continue;
+        MIB_IF_ROW2 link = {};
+        link.InterfaceLuid = route.InterfaceLuid;
+        if (GetIfEntry2(&link) != NO_ERROR) continue;
+        MIB_IPINTERFACE_ROW ip = {};
+        InitializeIpInterfaceEntry(&ip);
+        ip.Family = AF_INET;
+        ip.InterfaceLuid = route.InterfaceLuid;
+        if (GetIpInterfaceEntry(&ip) != NO_ERROR) continue;
+        const auto iface = QNetworkInterface::interfaceFromIndex(route.InterfaceIndex);
+        candidates.push_back({route.InterfaceIndex, ntohl(route.NextHop.Ipv4.sin_addr.s_addr),
+                              route.Metric, ip.Metric, 0, link.OperStatus == IfOperStatusUp,
+                              link.Type == IF_TYPE_SOFTWARE_LOOPBACK, bool(ip.Connected), iface.isValid()});
     }
-
-    free(pAdapterAddresses);
-    return { resGateway, QNetworkInterface::interfaceFromIndex(resIndex) };
+    FreeMibTable(table);
+    const auto best = DefaultRouteSelection::select(candidates);
+    if (!best) {
+        qWarning() << "No active Windows default route with an external gateway";
+        return {};
+    }
+    return {QHostAddress(best->gateway).toString(), QNetworkInterface::interfaceFromIndex(best->interfaceIndex)};
 #endif
 #ifdef Q_OS_LINUX
     constexpr int BUFFER_SIZE = 100;

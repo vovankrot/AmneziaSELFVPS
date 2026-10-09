@@ -1,9 +1,8 @@
+#include <QScopeGuard>
 #include "router_win.h"
 
 #include <cstring>
 #include <string>
-#include <tlhelp32.h>
-#include <tchar.h>
 
 #include <QHostAddress>
 #include <QProcess>
@@ -17,10 +16,11 @@ static DWORD inetAddrFrom(const char* str) {
     return addr.S_un.S_addr;
 }
 
-LONG (NTAPI * NtSuspendProcess)(HANDLE ProcessHandle) = NULL;
-LONG (NTAPI * NtResumeProcess)(HANDLE ProcessHandle)  = NULL;
+static QString savedRouteKey(const MIB_IPFORWARDROW &row) {
+    return QString("%1/%2/%3/%4").arg(row.dwForwardDest).arg(row.dwForwardMask)
+        .arg(row.dwForwardNextHop).arg(row.dwForwardIfIndex);
+}
 
-#define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
 
 namespace {
 
@@ -175,12 +175,6 @@ QList<QString> RouterWin::kIpv6Subnets = { "fc00::/7", "2000::/4", "3000::/4" };
 RouterWin &RouterWin::Instance()
 {
     static RouterWin s;
-    BOOL ok;
-    ok = s.InitNtFunctions();
-    if (!ok) qDebug() << "RouterWin::Instance failed to InitNtFunctions";
-
-    ok = s.EnableDebugPrivilege();
-    if (!ok) qDebug() << "RouterWin::Instance failed to EnableDebugPrivilege";
 
     return s;
 }
@@ -229,6 +223,7 @@ int RouterWin::routeAddList(const QString &gw, const QStringList &ips)
         return 0;
     }
 
+    const auto freeTable = qScopeGuard([&] { if (pIpForwardTable) free(pIpForwardTable); });
     int success_count = 0;
     MIB_IPFORWARDROW ipfrow;
 
@@ -298,26 +293,29 @@ int RouterWin::routeAddList(const QString &gw, const QStringList &ips)
 
         dwStatus = CreateIpForwardEntry(&ipfrow);
         if (dwStatus == NO_ERROR){
-            m_ipForwardRows.insert(ip, ipfrow);
+            m_ipForwardRows.insert(savedRouteKey(ipfrow), ipfrow);
             success_count++;
         }
         else if (dwStatus == ERROR_OBJECT_ALREADY_EXISTS) {
-            m_ipForwardRows.insert(ip, ipfrow);
-            success_count++;
-            qDebug() << "Router::routeAdd: warning, route already exist:" << ip << gw;
+            // An existing OS route is not ours to delete. Verify its exact
+            // path before treating it as the requested route.
+            bool matches = false;
+            for (DWORD row = 0; row < pIpForwardTable->dwNumEntries; ++row) {
+                if (savedRouteKey(pIpForwardTable->table[row]) == savedRouteKey(ipfrow)) { matches = true; break; }
+            }
+            if (matches || m_ipForwardRows.contains(savedRouteKey(ipfrow))) ++success_count;
+            else qWarning() << "Existing route does not match requested interface/gateway";
         }
         else {
             qDebug() << "Router::routeAdd: failed CreateIpForwardEntry(), Error:" << ip << gw << dwStatus;
         }
     }
 
-    // Free resources
-    if (pIpForwardTable)
-        free(pIpForwardTable);
 
     qDebug() << "Router::routeAddList finished, success: " << success_count << "/" << ips.size();
 
-    if (m_ipForwardRows.size() > 500) suspendWcmSvc(true);
+    // Never suspend Windows Connection Manager: large route lists must not
+    // freeze unrelated downloads, connectivity checks or application startup.
 
     return success_count;
 }
@@ -359,24 +357,22 @@ bool RouterWin::clearSavedRoutes()
     }
 
     int removed_count = 0;
-    for (auto i = m_ipForwardRows.begin(); i != m_ipForwardRows.end(); ++i) {
+    const int originalCount = m_ipForwardRows.size();
+    for (auto i = m_ipForwardRows.begin(); i != m_ipForwardRows.end();) {
         dwStatus = DeleteIpForwardEntry(&i.value());
-
-        if (dwStatus != ERROR_SUCCESS) {
-            qDebug() << "Router::clearSavedRoutes : Could not delete old row" << i.key();
+        if (dwStatus == ERROR_SUCCESS || dwStatus == ERROR_NOT_FOUND || dwStatus == ERROR_FILE_NOT_FOUND) {
+            i = m_ipForwardRows.erase(i); ++removed_count;
+        } else {
+            qWarning() << "Router::clearSavedRoutes: deletion failed; retaining owned route" << dwStatus;
+            ++i;
         }
-        else  removed_count++;
     }
 
     if (pIpForwardTable)
         free(pIpForwardTable);
 
-    qDebug() << "Router::clearSavedRoutes : removed routes:" << removed_count << "of" << m_ipForwardRows.size();
-    m_ipForwardRows.clear();
-
-    suspendWcmSvc(false);
-
-    return true;
+    qDebug() << "Router::clearSavedRoutes : removed routes:" << removed_count << "of" << originalCount;
+    return m_ipForwardRows.isEmpty();
 }
 
 int RouterWin::routeDeleteList(const QString &gw, const QStringList &ips)
@@ -449,7 +445,7 @@ int RouterWin::routeDeleteList(const QString &gw, const QStringList &ips)
             gatewayMatches) {
             dwStatus = DeleteIpForwardEntry(&pIpForwardTable->table[i]);
             if (dwStatus == ERROR_SUCCESS) {
-                m_ipForwardRows.remove(ipMap.value(ipfrow.dwForwardDest).first);
+                m_ipForwardRows.remove(savedRouteKey(ipfrow));
                 success_count++;
             }
         }
@@ -587,152 +583,6 @@ bool RouterWin::createTun(const QString &dev, const QString &subnet)
     }
 
     return found;
-}
-
-void RouterWin::suspendWcmSvc(bool suspend)
-{
-    if (suspend == m_suspended) return;
-
-    // Solve Windows bug (routes > 1000)
-    DWORD wcmSvcPid = GetServicePid(std::wstring(L"wcmSvc").c_str());
-
-    //ListProcessThreads(wcmSvcPid);
-    BOOL ok = SuspendProcess(suspend, wcmSvcPid);
-    if (ok) {
-        m_suspended = suspend;
-    }
-
-    qDebug() << "RouterWin::routeAddList" <<
-                (ok ? "succeed to" : "failed to") <<
-                (suspend ? "suspend wcmSvc" : "resume wcmSvc");
-
-}
-
-DWORD RouterWin::GetServicePid(LPCWSTR serviceName)
-{
-    const auto hScm = OpenSCManagerW(nullptr, nullptr, SC_MANAGER_CONNECT);
-    if (!hScm) {
-        qWarning() << "GetServicePid: OpenSCManagerW failed, error:" << GetLastError();
-        return 0;
-    }
-    const auto hSc = OpenServiceW(hScm, serviceName, SERVICE_QUERY_STATUS);
-    if (!hSc) {
-        qWarning() << "GetServicePid: OpenServiceW failed, error:" << GetLastError();
-        CloseServiceHandle(hScm);
-        return 0;
-    }
-
-    SERVICE_STATUS_PROCESS ssp = {};
-    DWORD bytesNeeded = 0;
-    BOOL ok = QueryServiceStatusEx(hSc, SC_STATUS_PROCESS_INFO, reinterpret_cast<LPBYTE>(&ssp), sizeof(ssp), &bytesNeeded);
-
-    CloseServiceHandle(hSc);
-    CloseServiceHandle(hScm);
-
-    if (!ok) {
-        qWarning() << "GetServicePid: QueryServiceStatusEx failed, error:" << GetLastError();
-        return 0;
-    }
-    return ssp.dwProcessId;
-}
-
-BOOL RouterWin::ListProcessThreads( DWORD dwOwnerPID )
-{
-  HANDLE hThreadSnap = INVALID_HANDLE_VALUE;
-  THREADENTRY32 te32;
-
-  // Take a snapshot of all running threads
-  hThreadSnap = CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, 0 );
-  if( hThreadSnap == INVALID_HANDLE_VALUE )
-    return( FALSE );
-
-  // Fill in the size of the structure before using it.
-  te32.dwSize = sizeof(THREADENTRY32);
-
-  // Retrieve information about the first thread,
-  // and exit if unsuccessful
-  if( !Thread32First( hThreadSnap, &te32 ) )
-  {
-    //printError( TEXT("Thread32First") ); // show cause of failure
-    CloseHandle( hThreadSnap );          // clean the snapshot object
-    return( FALSE );
-  }
-
-  // Now walk the thread list of the system,
-  // and display information about each thread
-  // associated with the specified process
-  //HANDLE threadHandle;
-  do
-  {
-    if( te32.th32OwnerProcessID == dwOwnerPID )
-    {
-        HANDLE threadHandle = OpenThread (PROCESS_QUERY_INFORMATION, FALSE, te32.th32ThreadID);
-         qDebug() << "OpenThread GetLastError:"<< te32.th32ThreadID << GetLastError() << threadHandle;
-        ULONG64 cycles = 0;
-        BOOL ok = QueryThreadCycleTime(threadHandle, &cycles);
-        qDebug() << "QueryThreadCycleTime GetLastError:" << ok << GetLastError();
-
-        qDebug() << "Thread cycles:" << te32.th32ThreadID << cycles;
-//      _tprintf( TEXT("\n\n     THREAD ID      = 0x%08X"), te32.th32ThreadID );
-//      _tprintf( TEXT("\n     Base priority  = %d"), te32.tpBasePri );
-//      _tprintf( TEXT("\n     Delta priority = %d"), te32.tpDeltaPri );
-//      _tprintf( TEXT("\n"));
-
-        CloseHandle(threadHandle);
-    }
-  } while( Thread32Next(hThreadSnap, &te32 ) );
-
-  CloseHandle( hThreadSnap );
-  return( TRUE );
-}
-
-BOOL RouterWin::EnableDebugPrivilege(VOID)
-{
-  HANDLE           hToken = NULL;
-  TOKEN_PRIVILEGES priv;
-
-  if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &hToken))
-    return FALSE;
-
-  if (!LookupPrivilegeValueW(NULL, SE_DEBUG_NAME, &priv.Privileges[0].Luid))
-    return FALSE;
-
-  priv.PrivilegeCount           = 1;
-  priv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-
-  return AdjustTokenPrivileges(hToken, FALSE, &priv, sizeof(priv), NULL, NULL);
-}
-
-BOOL RouterWin::InitNtFunctions(VOID)
-{
-  HMODULE hModule;
-
-  hModule = GetModuleHandleW(L"ntdll.dll");
-  if (hModule == NULL)
-    return FALSE;
-
-  //NtSuspendProcess = (decltype(NtSuspendProcess))GetProcAddress(hModule, "NtSuspendThread");
-  NtSuspendProcess = (decltype(NtSuspendProcess))GetProcAddress(hModule, "NtSuspendProcess");
-  if (NtSuspendProcess == NULL)
-    return FALSE;
-
-  //NtResumeProcess = (decltype(NtResumeProcess))GetProcAddress(hModule, "NtResumeThread");
-  NtResumeProcess = (decltype(NtResumeProcess))GetProcAddress(hModule, "NtResumeProcess");
-  if (NtResumeProcess == NULL)
-    return FALSE;
-
-  return TRUE;
-}
-
-BOOL RouterWin::SuspendProcess(BOOL fSuspend, DWORD dwProcessId)
-{
-    HANDLE pHandle = OpenProcess(PROCESS_SUSPEND_RESUME, FALSE, dwProcessId);
-    if (pHandle == NULL) return false;
-
-    bool ok = ((fSuspend ? NtSuspendProcess : NtResumeProcess)(pHandle) == STATUS_SUCCESS);
-    CloseHandle(pHandle);
-
-    return ok;
 }
 
 bool RouterWin::updateResolvers(const QString& ifname, const QList<QHostAddress>& resolvers)

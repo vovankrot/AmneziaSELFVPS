@@ -11,6 +11,12 @@
 #include "core/ipcclient.h"
 #include "settings.h"
 #include "vpnprotocol.h"
+#include <QPointer>
+
+class AsyncIpcSequence;
+class AsyncProcessRequest;
+class AsyncReplicaReady;
+class AsyncSocksProbe;
 
 class AnyTlsProtocol : public VpnProtocol
 {
@@ -21,16 +27,15 @@ public:
 
     ErrorCode start() override;
     void stop() override;
+    bool stopsAsynchronously() const override { return true; }
 
 private:
     ErrorCode startAnyTlsProcess();
-    ErrorCode startXrayRouter(const QSharedPointer<IpcInterfaceReplica> &iface);
+    void afterHelperStarted();
+    void startXrayRouter();
     ErrorCode startTun2Socks();
-    ErrorCode setupRouting();
-    bool ensureProxyReachable();
-    bool ensureXrayRouterReachable();
-    bool performSocks5Probe(const QString &targetHost, quint16 targetPort, int timeoutMs, int socksPort,
-                            const QString &user = QString(), const QString &password = QString());
+    void configureTun2Socks();
+    void setupRouting();
     int parseLocalPort(const QString &listen) const;
     QString buildServerUri() const;
 
@@ -52,6 +57,12 @@ private:
     QPointer<QProcess> m_anyTlsProcess;
     QSharedPointer<IpcProcessInterfaceReplica> m_tun2socksProcess;
     bool m_stopping = false;
+    QPointer<AsyncIpcSequence> m_routingSetup;
+    QPointer<AsyncIpcSequence> m_startupSequence;
+    QPointer<AsyncProcessRequest> m_processRequest;
+    QPointer<AsyncReplicaReady> m_startupReady;
+    QPointer<AsyncSocksProbe> m_startupProbe;
+    quint64 m_startGeneration = 0;
 };
 
 #endif // ANYTLSPROTOCOL_H

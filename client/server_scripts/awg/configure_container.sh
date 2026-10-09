@@ -1,3 +1,5 @@
+set -e
+umask 077
 mkdir -p /opt/amnezia/awg
 cd /opt/amnezia/awg
 WIREGUARD_SERVER_PRIVATE_KEY=$(awg genkey)
@@ -71,5 +73,6 @@ EOF
 # nothing. The real parse happens in start.sh via `awg-quick up`.
 if [ -n "$AWG_HEADER_PROTECTION_KEY" ]; then
     echo "HeaderProtectionKey = $AWG_HEADER_PROTECTION_KEY" >> /opt/amnezia/awg/awg0.conf
+    echo "ContentPaddingAddition = $AWG_CONTENT_PADDING_ADDITION" >> /opt/amnezia/awg/awg0.conf
     echo "$AWG_HEADER_PROTECTION_KEY" > /opt/amnezia/awg/awg_header_protection.key
 fi

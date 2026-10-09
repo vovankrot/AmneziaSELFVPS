@@ -38,6 +38,7 @@ public:
 
 public slots:
     bool addApp(const amnezia::InstalledAppInfo &appInfo);
+    int addAppsBatch(const QVector<amnezia::InstalledAppInfo> &apps);
     void removeApp(QModelIndex index);
     int removeGroup(const QString &groupFolder);
     int groupCount(const QString &groupFolder) const;

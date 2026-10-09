@@ -40,7 +40,11 @@ echo "$MASQ_HOST" > "$MASQ_HOST_PATH"
 # Password — 32 bytes hex. Hysteria 2 supports a single shared password by
 # default; for now we keep one. Multi-user (per-client) auth needs the
 # "userpass" auth mode and a userdb file — left for a future revision.
-HYSTERIA_PASSWORD="$(openssl rand -hex 16)"
+if [ -s "$PASSWORD_PATH" ]; then
+    HYSTERIA_PASSWORD="$(cat "$PASSWORD_PATH")"
+else
+    HYSTERIA_PASSWORD="$(openssl rand -hex 16)"
+fi
 echo "$HYSTERIA_PASSWORD" > "$PASSWORD_PATH"
 chmod 600 "$PASSWORD_PATH"
 
@@ -48,13 +52,18 @@ chmod 600 "$PASSWORD_PATH"
 # noise so DPI cannot fingerprint the QUIC/Hysteria handshake. This is what lets
 # Hysteria pass RKN/TSPU: plain QUIC/UDP to a flagged server IP is dropped, but
 # salamander-obfuscated UDP passes (verified end-to-end on this network). by vovankrot
-HYSTERIA_OBFS_PASSWORD="$(openssl rand -hex 16)"
+if [ -s "$CONFIG_DIR/hysteria2_obfs_password.key" ]; then
+    HYSTERIA_OBFS_PASSWORD="$(cat "$CONFIG_DIR/hysteria2_obfs_password.key")"
+else
+    HYSTERIA_OBFS_PASSWORD="$(openssl rand -hex 16)"
+fi
 echo "$HYSTERIA_OBFS_PASSWORD" > "$CONFIG_DIR/hysteria2_obfs_password.key"
 chmod 600 "$CONFIG_DIR/hysteria2_obfs_password.key"
 
 # Self-signed cert. ECDSA P-256, valid 100 years. CN matches MASQ_HOST so that
 # clients with `tls.sni: $MASQ_HOST` and `tls.insecure: true` see a name match
 # in logs (still insecure, the point is just to look like real HTTPS to DPI).
+if [ ! -s "$KEY_PATH" ] || [ ! -s "$CERT_PATH" ]; then
 timeout 30 openssl req -x509 -nodes \
     -newkey ec:<(openssl ecparam -name prime256v1) \
     -keyout "$KEY_PATH" \
@@ -62,6 +71,7 @@ timeout 30 openssl req -x509 -nodes \
     -subj "/CN=$MASQ_HOST" \
     -days 36500 \
     >/dev/null 2>&1
+fi
 chmod 600 "$KEY_PATH"
 
 cat > "$CONFIG_TMP" <<EOF

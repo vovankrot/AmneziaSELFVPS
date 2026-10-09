@@ -103,6 +103,10 @@ WindowsRouteMonitor::~WindowsRouteMonitor() {
 
   flushRouteTable(m_exclusionRoutes);
   flushRouteTable(m_clonedRoutes);
+  // On daemon destruction there is no retry owner left for failed records.
+  // Release their memory even if Windows refused the route removal.
+  qDeleteAll(m_exclusionRoutes);
+  qDeleteAll(m_clonedRoutes);
   logger.debug() << "WindowsRouteMonitor destroyed.";
 }
 
@@ -221,8 +225,9 @@ void WindowsRouteMonitor::updateExclusionRoute(MIB_IPFORWARD_ROW2* data,
   // Delete the previous routing table entry, if any.
   if (data->InterfaceLuid.Value != 0) {
     DWORD result = DeleteIpForwardEntry2(data);
-    if ((result != NO_ERROR) && (result != ERROR_NOT_FOUND)) {
+    if ((result != NO_ERROR) && (result != ERROR_NOT_FOUND) && (result != ERROR_FILE_NOT_FOUND)) {
       logger.error() << "Failed to delete route:" << result;
+      return; // Keep the previous route identity when deletion fails.
     }
   }
 
@@ -287,9 +292,9 @@ void WindowsRouteMonitor::updateCapturedRoutes(int family) {
     return;
   }
 
-  PMIB_IPFORWARD_TABLE2 table;
+  PMIB_IPFORWARD_TABLE2 table = nullptr;
   DWORD error = GetIpForwardTable2(family, &table);
-  if (error != NO_ERROR) {
+  if (error == NO_ERROR && table) {
     updateCapturedRoutes(family, table);
     FreeMibTable(table);
   }
@@ -329,7 +334,10 @@ void WindowsRouteMonitor::updateCapturedRoutes(int family, void* ptable) {
     // LAN subnet (e.g. 192.168.0.0/24) into the tunnel is exactly what made
     // local devices and the VM unreachable: the VPN could not tell LAN from
     // internet. by vovankrot
-    if (m_allowLocalNetwork && isLocalNetworkPrefix(destination)) {
+    const bool onLink = row->NextHop.si_family == AF_UNSPEC
+        || (row->NextHop.si_family == AF_INET && row->NextHop.Ipv4.sin_addr.s_addr == 0)
+        || (row->NextHop.si_family == AF_INET6 && IN6_IS_ADDR_UNSPECIFIED(&row->NextHop.Ipv6.sin6_addr));
+    if (m_allowLocalNetwork && (isLocalNetworkPrefix(destination) || onLink)) {
       continue;
     }
 
@@ -395,8 +403,10 @@ void WindowsRouteMonitor::updateCapturedRoutes(int family, void* ptable) {
 
     // Otherwise, this route is no longer in use.
     DWORD result = DeleteIpForwardEntry2(data);
-    if ((result != NO_ERROR) && (result != ERROR_NOT_FOUND)) {
+    if ((result != NO_ERROR) && (result != ERROR_NOT_FOUND) && (result != ERROR_FILE_NOT_FOUND)) {
       logger.error() << "Failed to delete route:" << result;
+      ++i;
+      continue; // Retain ownership so a later notification can retry.
     }
     delete data;
     i = m_clonedRoutes.erase(i);
@@ -419,8 +429,8 @@ bool WindowsRouteMonitor::addExclusionRoute(const IPAddress& prefix) {
   }
 
   if (m_exclusionRoutes.contains(prefix)) {
-    logger.warning() << "Exclusion route already exists";
-    return false;
+    logger.debug() << "Exclusion route already owned";
+    return true;
   }
 
   // Allocate and initialize the MIB routing table row.
@@ -467,11 +477,13 @@ bool WindowsRouteMonitor::addExclusionRoute(const IPAddress& prefix) {
     return false;
   }
   updateInterfaceMetrics(family);
+  // Publish the exception before reconciliation, otherwise the same pass may
+  // retain a captured VPN route which competes with the new direct route.
+  m_exclusionRoutes.insert(prefix, data);
   updateCapturedRoutes(family, table);
   updateExclusionRoute(data, table);
   FreeMibTable(table);
 
-  m_exclusionRoutes[prefix] = data;
   return true;
 }
 
@@ -484,17 +496,19 @@ bool WindowsRouteMonitor::deleteExclusionRoute(const IPAddress& prefix) {
   logger.debug() << "Deleting exclusion route for"
                  << prefix.address().toString();
 
-  MIB_IPFORWARD_ROW2* data = m_exclusionRoutes.take(prefix);
+  MIB_IPFORWARD_ROW2* data = m_exclusionRoutes.value(prefix, nullptr);
   if (data == nullptr) {
     return true;
   }
 
   DWORD result = DeleteIpForwardEntry2(data);
-  if ((result != ERROR_NOT_FOUND) && (result != NO_ERROR)) {
+  if ((result != ERROR_NOT_FOUND) && (result != ERROR_FILE_NOT_FOUND) && (result != NO_ERROR)) {
     logger.error() << "Failed to delete route to"
                    << prefix.toString()
                    << "result:" << result;
+    return false;
   }
+  m_exclusionRoutes.remove(prefix);
 
   // Captured routes might have changed.
   updateCapturedRoutes(data->DestinationPrefix.Prefix.si_family);
@@ -503,29 +517,34 @@ bool WindowsRouteMonitor::deleteExclusionRoute(const IPAddress& prefix) {
   return true;
 }
 
-void WindowsRouteMonitor::flushRouteTable(
+bool WindowsRouteMonitor::flushRouteTable(
     QHash<IPAddress, MIB_IPFORWARD_ROW2*>& table) {
-  for (auto i = table.begin(); i != table.end(); i++) {
+  bool cleaned = true;
+  for (auto i = table.begin(); i != table.end();) {
     MIB_IPFORWARD_ROW2* data = i.value();
     DWORD result = DeleteIpForwardEntry2(data);
-    if ((result != ERROR_NOT_FOUND) && (result != NO_ERROR)) {
+    if ((result != ERROR_NOT_FOUND) && (result != ERROR_FILE_NOT_FOUND) && (result != NO_ERROR)) {
       logger.error() << "Failed to delete route to"
                      << i.key().toString()
                      << "result:" << result;
+      cleaned = false;
+      ++i;
+      continue;
     }
     delete data;
+    i = table.erase(i);
   }
-  table.clear();
+  return cleaned;
 }
 
-void WindowsRouteMonitor::setDetaultRouteCapture(bool enable) {
+bool WindowsRouteMonitor::setDetaultRouteCapture(bool enable) {
   m_defaultRouteCapture = enable;
 
   // Flush any captured routes when disabling the feature.
   if (!m_defaultRouteCapture) {
-    flushRouteTable(m_clonedRoutes);
-    return;
+    return flushRouteTable(m_clonedRoutes);
   }
+  return true;
 }
 
 void WindowsRouteMonitor::routeChanged() {

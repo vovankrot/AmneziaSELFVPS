@@ -51,12 +51,14 @@
     },
     {
       "path": "deploy/prebuilt-selfvps/windows/x64/tunnel.dll",
-      "sha256": "eb47cfd2866a5add83b6e682b1023063e21594b1483910e6516541089ef960d7",
+      "sha256": "bfa249989ba3ebc9c94808aa431d2ed8ec1a5a4a65d4a2bccfafe7d03757ae0d",
       "source": "https://github.com/amnezia-vpn/amneziawg-windows",
-      "revision": "3.0.2",
+      "revision": "v3.1.20260814 (e90531d15802cb976773f3b63443bc281f738ca3)",
       "architecture": "windows-x64",
-      "toolchain": "go1.25.0",
-      "license": "MIT"
+      "toolchain": "go1.25.0 / WinLibs GCC UCRT",
+      "license": "MIT",
+      "sourceArchiveSha256": "3b1def00ab9ce792d246616c4d0d99964301fab25e6c54622c6345c131f69b46",
+      "sourceArchiveUrl": "https://api.github.com/repos/amnezia-vpn/amneziawg-windows/zipball/e90531d15802cb976773f3b63443bc281f738ca3"
     },
     {
       "path": "deploy/prebuilt-selfvps/android/arm64-v8a/libwg-go.so",

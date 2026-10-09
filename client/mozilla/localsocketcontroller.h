@@ -6,6 +6,7 @@
 #define LOCALSOCKETCONTROLLER_H
 
 #include <QHostAddress>
+#include <QJsonObject>
 #include <QLocalSocket>
 #include <QTimer>
 #include <functional>
@@ -46,6 +47,7 @@ class LocalSocketController final : public ControllerImpl {
   void parseCommand(const QByteArray& command);
 
   void write(const QJsonObject& json);
+  void sendActivation(const QJsonObject& json);
 
  private:
   enum {
@@ -64,6 +66,8 @@ class LocalSocketController final : public ControllerImpl {
 
   QTimer m_initializingTimer;
   uint32_t m_initializingRetry = 0;
+  bool m_deactivatePending = false;
+  QJsonObject m_pendingActivation;
 };
 
 #endif  // LOCALSOCKETCONTROLLER_H

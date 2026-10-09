@@ -17,7 +17,7 @@ jobs:
         with:
           version: '6.8.3'
           arch: 'win64_msvc2022_64'
-          modules: 'qt5compat'
+          modules: 'qt5compat qtremoteobjects'
           cache: true
       - uses: actions/setup-python@v5
         with:
@@ -46,15 +46,19 @@ jobs:
           QT_QUICK_BACKEND: software
           QT_FORCE_STDERR_LOGGING: '1'
         run: |
-          foreach ($suite in @('security-regressions', 'ui-regressions', 'driver-regressions', 'update-regressions', 'client-refresh-regressions')) {
+          $env:PATH = "$pwd/client/3rd-prebuilt/deploy-prebuilt/windows/x64;" + $env:PATH
+          foreach ($suite in @('security-regressions', 'ui-regressions', 'driver-regressions', 'update-regressions', 'client-refresh-regressions', 'transport-regressions', 'app-routing-regressions', 'ipc-lifetime-regressions', 'site-route-regressions', 'process-policy-regressions')) {
             cmake -S "tests/$suite" -B "build/$suite" -G 'Visual Studio 17 2022' -A x64
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
             cmake --build "build/$suite" --config Release -- /m:2
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
-            if ($suite -eq 'security-regressions') {
-              & "build/$suite/Release/$suite.exe" -o security-results.txt,txt
+            if ($suite -in @('driver-regressions', 'site-route-regressions')) {
+              ctest --test-dir "build/$suite" -C Release --output-on-failure
               $result = $LASTEXITCODE
-              Get-Content security-results.txt
+            } elseif ($suite -ne 'ui-regressions') {
+              & "build/$suite/Release/$suite.exe" -o "$suite-results.txt,txt"
+              $result = $LASTEXITCODE
+              Get-Content "$suite-results.txt"
             } else {
               & "build/$suite/Release/$suite.exe"
               $result = $LASTEXITCODE

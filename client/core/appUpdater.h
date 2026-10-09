@@ -7,6 +7,9 @@
 #include <QCryptographicHash>
 #include <QTimer>
 #include <memory>
+#include <QFutureWatcher>
+#include <functional>
+#include "installerFileCheck.h"
 #include "releaseManifest.h"
 
 class AppUpdater : public QObject {
@@ -22,6 +25,7 @@ class AppUpdater : public QObject {
     Q_PROPERTY(bool supported READ supported CONSTANT)
 public:
     explicit AppUpdater(QObject *parent = nullptr, QNetworkAccessManager *network = nullptr);
+    ~AppUpdater() override;
     QString status() const { return m_status; }
     QString availableVersion() const { return m_release.version; }
     QString releaseNotes() const { return m_release.notes; }
@@ -29,7 +33,7 @@ public:
     void setRepository(const QString &repo);
     bool automatic() const;
     void setAutomatic(bool value);
-    bool busy() const { return !m_reply.isNull(); }
+    bool busy() const { return !m_reply.isNull() || !m_verification.isNull(); }
     bool ready() const { return !m_readyPath.isEmpty(); }
     int progress() const { return m_progress; }
     bool supported() const;
@@ -44,6 +48,7 @@ signals:
 private:
     friend class UpdateTests;
     void fail(const QString &message);
+    void launchVerifiedInstaller(const QString &path);
     QNetworkRequest request(const QUrl &url) const;
     QNetworkAccessManager *m_network;
     QPointer<QNetworkReply> m_reply;
@@ -56,4 +61,9 @@ private:
     qint64 m_received = 0;
     int m_progress = 0;
     bool m_failed = false;
+    QPointer<QFutureWatcher<InstallerFileCheck::Result>> m_verification;
+    std::shared_ptr<std::atomic_bool> m_verificationCanceled;
+    quint64 m_installGeneration = 0;
+    // Test fixture replaces the final launch, never the file validation.
+    std::function<void(const QString &)> m_verifiedInstaller;
 };

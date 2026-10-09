@@ -239,6 +239,14 @@
         <source>Split tunneling settings were updated, but the selected file could not be started</source>
         <translation>Split tunneling settings were updated, but the selected file could not be started</translation>
     </message>
+    <message>
+        <source>The folder is too large to scan. Select the application's own folder.</source>
+        <translation>The folder is too large to scan. Select the application's own folder.</translation>
+    </message>
+    <message>
+        <source>Folder contents changed. Scan the folder again.</source>
+        <translation>Folder contents changed. Scan the folder again.</translation>
+    </message>
 </context>
 <context>
     <name>AppUpdateDialog</name>
@@ -280,6 +288,10 @@
 </context>
 <context>
     <name>AppUpdater</name>
+    <message>
+        <source>Проверяем установщик перед запуском…</source>
+        <translation>Verifying the installer before launch…</translation>
+    </message>
     <message>
         <location filename="../core/appUpdater.cpp" line="+64"/>
         <source>Проверяем релизы GitHub…</source>
@@ -3632,6 +3644,26 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <source>Open application folder</source>
         <translation>Open application folder</translation>
     </message>
+    <message>
+        <source>Add applications from folder "%1" to VPN bypass?</source>
+        <translation>Add applications from folder "%1" to VPN bypass?</translation>
+    </message>
+    <message>
+        <source>Found %1 executable files. The game launcher and game must use the same route.</source>
+        <translation>Found %1 executable files. The game launcher and game must use the same route.</translation>
+    </message>
+    <message>
+        <source>…and %1 more files</source>
+        <translation>…and %1 more files</translation>
+    </message>
+    <message>
+        <source>Scanning…</source>
+        <translation>Scanning…</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation>Add</translation>
+    </message>
 </context>
 <context>
     <name>PageSettingsApplication</name>
@@ -4413,6 +4445,8 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <source>Cannot reset API config during active connection</source>
         <translation>Cannot reset API config during active connection</translation>
     </message>
+    <message><source>Изменить сохранённый пароль SSH</source><translation>Change saved SSH password</translation></message>
+    <message><source>Обновить пароль пользователя для доступа к существующему VPS</source><translation>Update the user password for access to an existing VPS</translation></message>
 </context>
 <context>
     <name>PageSettingsServerInfo</name>
@@ -4914,6 +4948,11 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <source>Add imported sites to existing ones</source>
         <translation>Add imported sites to existing ones</translation>
     </message>
+    <message><source>Как использовать список сайтов</source><translation>How to use the site list</translation></message>
+    <message><source>Сайты из списка — через VPN</source><translation>Listed sites use VPN</translation></message>
+    <message><source>Сайты из списка — без VPN</source><translation>Listed sites bypass VPN</translation></message>
+    <message><source>Раздельное туннелирование сайтов выключено. Список не применяется.</source><translation>Site split tunneling is off. The list is not applied.</translation></message>
+    <message><source>Дополнительное правило прямого доступа по российским IP-адресам. Выбранный режим списка сайтов остаётся прежним.</source><translation>An additional rule for direct access to Russian IP addresses. The selected site list mode remains unchanged.</translation></message>
 </context>
 <context>
     <name>PageSetupWizardApiFreeInfo</name>
@@ -7600,6 +7639,7 @@ Features:
         <source>Mbps</source>
         <translation>Mbps</translation>
     </message>
+    <message><source>Не удалось полностью восстановить сеть после VPN. Повторите отключение перед новым подключением.</source><translation>Could not fully restore the network after VPN. Retry disconnection before starting a new connection.</translation></message>
 </context>
 <context>
     <name>VpnProtocol</name>
@@ -7643,6 +7683,7 @@ Features:
         <source>Error</source>
         <translation>Error</translation>
     </message>
+    <message><source>Не удалось полностью очистить VPN-сессию. Новое подключение заблокировано до успешной очистки.</source><translation>VPN session cleanup failed. A new connection is blocked until cleanup succeeds.</translation></message>
 </context>
 <context>
     <name>WindowsDaemon</name>
@@ -7657,6 +7698,8 @@ Features:
         <source>Исключения приложений недоступны. Весь трафик идёт через VPN.</source>
         <translation>App exclusions are unavailable. All traffic uses the VPN.</translation>
     </message>
+    <message><source>Не удалось обновить сетевые адреса исключений приложений. Проверьте подключение к сети; повторная попытка будет выполнена при её изменении.</source><translation>Could not refresh network addresses for app exclusions. Check your network connection; changes to the network will trigger another attempt.</translation></message>
+    <message><source>Исключения приложений ожидают восстановления сетевых адресов.</source><translation>App exclusions are waiting for network addresses to become available.</translation></message>
 </context>
 <context>
     <name>WireguardConfigurator</name>
@@ -7673,6 +7716,7 @@ Features:
         <source>XRay: проверочный сайт недоступен. Соединение сохранено, чтобы не прерывать исключённые приложения. Если VPN не работает, переподключите его вручную.</source>
         <translation>XRay: the test site is unavailable. The connection is preserved to avoid interrupting excluded apps. If the VPN is not working, reconnect manually.</translation>
     </message>
+    <message><source>Не удалось полностью очистить VPN-сессию. Новое подключение заблокировано до успешной очистки.</source><translation>VPN session cleanup failed. A new connection is blocked until cleanup succeeds.</translation></message>
 </context>
 <context>
     <name>amnezia::ContainerProps</name>
@@ -7719,5 +7763,25 @@ Features:
         <source>Save</source>
         <translation>Save</translation>
     </message>
+</context>
+<context>
+    <name>ServerPasswordDialog</name>
+    <message><source>Сохранённый пароль SSH</source><translation>Saved SSH password</translation></message>
+    <message><source>Пользователь: %1</source><translation>User: %1</translation></message>
+    <message><source>Укажите пароль, уже установленный на VPS. Он сохранится только в приложении и будет использоваться при следующих SSH-подключениях.</source><translation>Enter the password already set on the VPS. It will be saved only in the app and used for subsequent SSH connections.</translation></message>
+    <message><source>Новый сохранённый пароль</source><translation>New saved password</translation></message>
+    <message><source>Повторите пароль</source><translation>Repeat password</translation></message>
+    <message><source>Сохранить</source><translation>Save</translation></message>
+    <message><source>Отмена</source><translation>Cancel</translation></message>
+    <message><source>Не удалось сохранить пароль. Откройте настройки сервера заново.</source><translation>Could not save the password. Reopen the server settings.</translation></message>
+    <message><source>Пароль SSH сохранён в приложении.</source><translation>SSH password saved in the app.</translation></message>
+</context>
+<context>
+    <name>Hysteria2Protocol</name>
+    <message><source>Не удалось полностью очистить VPN-сессию. Новое подключение заблокировано до успешной очистки.</source><translation>VPN session cleanup failed. A new connection is blocked until cleanup succeeds.</translation></message>
+</context>
+<context>
+    <name>AnyTlsProtocol</name>
+    <message><source>Не удалось полностью очистить VPN-сессию. Новое подключение заблокировано до успешной очистки.</source><translation>VPN session cleanup failed. A new connection is blocked until cleanup succeeds.</translation></message>
 </context>
 </TS>

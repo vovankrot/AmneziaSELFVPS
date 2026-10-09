@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QString>
 #include <QJsonObject>
+#include <QSet>
 
 #include "core/defs.h"
 #include "containers/containers_defs.h"
@@ -55,6 +56,9 @@ public:
     virtual bool isDisconnected() const;
     virtual ErrorCode start() = 0;
     virtual void stop() = 0;
+    virtual bool stopsAsynchronously() const { return false; }
+    bool cleanupInProgress() const { return m_cleanupInProgress; }
+    bool cleanupFailed() const { return m_cleanupFailed; }
 
     Vpn::ConnectionState connectionState() const;
     ErrorCode lastError() const;
@@ -68,6 +72,7 @@ public:
     static VpnProtocol* factory(amnezia::DockerContainer container, const QJsonObject &configuration);
 
 signals:
+    void stopFinished(bool success);
     void bytesChanged(quint64 receivedBytes, quint64 sentBytes);
     void connectionStateChanged(Vpn::ConnectionState state);
     void timeoutTimerEvent();
@@ -93,6 +98,13 @@ public slots:
     void setConnectionState(Vpn::ConnectionState state);
 
 protected:
+    QSet<QString> m_completedStopSteps;
+    void beginAsyncStop() { m_cleanupInProgress = true; m_cleanupFailed = false; setConnectionState(Vpn::Disconnecting); }
+    void finishAsyncStop(bool success) {
+        m_cleanupInProgress = false; m_cleanupFailed = !success;
+        setConnectionState(success ? Vpn::Disconnected : Vpn::Error);
+        emit stopFinished(success);
+    }
     void startTimeoutTimer();
     void stopTimeoutTimer();
 
@@ -105,6 +117,8 @@ protected:
     QJsonObject m_rawConfig;
 
 private:
+    bool m_cleanupInProgress = false;
+    bool m_cleanupFailed = false;
     void startSilenceWatchdog();
     void stopSilenceWatchdog();
 

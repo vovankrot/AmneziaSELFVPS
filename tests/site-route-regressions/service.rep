@@ -1,0 +1,12 @@
+#include <QtCore>
+class IpcInterface
+{
+    SLOT( int routeAddList(const QString &gw, const QStringList &ips) );
+    SLOT( bool flushDns() );
+    SLOT( bool restoreResolvers() );
+    SLOT( bool clearSavedRoutes() );
+    SLOT( bool refreshKillSwitch(bool enabled) );
+    SIGNAL( networkChanged() );
+    SIGNAL( wakeup() );
+    SIGNAL( networkPolicyWarning(const QString &message) );
+};

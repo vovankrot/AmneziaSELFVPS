@@ -32,6 +32,11 @@ QSharedPointer<IpcInterfaceReplica> IpcClient::Interface()
     return rep;
 }
 
+QSharedPointer<IpcInterfaceReplica> IpcClient::InterfaceWithoutWait()
+{
+    return Instance().m_interface;
+}
+
 QSharedPointer<IpcProcessInterfaceReplica> IpcClient::CreatePrivilegedProcess()
 {
     return withInterface([](QSharedPointer<IpcInterfaceReplica> &iface) -> QSharedPointer<IpcProcessInterfaceReplica> {
@@ -42,6 +47,10 @@ QSharedPointer<IpcProcessInterfaceReplica> IpcClient::CreatePrivilegedProcess()
         }
 
         const int pid = createPrivilegedProcess.returnValue();
+        if (pid < 0) {
+            qWarning() << "Service refused privileged process creation";
+            return nullptr;
+        }
 
         auto* node = new QRemoteObjectNode();
         node->connectToNode(QUrl(QString("local:%1").arg(amnezia::getIpcProcessUrl(pid))));

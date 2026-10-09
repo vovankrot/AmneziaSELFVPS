@@ -43,17 +43,22 @@ IpcServerProcess::~IpcServerProcess()
 
 void IpcServerProcess::start()
 {
+    if (m_process->state() != QProcess::NotRunning) {
+        qWarning() << "IPC: ignoring duplicate process start";
+        return;
+    }
     if (m_process->program().isEmpty() || !m_argumentsAccepted) {
         qCritical() << "IPC: refusing to start an invalid or empty privileged program";
+        emit errorOccurred(QProcess::FailedToStart);
         return;
     }
 
-    Utils::killProcessByName(m_process->program());
     m_process->start();
     qDebug() << "IpcServerProcess started" << m_process->program()
              << "argument count=" << m_process->arguments().size();
 
-    m_process->waitForStarted();
+    // QProcess reports started/errorOccurred asynchronously. Waiting here stalls
+    // all service IPC, including cancellation and network policy requests.
 }
 
 void IpcServerProcess::terminate() {
@@ -66,7 +71,8 @@ void IpcServerProcess::kill() {
 
 void IpcServerProcess::close()
 {
-    m_process->close();
+    if (isRunning()) m_process->kill();
+    emit releaseRequested();
 }
 
 void IpcServerProcess::setArguments(const QStringList &arguments)
@@ -150,11 +156,11 @@ bool IpcServerProcess::waitForStarted(int msecs) {
 }
 
 bool IpcServerProcess::waitForFinished() {
-    return m_process->waitForFinished();
+    return m_process->state() == QProcess::NotRunning || m_process->waitForFinished();
 }
 
 bool IpcServerProcess::waitForFinished(int msecs) {
-    return m_process->waitForFinished(msecs);
+    return m_process->state() == QProcess::NotRunning || m_process->waitForFinished(msecs);
 }
 
 #endif

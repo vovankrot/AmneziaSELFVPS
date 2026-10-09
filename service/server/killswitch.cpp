@@ -125,24 +125,35 @@ bool KillSwitch::init()
     return true;
 }
 
-bool KillSwitch::refresh(bool enabled)
+bool KillSwitch::refresh(bool enabled, bool preserveActivePolicy)
 {
+    const bool previous = isStrictKillSwitchEnabled();
 #ifdef Q_OS_WIN
     QSettings RegHLM("HKEY_LOCAL_MACHINE\\Software\\" + QString(ORGANIZATION_NAME)
                              + "\\" + QString(APPLICATION_NAME), QSettings::NativeFormat);
     RegHLM.setValue("strictKillSwitchEnabled", enabled);
+    RegHLM.sync();
+    if (RegHLM.status() != QSettings::NoError) return false;
 #endif
 
 #if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)
     m_appSettigns->setValue("Conf/strictKillSwitchEnabled", enabled);
 #endif
 
-    if (isStrictKillSwitchEnabled()) {
-        return disableAllTraffic();
-    }  else {
-        return disableKillSwitch();
+    // Strict mode governs the disconnected state. Updating its preference
+    // must not tear down an active app bypass or remove the peer DNS permits.
+    if (preserveActivePolicy) return true;
+    const bool success = enabled ? disableAllTraffic() : disableKillSwitch();
+    if (!success) {
+#ifdef Q_OS_WIN
+        RegHLM.setValue("strictKillSwitchEnabled", previous);
+        RegHLM.sync();
+#endif
+#if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)
+        m_appSettigns->setValue("Conf/strictKillSwitchEnabled", previous);
+#endif
     }
-
+    return success;
 }
 
 bool KillSwitch::isStrictKillSwitchEnabled()
@@ -233,7 +244,8 @@ bool KillSwitch::disableKillSwitch() {
 
 bool KillSwitch::disableAllTraffic() {
 #ifdef Q_OS_WIN
-    WindowsFirewall::create(this)->enableInterface(-1);
+    auto *firewall = WindowsFirewall::create(this);
+    if (!firewall || !firewall->enableInterface(-1, true)) return false;
 #endif
 #ifdef Q_OS_LINUX
     if (!LinuxFirewall::isInstalled()) {
@@ -264,6 +276,14 @@ bool KillSwitch::resetAllowedRange(const QStringList &ranges) {
         return false;
     }
 
+#ifdef Q_OS_WIN
+    auto *firewall = WindowsFirewall::create(this);
+    if (!firewall) return false;
+    const bool installed = isStrictKillSwitchEnabled()
+        ? firewall->enableInterface(-1, true, ranges)
+        : firewall->allowTrafficRange(ranges, true);
+    if (!installed) return false;
+#endif
     m_allowedRanges = ranges;
 
 #ifdef Q_OS_LINUX
@@ -276,12 +296,6 @@ bool KillSwitch::resetAllowedRange(const QStringList &ranges) {
     MacOSFirewall::setAnchorTable(QStringLiteral("110.allowNets"), true, QStringLiteral("allownets"), m_allowedRanges);
 #endif
 
-#ifdef Q_OS_WIN
-    if (isStrictKillSwitchEnabled()) {
-        WindowsFirewall::create(this)->enableInterface(-1);
-    }
-    WindowsFirewall::create(this)->allowTrafficRange(m_allowedRanges);
-#endif
 
     return true;
 }
@@ -292,13 +306,14 @@ bool KillSwitch::addAllowedRange(const QStringList &ranges) {
         return false;
     }
 
+    auto combinedRanges = m_allowedRanges;
     for (const QString &range : ranges) {
-        if (!range.isEmpty() && !m_allowedRanges.contains(range)) {
-            m_allowedRanges.append(range);
+        if (!range.isEmpty() && !combinedRanges.contains(range)) {
+            combinedRanges.append(range);
         }
     }
 
-    return resetAllowedRange(m_allowedRanges);
+    return resetAllowedRange(combinedRanges);
 }
 
 bool KillSwitch::enablePeerTraffic(const QJsonObject &configStr) {
@@ -364,10 +379,14 @@ bool KillSwitch::enablePeerTraffic(const QJsonObject &configStr) {
     WindowsFirewall *firewall = WindowsFirewall::create(this);
     if (firewall == nullptr) {
         qWarning() << "KillSwitch::enablePeerTraffic: Windows firewall is not available";
+        return false;
     } else {
         // killSwitch toggle
         if (QVariant(configStr.value(amnezia::config_key::killSwitchOption).toString()).toBool()) {
-            firewall->enablePeerTraffic(config);
+            if (!firewall->enablePeerTraffic(config)) {
+                qWarning() << "Could not establish peer firewall policy";
+                return false;
+            }
         }
 
         const QList<IPAddress> lanBypassRanges = getLanBypassRanges();
@@ -379,7 +398,10 @@ bool KillSwitch::enablePeerTraffic(const QJsonObject &configStr) {
             }
 
             qDebug() << "KillSwitch::enablePeerTraffic: enabling LAN bypass ranges" << lanBypassRangeNames;
-            firewall->enableLanBypass(lanBypassRanges);
+            if (!firewall->enableLanBypass(lanBypassRanges)) {
+                qWarning() << "Could not establish LAN bypass; refusing to report a connected tunnel";
+                return false;
+            }
         }
     }
 
@@ -394,7 +416,10 @@ bool KillSwitch::enablePeerTraffic(const QJsonObject &configStr) {
             qWarning() << "Requested app bypass is unavailable; refusing a mixed IPv4/IPv6 policy";
             return false;
         }
-        if (!firewall || !firewall->enableIpv6AppBypass(config.m_vpnDisabledApps)) {
+        // Match the paths actually accepted by the driver. Raw settings can
+        // contain removed executables or non-canonical paths after an update.
+        const auto& activeApps = static_cast<WindowsDaemon*>(WindowsDaemon::instance())->activeAppBypassPaths();
+        if (!firewall || !firewall->enableIpv6AppBypass(activeApps)) {
             qWarning() << "Could not establish IPv6 policy for excluded apps";
             return false;
         }
@@ -424,10 +449,9 @@ bool KillSwitch::enablePeerTraffic(const QJsonObject &configStr) {
 
 bool KillSwitch::enableKillSwitch(const QJsonObject &configStr, int vpnAdapterIndex) {
 #ifdef Q_OS_WIN
-    if (configStr.value("splitTunnelType").toInt() != 0) {
-        WindowsFirewall::create(this)->allowAllTraffic();
-    }
-    return WindowsFirewall::create(this)->enableInterface(vpnAdapterIndex);
+    auto *firewall = WindowsFirewall::create(this);
+    if (!firewall) return false;
+    return firewall->enableInterface(vpnAdapterIndex, true);
 #endif
 
 #if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)

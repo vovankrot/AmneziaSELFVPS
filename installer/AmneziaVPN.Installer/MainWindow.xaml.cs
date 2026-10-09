@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -232,6 +232,19 @@ public partial class MainWindow : Window
 
     private async Task RunInstallAsync()
     {
+        // Validate before entering the failure path that can restart services.
+        try
+        {
+            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("AmneziaVPN.Payload.zip")
+                ?? throw new IOException("Пакет установки не найден.");
+            using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
+            var entry = archive.GetEntry(RuntimeCompatibility.ManifestName)
+                ?? throw new IOException("В пакете отсутствуют требования к Windows.");
+            using var json = System.Text.Json.JsonDocument.Parse(entry.Open());
+            RuntimeCompatibility.Validate(Environment.OSVersion.Version, Environment.Is64BitOperatingSystem,
+                json.RootElement.GetProperty("minimumWindowsBuild").GetInt32());
+        }
+        catch (Exception ex) { ShowError(FormatExceptionMessage(ex)); return; }
         ShowProgress("Подготовка...");
         _step = Step.Installing;
 
@@ -246,16 +259,6 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            // StopProcessesAndServices() disables the service to block SCM
-            // auto-restarts during the install. If we failed before
-            // CreateOrUpdateService() re-enabled it, restore autostart so the
-            // machine is not left with a permanently disabled VPN service.
-            await Task.Run(() =>
-            {
-                TryRun("sc.exe", $"config {ServiceName} start= auto");
-                if (!DriverUpdateGuard.RequiresReboot) TryRun("sc.exe", $"start {ServiceName}");
-            });
-
             ShowError(FormatExceptionMessage(ex));
         }
     }
@@ -272,6 +275,14 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            try {
+                await Task.Run(() => {
+                    if (File.Exists(ServiceExePath)) {
+                        CreateOrUpdateService();
+                        if (!DriverUpdateGuard.RequiresReboot) StartAndConfigureService();
+                    }
+                });
+            } catch (Exception recoveryError) { InstallerJournal.Write("Восстановление после отказа удаления: " + recoveryError.Message); }
             ShowError(FormatExceptionMessage(ex));
         }
     }
@@ -287,6 +298,7 @@ public partial class MainWindow : Window
             Report(2, "Проверяем пакет обновления...");
             Directory.CreateDirectory(extractDir);
             ExtractPayload(extractDir);
+            RuntimeCompatibility.Check(extractDir);
             foreach (string required in new[] { ClientExeName, ServiceExeName, "Qt6Core.dll", "tunnel.dll" })
             {
                 if (!File.Exists(Path.Combine(extractDir, required))) throw new IOException("В пакете отсутствует " + required);
@@ -299,8 +311,8 @@ public partial class MainWindow : Window
                     throw new InvalidOperationException("Обновление должно иметь версию выше установленной.");
             }
             Report(6, "Останавливаем процессы и службы...");
-            StopProcessesAndServices();
             stopped = true;
+            StopProcessesAndServices();
             DriverUpdateGuard.Prepare(Path.Combine(extractDir, DriverFileName), Path.Combine(InstallDir, DriverFileName));
             DriverUpdateGuard.StageCatalog(extractDir);
             files = new InstallFileTransaction(InstallDir);
@@ -321,7 +333,7 @@ public partial class MainWindow : Window
             Report(56, "Готовим удаление и скрипты...");
             files.TrackWrite(UninstallerPath);
             CopySelfTo(UninstallerPath);
-            RunBundledScript(Path.Combine(InstallDir, "post_install.cmd"), true);
+            // Native stop/state checks already replaced the legacy batch lifecycle.
 
             Report(68, "Обновляем службы и redistributable...");
             InstallVcRedistIfPresent();
@@ -368,7 +380,13 @@ public partial class MainWindow : Window
                     WriteUninstallEntry(FileVersionInfo.GetVersionInfo(ClientExePath).FileVersion);
                 }
             }
-            else if (stopped) TryRun("sc.exe", $"config {ServiceName} start= auto");
+            else if (stopped)
+            {
+                try {
+                    TryRun("sc.exe", $"config {ServiceName} start= auto");
+                    if (!DriverUpdateGuard.RequiresReboot) TryRun("sc.exe", $"start {ServiceName}");
+                } catch (Exception recoveryError) { InstallerJournal.Write("Восстановление службы: " + recoveryError.Message); }
+            }
             throw;
         }
         finally
@@ -384,7 +402,12 @@ public partial class MainWindow : Window
         StopProcessesAndServices();
 
         Report(35, "Удаляем служебные регистрации...");
-        RunBundledScript(Path.Combine(InstallDir, "post_uninstall.cmd"), false);
+        DriverUpdateGuard.PrepareRemoval();
+        foreach (string service in new[] { ServiceName,DriverServiceName }) {
+            var deleted = RunCommand("sc.exe", $"delete {service}");
+            if (deleted.ExitCode != 0 && deleted.ExitCode != 1060 && deleted.ExitCode != 1072)
+                throw new IOException("Не удалось удалить службу " + service + ": " + FirstNonEmpty(deleted.StdErr,deleted.StdOut));
+        }
         DeleteLaunchBypassRegistry();
         DeleteUninstallEntry();
 
@@ -400,6 +423,7 @@ public partial class MainWindow : Window
 
     private void Report(int percent, string status)
     {
+        InstallerJournal.Write($"Этап {percent}%: {status}");
         Dispatcher.Invoke(() =>
         {
             ProgressBar.Value = percent;
@@ -440,15 +464,22 @@ public partial class MainWindow : Window
 
     private static void PerformCleanInstallCleanup()
     {
-        TryDeleteDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AmneziaVPN.ORG"));
-        TryDeleteDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AmneziaVPN.ORG"));
-        TryDeleteDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), AppName));
-        TryDeleteDirectory(Path.Combine(Path.GetTempPath(), AppName));
+        DeleteDataDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AmneziaVPN.ORG"));
+        DeleteDataDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AmneziaVPN.ORG"));
+        DeleteDataDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), AppName));
+        DeleteDataDirectory(Path.Combine(Path.GetTempPath(), AppName));
 
         Registry.CurrentUser.DeleteSubKeyTree(AppRegistryPath, false);
 
         using RegistryKey? runKey = Registry.CurrentUser.OpenSubKey(AutoStartRegistryPath, writable: true);
         runKey?.DeleteValue(AppName, false);
+    }
+
+    private static void DeleteDataDirectory(string path)
+    {
+        if (Directory.Exists(path)) Directory.Delete(path,true);
+        if (Directory.Exists(path)) throw new IOException("Не удалось очистить данные: " + path);
+        InstallerJournal.Write("Данные очищены: " + path);
     }
 
     private static void StopInstalledProcess(string filename)
@@ -476,42 +507,22 @@ public partial class MainWindow : Window
         TryRun("sc.exe", $"config {ServiceName} start= disabled");
         TryRun("sc.exe", $"failure {ServiceName} reset= 0 actions= ////");
         StopInstalledProcess(ClientExeName);
-        Thread.Sleep(400);
 
-        foreach (string helper in new[]
-                 {
-                     ServiceExeName,
-                     "wireguard.exe",
-                     "openvpn.exe",
-                     "tun2socks.exe",
-                     "hysteria.exe",
-                     "anytls-client.exe",
-                     "ck-client.exe",
-                     "ss-local.exe"
-                 })
-        {
-            StopInstalledProcess(helper);
+        // Give the service a chance to restore routes/DNS and stop its tunnel.
+        // Killing it first abandons driver requests and bypasses this cleanup.
+        TryRun("sc.exe", $"stop {ServiceName}");
+        try { InstallerServiceState.Wait(ServiceName,1,18000,true); }
+        catch (IOException) {
+            InstallerJournal.Write("Штатная остановка не завершилась; проверяем процесс службы.");
+            StopInstalledProcess(ServiceExeName);
+            InstallerServiceState.Wait(ServiceName,1,5000,true);
         }
-
-        Thread.Sleep(600);
-
-        // Prevent the Service Control Manager from auto-restarting the service
-        // mid-install: the failure actions are "restart/2000", and a disabled
-        // service cannot be restarted by them. Re-enabled in CreateOrUpdateService
-        // (start= auto) or in the failure path of RunInstallAsync.
-        TryRun("sc.exe", $"config {ServiceName} start= disabled");
-        TryRun("sc.exe", $"failure {ServiceName} reset= 0 actions= ////");
-        TryRun("net.exe", $"stop {WireGuardServiceName}");
+        TryRun("sc.exe", $"stop {WireGuardServiceName}");
+        InstallerServiceState.Wait(WireGuardServiceName,1,10000,true);
         TryRun("sc.exe", $"delete {WireGuardServiceName}");
-        TryRun("net.exe", $"stop {ServiceName}");
-        Thread.Sleep(1500);
-        StopInstalledProcess(ServiceExeName);
-
-        // The tunnel-daemon child (same exe) may briefly outlive the service stop;
-        // give it a moment and kill again so the exe is really unlocked.
-        Thread.Sleep(400);
-        StopInstalledProcess(ServiceExeName);
-
+        foreach (string helper in new[] { ServiceExeName,"wireguard.exe","tun2socks.exe",
+            "hysteria.exe","anytls-client.exe","ck-client.exe","ss-local.exe" })
+            StopInstalledProcess(helper);
         WaitForFilesUnlocked();
     }
 
@@ -698,8 +709,19 @@ public partial class MainWindow : Window
 
     private static void StartAndConfigureService()
     {
-        RunCommand("sc.exe", $"start {ServiceName}", InstallDir);
-        RunCommand("sc.exe", $"failure {ServiceName} reset= 100 actions= restart/2000/restart/2000/restart/2000", InstallDir);
+        var start = RunCommand("sc.exe", $"start {ServiceName}", InstallDir);
+        if (start.ExitCode != 0 && start.ExitCode != 1056)
+            throw new IOException("Не удалось запустить службу: " + FirstNonEmpty(start.StdErr,start.StdOut));
+        InstallerServiceState.Wait(ServiceName,4,15000,false);
+        if (Version.TryParse(FileVersionInfo.GetVersionInfo(ClientExePath).FileVersion,out var version)
+            && version >= new Version(5,0,0,30)) {
+            // The service admits only the installed client executable. Never
+            // widen privileged IPC admission to arbitrary installer paths.
+            var health = RunCommand(ClientExePath,"--service-health-check",InstallDir);
+            if (health.ExitCode != 0) throw new IOException("Служба запущена, но IPC не отвечает (603). Установка не подтверждена.");
+        }
+        var recovery = RunCommand("sc.exe", $"failure {ServiceName} reset= 100 actions= restart/2000/restart/2000/restart/2000", InstallDir);
+        if (recovery.ExitCode != 0) throw new IOException("Не удалось настроить восстановление службы: " + recovery.StdOut);
     }
 
     private static void CopySelfTo(string targetPath)
@@ -885,35 +907,38 @@ public partial class MainWindow : Window
 
     private static void TryRun(string fileName, string arguments)
     {
-        RunCommand(fileName, arguments, InstallDir);
+        RunCommand(fileName, arguments, Environment.SystemDirectory);
     }
 
     private static CommandResult RunCommand(string fileName, string arguments, string? workingDirectory = null)
     {
-        using Process process = new();
-        process.StartInfo = new ProcessStartInfo
+        string toolName = Path.GetFileName(fileName);
+        bool systemTool = string.Equals(toolName, "sc.exe", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(toolName, "net.exe", StringComparison.OrdinalIgnoreCase);
+        if (systemTool)
         {
-            FileName = fileName,
-            Arguments = arguments,
-            WorkingDirectory = workingDirectory ?? Environment.CurrentDirectory,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true,
-            WindowStyle = ProcessWindowStyle.Hidden
-        };
-
-        process.Start();
-        string stdOut = process.StandardOutput.ReadToEnd();
-        string stdErr = process.StandardError.ReadToEnd();
-        process.WaitForExit();
-
-        return new CommandResult(process.ExitCode, stdOut.Trim(), stdErr.Trim());
+            fileName = Path.Combine(Environment.SystemDirectory, toolName);
+            workingDirectory = Environment.SystemDirectory;
+        }
+        InstallerJournal.Write("Команда: " + toolName + " " + arguments);
+        int timeout = arguments == "--service-health-check" ? 7000 : systemTool ? 20000 : toolName.Equals("cmd.exe",StringComparison.OrdinalIgnoreCase) ? 60000 : 180000;
+        try {
+            var result = InstallerCommandRunner.Run(new ProcessStartInfo {
+                FileName=fileName, Arguments=arguments,
+                WorkingDirectory=workingDirectory ?? Environment.CurrentDirectory
+            },timeout);
+            InstallerJournal.Write($"Результат {toolName}: {result.ExitCode} {result.StdOut} {result.StdErr}");
+            return new CommandResult(result.ExitCode,result.StdOut,result.StdErr);
+        } catch (Exception ex) {
+            InstallerJournal.Write("Ошибка команды " + toolName + ": " + ex.Message);
+            throw;
+        }
     }
 
     private static string FormatExceptionMessage(Exception ex)
     {
-        string message = ex.Message.Trim();
+        InstallerJournal.Write(ex.ToString());
+        string message = ex.Message.Trim() + Environment.NewLine + "Журнал: " + InstallerJournal.LogPath;
         if (ex.InnerException == null)
         {
             return message;

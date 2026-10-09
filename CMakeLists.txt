@@ -1,12 +1,17 @@
 cmake_minimum_required(VERSION 3.25.0 FATAL_ERROR)
 
 set(PROJECT AmneziaVPN)
-set(AMNEZIAVPN_VERSION 5.0.0.12)
+set(AMNEZIAVPN_VERSION 5.0.0.34)
 
 project(${PROJECT} VERSION ${AMNEZIAVPN_VERSION}
         DESCRIPTION "AmneziaVPN"
         HOMEPAGE_URL "https://amnezia.org/"
 )
+
+option(AMNEZIA_EXPERIMENTAL_CDN_RECOVERY "Isolated signed-driver CDN routing control (not production)" OFF)
+if(AMNEZIA_EXPERIMENTAL_CDN_RECOVERY)
+    add_compile_definitions(AMNEZIA_EXPERIMENTAL_CDN_RECOVERY)
+endif()
 
 string(TIMESTAMP CURRENT_DATE "%Y-%m-%d")
 set(RELEASE_DATE "${CURRENT_DATE}")

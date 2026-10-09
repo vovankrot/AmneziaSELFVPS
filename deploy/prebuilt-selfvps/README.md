@@ -24,7 +24,7 @@ self-contained.
 |------|--------|----------------|
 | `windows/x64/mullvad-split-tunnel.sys`, `.inf`, `.cat` | Official Mullvad 1.3.0.0, source `0a0eb97f67d1dbcb3d08bda66d3b24f465d95475` | Signed driver update; client uses the 32-byte sublayer initialization ABI. Installer resets/unloads the old driver before replacement and stages the unchanged catalog through PnPUtil. Licenses and corresponding source URL are bundled in `licenses/mullvad-split-tunnel`. |
 | `windows/x64/mullvad-split-tunnel.sys`, `.inf`, `.cat` | Official signed Mullvad 1.3.0.0 | Client supports the new initialization ABI; installer resets and unloads the previous driver before replacement. Bundled licenses and source reference: `licenses/mullvad-split-tunnel`. |
-| `windows/x64/tunnel.dll` | [`amneziawg-windows`](https://github.com/amnezia-vpn/amneziawg-windows) v3.0.2 | AmneziaWG 3 support. The submodule's copy is an April 2026 build that predates AWG3 and **rejects** a config containing `HeaderProtectionKey` or `ContentPaddingAddition` outright, killing the tunnel rather than ignoring the keys. |
+| `windows/x64/tunnel.dll` | [`amneziawg-windows`](https://github.com/amnezia-vpn/amneziawg-windows) v3.1.20260814 | AmneziaWG 3.1 support, including `RandomTrailers` and `DisableCookies`. The submodule's copy is an April 2026 build that predates AWG3 and **rejects** a config containing `HeaderProtectionKey` or `ContentPaddingAddition` outright, killing the tunnel rather than ignoring the keys. |
 | `windows/x64/hysteria/hysteria.exe` | Hysteria 2 | Protocol this fork added; never existed upstream. |
 | `windows/x64/anytls/anytls-client.exe` | AnyTLS | Protocol this fork added; never existed upstream. |
 | `android/arm64-v8a/libwg-go.so`, `libwg.so`, `libwg-quick.so` | [`amneziawg-android`](https://github.com/amnezia-vpn/amneziawg-android) v3.0.1, NDK r27c | AmneziaWG 3 for Android. Same story as `tunnel.dll`: the submodule's build has no AWG3 support. `client/cmake/android.cmake` prefers these and warns when falling back. |
@@ -35,11 +35,11 @@ Needs Go (1.25+, or any Go with `GOTOOLCHAIN=auto` so it can fetch one) and a
 MinGW toolchain. Same command upstream's own Conan recipe uses:
 
 ```bash
-curl -L -o awg.zip https://github.com/amnezia-vpn/amneziawg-windows/archive/refs/tags/v3.0.2.zip
-# Verify against the sha256 pinned in upstream's recipes/awg-windows/conanfile.py:
-#   e5755ef1e19fd8408881cab49684d37ee4a0822d706960bbabe89770f7c436f1
+curl -L -o awg.zip https://github.com/amnezia-vpn/amneziawg-windows/archive/refs/tags/v3.1.20260814.zip
+# Pin upstream commit e90531d15802cb976773f3b63443bc281f738ca3.
+# manifest.json records the downloaded API source archive digest and DLL digest.
 sha256sum awg.zip
-unzip -q awg.zip && cd amneziawg-windows-3.0.2
+unzip -q awg.zip && cd amneziawg-windows-3.1.20260814
 
 export GOOS=windows GOARCH=amd64 CGO_ENABLED=1
 export CC=/path/to/mingw64/bin/gcc.exe

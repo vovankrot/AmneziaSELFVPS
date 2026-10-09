@@ -29,6 +29,7 @@
 #include "windowsfirewall.h"
 
 #include "core/networkUtilities.h"
+#include "core/defaultRouteSelection.h"
 
 // Metric for exclusion routes - high enough to not interfere with normal routing
 constexpr const ULONG SITE_EXCLUSION_ROUTE_METRIC = 0x5e73;
@@ -42,15 +43,14 @@ quint64 exclusionRouteKey(quint32 address, quint8 prefixLen) {
 
 bool parseIpv4RouteKey(const QString& ipRange, quint64& routeKey) {
   const QStringList parts = ipRange.split('/');
-  const QString ip = parts[0];
-  const int prefixLen = (parts.size() > 1) ? parts[1].toInt() : 32;
-
-  QHostAddress addr(ip);
-  if (addr.protocol() != QAbstractSocket::IPv4Protocol || prefixLen < 0 || prefixLen > 32) {
-    return false;
-  }
-
-  routeKey = exclusionRouteKey(addr.toIPv4Address(), static_cast<quint8>(prefixLen));
+  if (parts.size() > 2) return false;
+  bool validPrefix = true;
+  const int prefixLen = parts.size() == 2 ? parts[1].toInt(&validPrefix) : 32;
+  const QHostAddress addr(parts[0]);
+  if (!validPrefix || addr.protocol() != QAbstractSocket::IPv4Protocol
+      || prefixLen < 0 || prefixLen > 32) return false;
+  const quint32 mask = prefixLen == 0 ? 0 : (0xffffffffu << (32 - prefixLen));
+  routeKey = exclusionRouteKey(addr.toIPv4Address() & mask, static_cast<quint8>(prefixLen));
   return true;
 }
 
@@ -250,7 +250,7 @@ WindowsDaemon::WindowsDaemon() : Daemon(nullptr) {
 
   m_wgutils = WireguardUtilsWindows::create(m_firewallManager, this);
   m_dnsutils = new DnsUtilsWindows(this);
-  m_splitTunnelManager = WindowsSplitTunnel::create(m_firewallManager);
+  // Initialize the process-monitoring driver only when app exclusions are needed.
 
   connect(m_wgutils.get(), &WireguardUtilsWindows::backendFailure, this,
           &WindowsDaemon::monitorBackendFailure);
@@ -270,9 +270,10 @@ WindowsDaemon::~WindowsDaemon() {
 void WindowsDaemon::prepareActivation(const InterfaceConfig& config, int inetAdapterIndex) {
   // Before creating the interface we need to check which adapter
   // routes to the server endpoint
+  m_serverEndpoint = QHostAddress(config.m_serverIpv4AddrIn);
+  if (m_serverEndpoint.isNull()) m_serverEndpoint = QHostAddress(config.m_serverIpv6AddrIn);
   if (inetAdapterIndex == 0) {
-      auto serveraddr = QHostAddress(config.m_serverIpv4AddrIn);
-      m_inetAdapterIndex = NetworkUtilities::AdapterIndexTo(serveraddr);
+      m_inetAdapterIndex = NetworkUtilities::AdapterIndexTo(m_serverEndpoint);
   } else {
       m_inetAdapterIndex = inetAdapterIndex;
   }
@@ -305,6 +306,31 @@ void WindowsDaemon::tryRestoreSplitTunnelManager() {
   auto restoredManager = WindowsSplitTunnel::create(m_firewallManager);
   if (restoredManager) {
     logger.info() << "Split-tunnel driver manager restored; app split tunneling can be retried";
+    auto manager = restoredManager.get();
+    const QPointer<WindowsSplitTunnel> guardedManager(manager);
+    connect(manager, &WindowsSplitTunnel::addressRefreshFailed, this,
+            [this, guardedManager](quint64 generation) {
+      auto manager = guardedManager.data();
+      if (!manager) return;
+      if (m_splitTunnelManager.get() != manager ||
+          manager->addressGeneration() != generation) return;
+      if (manager->isUnresponsive()) {
+        m_appBypassActive = false;
+        m_activeAppBypassPaths.clear();
+        fallBackFromUnresponsiveSplitTunnel("address refresh");
+      } else {
+        emit networkPolicyWarning(QCoreApplication::translate("WindowsDaemon", "Не удалось обновить сетевые адреса исключений приложений. Проверьте подключение к сети; повторная попытка будет выполнена при её изменении."));
+      }
+    }, Qt::QueuedConnection);
+    connect(manager, &WindowsSplitTunnel::addressConfigurationChanged, this,
+            [this, guardedManager](bool active, quint64 generation) {
+      auto manager = guardedManager.data();
+      if (!manager) return;
+      if (m_splitTunnelManager.get() != manager ||
+          manager->addressGeneration() != generation) return;
+      m_appBypassActive = active && !m_activeAppBypassPaths.isEmpty();
+      if (!active) emit networkPolicyWarning(QCoreApplication::translate("WindowsDaemon", "Исключения приложений ожидают восстановления сетевых адресов."));
+    }, Qt::QueuedConnection);
     m_splitTunnelManager = std::move(restoredManager);
   } else {
     logger.warning() << "Split-tunnel driver manager is still unavailable; continuing with a full VPN tunnel";
@@ -313,7 +339,9 @@ void WindowsDaemon::tryRestoreSplitTunnelManager() {
 
 bool WindowsDaemon::activateSplitTunnel(const InterfaceConfig& config, int vpnAdapterIndex) {
   m_appBypassActive = false;
-  if (!m_splitTunnelManager && !config.m_vpnDisabledApps.isEmpty()) {
+  m_activeAppBypassPaths.clear();
+  const QStringList sanitizedApps = sanitizeSplitTunnelApps(config.m_vpnDisabledApps);
+  if (!m_splitTunnelManager && !sanitizedApps.isEmpty()) {
     tryRestoreSplitTunnelManager();
   }
 
@@ -325,10 +353,8 @@ bool WindowsDaemon::activateSplitTunnel(const InterfaceConfig& config, int vpnAd
     return true;
   }
 
-  const QStringList sanitizedApps = sanitizeSplitTunnelApps(config.m_vpnDisabledApps);
-
   if (!sanitizedApps.isEmpty()) {
-    if (!m_splitTunnelManager->start(m_inetAdapterIndex, vpnAdapterIndex)) {
+    if (!m_splitTunnelManager->start(m_serverEndpoint, m_inetAdapterIndex, vpnAdapterIndex)) {
       if (fallBackFromUnresponsiveSplitTunnel("startup")) return true;
       emit backendFailure(DaemonError::ERROR_SPLIT_TUNNEL_START_FAILURE);
       return false;
@@ -339,6 +365,7 @@ bool WindowsDaemon::activateSplitTunnel(const InterfaceConfig& config, int vpnAd
       return false;
     }
     m_appBypassActive = true;
+    m_activeAppBypassPaths = sanitizedApps;
   } else {
     if (!config.m_vpnDisabledApps.isEmpty()) {
       logger.warning() << "Skipping app split tunnel activation: no valid executable paths remain after sanitization";
@@ -353,6 +380,8 @@ bool WindowsDaemon::activateSplitTunnel(const InterfaceConfig& config, int vpnAd
 }
 
 bool WindowsDaemon::run(Op op, const InterfaceConfig& config) {
+  const QStringList sanitizedApps = sanitizeSplitTunnelApps(config.m_vpnDisabledApps);
+  if (op != Down && !m_splitTunnelManager && !sanitizedApps.isEmpty()) tryRestoreSplitTunnelManager();
   if (!m_splitTunnelManager) {
     if (config.m_vpnDisabledApps.length() > 0) {
       logger.warning() << "App split tunneling is unavailable; continuing with a full VPN tunnel";
@@ -366,12 +395,15 @@ bool WindowsDaemon::run(Op op, const InterfaceConfig& config) {
       emit backendFailure(DaemonError::ERROR_SPLIT_TUNNEL_START_FAILURE);
       return false;
     }
+    m_appBypassActive = false;
+    m_activeAppBypassPaths.clear();
     return true;
   }
-  const QStringList sanitizedApps = sanitizeSplitTunnelApps(config.m_vpnDisabledApps);
 
+
+  if (op == Switch) prepareActivation(config);
   if (!sanitizedApps.isEmpty()) {
-    if (!m_splitTunnelManager->start(m_inetAdapterIndex)) {
+    if (!m_splitTunnelManager->start(m_serverEndpoint, m_inetAdapterIndex)) {
       if (fallBackFromUnresponsiveSplitTunnel("startup")) return true;
       emit backendFailure(DaemonError::ERROR_SPLIT_TUNNEL_START_FAILURE);
       return false;
@@ -386,6 +418,8 @@ bool WindowsDaemon::run(Op op, const InterfaceConfig& config) {
       emit backendFailure(DaemonError::ERROR_SPLIT_TUNNEL_START_FAILURE);
       return false;
     }
+    m_appBypassActive = true;
+    m_activeAppBypassPaths = sanitizedApps;
     return true;
   }
 
@@ -398,6 +432,8 @@ bool WindowsDaemon::run(Op op, const InterfaceConfig& config) {
     return false;
   }
 
+  m_appBypassActive = false;
+  m_activeAppBypassPaths.clear();
   return true;
 }
 
@@ -409,6 +445,8 @@ void WindowsDaemon::monitorBackendFailure() {
 }
 
 bool WindowsDaemon::getDefaultGateway(quint32& gatewayIp, quint64& interfaceLuid) {
+  gatewayIp = 0;
+  interfaceLuid = 0;
   PMIB_IPFORWARD_TABLE2 table = nullptr;
   DWORD result = GetIpForwardTable2(AF_INET, &table);
   if (result != NO_ERROR) {
@@ -416,9 +454,10 @@ bool WindowsDaemon::getDefaultGateway(quint32& gatewayIp, quint64& interfaceLuid
     return false;
   }
 
-  bool found = false;
-  ULONG bestMetric = ULONG_MAX;
-  
+  const auto releaseTable = qScopeGuard([&] { FreeMibTable(table); });
+  std::vector<DefaultRouteSelection::Route> candidates;
+  QHash<quint32, quint64> interfaceLuids;
+
   for (ULONG i = 0; i < table->NumEntries; i++) {
     MIB_IPFORWARD_ROW2* row = &table->Table[i];
     
@@ -432,39 +471,44 @@ bool WindowsDaemon::getDefaultGateway(quint32& gatewayIp, quint64& interfaceLuid
       continue;
     }
     
-    // Look for default route (0.0.0.0/0)
-    if (row->DestinationPrefix.PrefixLength == 0 &&
-        row->DestinationPrefix.Prefix.Ipv4.sin_family == AF_INET) {
-      
-      // Prefer route with lower metric
-      if (row->Metric < bestMetric) {
-        gatewayIp = ntohl(row->NextHop.Ipv4.sin_addr.s_addr);
-        interfaceLuid = row->InterfaceLuid.Value;
-        bestMetric = row->Metric;
-        found = true;
-      }
-    }
+    if (row->DestinationPrefix.PrefixLength != 0
+        || row->DestinationPrefix.Prefix.si_family != AF_INET
+        || row->NextHop.si_family != AF_INET
+        || row->NextHop.Ipv4.sin_addr.s_addr == 0 || row->ValidLifetime == 0) continue;
+
+    MIB_IF_ROW2 link = {};
+    link.InterfaceLuid = row->InterfaceLuid;
+    if (GetIfEntry2(&link) != NO_ERROR) continue;
+    MIB_IPINTERFACE_ROW ip = {};
+    InitializeIpInterfaceEntry(&ip);
+    ip.Family = AF_INET;
+    ip.InterfaceLuid = row->InterfaceLuid;
+    if (GetIpInterfaceEntry(&ip) != NO_ERROR) continue;
+
+    // Windows ranks routes by route metric plus interface metric. Never use
+    // a stale/disconnected/on-link route as the gateway for public exclusions.
+    candidates.push_back({row->InterfaceIndex, ntohl(row->NextHop.Ipv4.sin_addr.s_addr),
+                          row->Metric, ip.Metric, 0, link.OperStatus == IfOperStatusUp,
+                          link.Type == IF_TYPE_SOFTWARE_LOOPBACK, bool(ip.Connected), true});
+    interfaceLuids.insert(row->InterfaceIndex, row->InterfaceLuid.Value);
   }
   
-  FreeMibTable(table);
-  
-  if (found) {
-    logger.debug() << "Found default gateway:" << QHostAddress(gatewayIp).toString();
-  }
-  return found;
+  const auto best = DefaultRouteSelection::select(candidates);
+  if (!best) return false;
+  gatewayIp = best->gateway;
+  interfaceLuid = interfaceLuids.value(best->interfaceIndex);
+  logger.debug() << "Found default gateway:" << logger.sensitive(QHostAddress(gatewayIp).toString())
+                 << "interface:" << best->interfaceIndex;
+  return true;
 }
 
 bool WindowsDaemon::addExclusionRoute(const QString& ipRange) {
-  QStringList parts = ipRange.split('/');
-  QString ip = parts[0];
-  int prefixLen = (parts.size() > 1) ? parts[1].toInt() : 32;
-  
-  QHostAddress addr(ip);
-  if (addr.protocol() != QAbstractSocket::IPv4Protocol) {
-    logger.warning() << "Site exclusion routes only support IPv4:" << ipRange;
-    return false;
-  }
-  
+  quint64 key = 0;
+  if (!parseIpv4RouteKey(ipRange, key)) return false;
+  if (m_ownedExclusionRoutes.contains(key)) return true;
+  const QHostAddress addr{quint32(key)};
+  const int prefixLen = int(key >> 32);
+
   quint32 gatewayIp = 0;
   quint64 ifLuid = 0;
   if (!getDefaultGateway(gatewayIp, ifLuid)) {
@@ -503,59 +547,25 @@ bool WindowsDaemon::addExclusionRoute(const QString& ipRange) {
     return false;
   }
   
+  // A pre-existing row belongs to its creator, not to this session.
+  if (result == NO_ERROR) m_ownedExclusionRoutes.insert(key, row);
   logger.info() << "Added site exclusion route:" << ipRange << "via" << QHostAddress(gatewayIp).toString();
   return true;
 }
 
 bool WindowsDaemon::deleteExclusionRoute(const QString& ipRange) {
-  QStringList parts = ipRange.split('/');
-  QString ip = parts[0];
-  int prefixLen = (parts.size() > 1) ? parts[1].toInt() : 32;
-  
-  QHostAddress addr(ip);
-  if (addr.protocol() != QAbstractSocket::IPv4Protocol) {
-    return false;
-  }
-  
-  quint32 gatewayIp = 0;
-  quint64 ifLuid = 0;
-  if (!getDefaultGateway(gatewayIp, ifLuid)) {
-    // If we can't find gateway, try to delete route anyway by scanning the table
-    PMIB_IPFORWARD_TABLE2 table = nullptr;
-    if (GetIpForwardTable2(AF_INET, &table) == NO_ERROR) {
-      for (ULONG i = 0; i < table->NumEntries; i++) {
-        MIB_IPFORWARD_ROW2* row = &table->Table[i];
-        if (row->Protocol == MIB_IPPROTO_NETMGMT &&
-            row->Metric == SITE_EXCLUSION_ROUTE_METRIC &&
-            row->DestinationPrefix.PrefixLength == prefixLen &&
-            row->DestinationPrefix.Prefix.Ipv4.sin_addr.s_addr == htonl(addr.toIPv4Address())) {
-          DeleteIpForwardEntry2(row);
-          logger.info() << "Deleted site exclusion route:" << ipRange;
-        }
-      }
-      FreeMibTable(table);
-    }
-    return true;
-  }
-  
-  MIB_IPFORWARD_ROW2 row;
-  InitializeIpForwardEntry(&row);
-  
-  row.DestinationPrefix.Prefix.Ipv4.sin_family = AF_INET;
-  row.DestinationPrefix.Prefix.Ipv4.sin_addr.s_addr = htonl(addr.toIPv4Address());
-  row.DestinationPrefix.PrefixLength = prefixLen;
-  row.NextHop.Ipv4.sin_family = AF_INET;
-  row.NextHop.Ipv4.sin_addr.s_addr = htonl(gatewayIp);
-  row.InterfaceLuid.Value = ifLuid;
-  row.Protocol = static_cast<NL_ROUTE_PROTOCOL>(MIB_IPPROTO_NETMGMT);
-  row.Metric = SITE_EXCLUSION_ROUTE_METRIC;
-  
-  DWORD result = DeleteIpForwardEntry2(&row);
+  quint64 key = 0;
+  if (!parseIpv4RouteKey(ipRange, key)) return false;
+  const auto owned = m_ownedExclusionRoutes.constFind(key);
+  if (owned == m_ownedExclusionRoutes.cend()) return true;
+  // Use the original gateway/interface, including after a network change.
+  // A failed delete retains ownership so cleanup can be retried.
+  const DWORD result = DeleteIpForwardEntry2(&owned.value());
   if (result != NO_ERROR && result != ERROR_NOT_FOUND) {
     logger.warning() << "Failed to delete exclusion route for" << ipRange << "error:" << result;
     return false;
   }
-  
+  m_ownedExclusionRoutes.remove(key);
   logger.info() << "Deleted site exclusion route:" << ipRange;
   return true;
 }
@@ -563,7 +573,11 @@ bool WindowsDaemon::deleteExclusionRoute(const QString& ipRange) {
 void WindowsDaemon::activateSiteExclusionRoutes(const QStringList& excludedAddresses) {
   // First, deactivate any existing routes
   deactivateSiteExclusionRoutes();
-  
+  if (!m_siteExclusionRoutes.isEmpty()) {
+    logger.warning() << "Site route replacement deferred: previous cleanup failed";
+    return;
+  }
+
   if (excludedAddresses.isEmpty()) {
     return;
   }
@@ -578,20 +592,25 @@ void WindowsDaemon::activateSiteExclusionRoutes(const QStringList& excludedAddre
 }
 
 void WindowsDaemon::deactivateSiteExclusionRoutes() {
-  if (m_siteExclusionRoutes.isEmpty()) {
-    return;
+  QSet<quint64> geoKeys;
+  for (const auto& cidr : std::as_const(m_geoExclusionRoutes)) {
+    quint64 key = 0;
+    if (parseIpv4RouteKey(cidr, key)) geoKeys.insert(key);
   }
-  
-  logger.info() << "Deactivating" << m_siteExclusionRoutes.size() << "site exclusion routes";
-  
-  for (const QString& ipRange : m_siteExclusionRoutes) {
-    deleteExclusionRoute(ipRange);
+  const auto routes = m_siteExclusionRoutes;
+  for (const auto& range : routes) {
+    quint64 key = 0;
+    if ((parseIpv4RouteKey(range, key) && geoKeys.contains(key)) || deleteExclusionRoute(range))
+      m_siteExclusionRoutes.remove(range);
   }
-  m_siteExclusionRoutes.clear();
 }
 
 void WindowsDaemon::activateGeoExclusionRoutes(const QStringList& cidrs) {
   deactivateGeoExclusionRoutes();
+  if (!m_geoExclusionRoutes.isEmpty()) {
+    logger.warning() << "Geo route replacement deferred: previous cleanup failed";
+    return;
+  }
 
   if (cidrs.isEmpty()) {
     return;
@@ -621,6 +640,13 @@ void WindowsDaemon::activateGeoExclusionRoutes(const QStringList& cidrs) {
   int added = 0;
   int failed = 0;
   for (const QString& cidr : aggregated) {
+    quint64 key = 0;
+    if (!parseIpv4RouteKey(cidr, key)) { ++failed; continue; }
+    if (m_ownedExclusionRoutes.contains(key)) {
+      m_geoExclusionRoutes.insert(cidr);
+      ++added;
+      continue;
+    }
     QStringList parts = cidr.split('/');
     if (parts.size() != 2) continue;
     
@@ -648,6 +674,7 @@ void WindowsDaemon::activateGeoExclusionRoutes(const QStringList& cidrs) {
     
     DWORD result = CreateIpForwardEntry2(&row);
     if (result == NO_ERROR || result == ERROR_OBJECT_ALREADY_EXISTS) {
+      if (result == NO_ERROR) m_ownedExclusionRoutes.insert(key, row);
       m_geoExclusionRoutes.insert(cidr);
       added++;
     } else {
@@ -659,55 +686,17 @@ void WindowsDaemon::activateGeoExclusionRoutes(const QStringList& cidrs) {
 }
 
 void WindowsDaemon::deactivateGeoExclusionRoutes() {
-  if (m_geoExclusionRoutes.isEmpty()) {
-    return;
+  QSet<quint64> siteKeys;
+  for (const auto& range : std::as_const(m_siteExclusionRoutes)) {
+    quint64 key = 0;
+    if (parseIpv4RouteKey(range, key)) siteKeys.insert(key);
   }
-
-  const auto geoRoutes = m_geoExclusionRoutes;
-  const int count = geoRoutes.size();
-  logger.info() << "Deactivating" << count << "geo exclusion routes (tracked batch scan)";
-
-  QSet<quint64> siteRouteKeys;
-  for (const QString& ipRange : m_siteExclusionRoutes) {
-    quint64 routeKey = 0;
-    if (parseIpv4RouteKey(ipRange, routeKey)) {
-      siteRouteKeys.insert(routeKey);
-    }
+  const auto routes = m_geoExclusionRoutes;
+  for (const auto& cidr : routes) {
+    quint64 key = 0;
+    if ((parseIpv4RouteKey(cidr, key) && siteKeys.contains(key)) || deleteExclusionRoute(cidr))
+      m_geoExclusionRoutes.remove(cidr);
   }
-
-  QSet<quint64> geoRouteKeys;
-  for (const QString& cidr : geoRoutes) {
-    quint64 routeKey = 0;
-    if (parseIpv4RouteKey(cidr, routeKey) && !siteRouteKeys.contains(routeKey)) {
-      geoRouteKeys.insert(routeKey);
-    }
-  }
-
-  m_geoExclusionRoutes.clear();
-  if (geoRouteKeys.isEmpty()) {
-    logger.info() << "Geo exclusion routes cleanup: nothing to remove";
-    return;
-  }
-
-  PMIB_IPFORWARD_TABLE2 table = nullptr;
-  if (GetIpForwardTable2(AF_INET, &table) != NO_ERROR) {
-    logger.warning() << "Failed to get routing table for geo route cleanup";
-    return;
-  }
-
-  int deleted = 0;
-  for (ULONG i = 0; i < table->NumEntries; i++) {
-    MIB_IPFORWARD_ROW2* r = &table->Table[i];
-    if (r->Protocol == MIB_IPPROTO_NETMGMT &&
-        r->Metric == SITE_EXCLUSION_ROUTE_METRIC &&
-        geoRouteKeys.contains(exclusionRouteKey(ntohl(r->DestinationPrefix.Prefix.Ipv4.sin_addr.s_addr),
-                                                r->DestinationPrefix.PrefixLength))) {
-      if (DeleteIpForwardEntry2(r) == NO_ERROR) {
-        deleted++;
-      }
-    }
-  }
-  FreeMibTable(table);
-
-  logger.info() << "Geo exclusion routes cleanup: removed" << deleted << "of" << geoRouteKeys.size();
+  if (!m_geoExclusionRoutes.isEmpty())
+    logger.warning() << "Geo route cleanup incomplete; retained" << m_geoExclusionRoutes.size() << "routes for retry";
 }

@@ -10,6 +10,8 @@
 
 #include "ipc.h"
 #include "ipcserverprocess.h"
+#include "clientSessionLease.h"
+#include <QSet>
 
 #include "rep_ipc_interface_source.h"
 
@@ -17,6 +19,8 @@ class IpcServer : public IpcInterfaceSource
 {
 public:
     explicit IpcServer(QObject *parent = nullptr);
+    bool acceptClient(QLocalSocket *socket);
+    std::function<bool()> recoverNativeTunnel;
     virtual int createPrivilegedProcess() override;
 
     virtual int routeAddList(const QString &gw, const QStringList &ips) override;
@@ -49,6 +53,13 @@ public:
     virtual QString runNetworkDiagnostics() override;
 
 private:
+    bool hasOwnedResources() const;
+    void recoverOwner(std::function<void(bool)> completed);
+    void recoverOwnerAfterHelpers(std::function<void(bool)> completed, int remainingPolls);
+    ClientSessionLease m_ownerLease;
+    bool m_ownedPolicy = false, m_ownedDns = false, m_ownedIpv6 = false, m_ownedXray = false, m_ownedRoutes = false;
+    QSet<QString> m_ownedDevices;
+    void releasePrivilegedProcess(int id, bool explicitlyClosed = false);
     int m_localpid = 0;
 
     struct ProcessDescriptor {
@@ -61,6 +72,11 @@ private:
         QSharedPointer<IpcServerProcess> ipcProcess;
         QSharedPointer<QRemoteObjectHost> serverNode;
         QSharedPointer<QLocalServer> localServer;
+        int connectedPeers = 0;
+        bool remotingEnabled = false;
+        bool closing = false;
+        QString ownerIdentity;
+        quint64 peerGeneration = 0;
     };
 
     QMap<int, ProcessDescriptor> m_processes;

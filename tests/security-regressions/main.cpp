@@ -1,6 +1,9 @@
 #include <QtTest>
 #include "common/logger/logRedaction.h"
+#include "client/core/tun2socksOutput.h"
+#include "client/core/localSocksUrl.h"
 #include <QFile>
+#include <QRegExp>
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QProcess>
@@ -20,13 +23,173 @@ QString amnezia::ContainerProps::containerToString(DockerContainer container) {
 #include "client/core/configFormat.h"
 #include "client/core/protectedBlob.h"
 #include "client/core/sshHostTrust.h"
+#include "client/core/sshSessionPolicy.h"
 #include "ipc/ipc.h"
 #include "ipc/localPeerAuth.h"
 
 struct Peer { QString clientId, latestHandshake, dataReceived, dataSent, allowedIps, endpoint; };
+#include "client/core/api/apiDefs.h"
+#include <QJsonArray>
+namespace config_key = amnezia::config_key;
+class PasswordModelFixture {
+public:
+    QJsonArray m_servers;
+    QJsonObject getServerConfig(int index) const { return index >= 0 && index < m_servers.size() ? m_servers.at(index).toObject() : QJsonObject{}; }
+    int m_processedServerIndex = 0, writes = 0;
+    bool canEditProcessedServerPassword() const;
+    bool updateProcessedServerPassword(int expectedIndex, const QString &password);
+    void editServer(const QJsonObject &server, int index) { m_servers.replace(index, server); ++writes; }
+};
+#include "production-password-model.inc"
+namespace NetworkUtilities {
+QRegExp ipPortRegExp();
+QString netMaskFromIpWithSubnet(const QString);
+bool checkIPv4Format(const QString &s) { return QHostAddress(s).protocol() == QAbstractSocket::IPv4Protocol; }
+}
+#include "production-port-validator.inc"
+#include "production-subnet-mask.inc"
+DockerContainer fixtureDnsContainer(const QString &s) { return s == "amnezia-dns" ? DockerContainer::Dns : DockerContainer::None; }
+struct DnsSettingsFixture {
+    QString primary = "9.9.9.9", secondary = "149.112.112.112";
+    QString primaryDns() const { return primary; } QString secondaryDns() const { return secondary; }
+};
+class DnsModelFixture {
+public:
+    QJsonArray m_servers;
+    QJsonObject getServerConfig(int index) const { return index >= 0 && index < m_servers.size() ? m_servers.at(index).toObject() : QJsonObject{}; }
+    bool m_isAmneziaDnsEnabled = false;
+    std::shared_ptr<DnsSettingsFixture> m_settings = std::make_shared<DnsSettingsFixture>();
+    QPair<QString, QString> getDnsPair(int);
+};
+#include "production-dns-model.inc"
+QString testApplicationFilePath() { return "C:/Program Files/AmneziaVPN/AmneziaVPN.exe"; }
+struct AutostartFixture { static QString appPath(); };
+#include "production-autostart-path.inc"
 class SecurityTests : public QObject {
     Q_OBJECT
 private slots:
+    void portValidatorAcceptsExactlyTheEntirePortRange() {
+        auto validator = NetworkUtilities::ipPortRegExp();
+        for (int port = 1; port <= 65535; ++port)
+            QVERIFY2(validator.exactMatch(QString::number(port)), qPrintable(QString::number(port)));
+        for (const auto &bad : {"0", "65536", "70000", "-1", "1.5", "01", "1x", ""})
+            QVERIFY(!validator.exactMatch(bad));
+    }
+    void subnetMaskHasDefinedBoundaryBehavior() {
+        QCOMPARE(NetworkUtilities::netMaskFromIpWithSubnet("192.0.2.1/0"), QString("0.0.0.0"));
+        QCOMPARE(NetworkUtilities::netMaskFromIpWithSubnet("192.0.2.1/1"), QString("128.0.0.0"));
+        QCOMPARE(NetworkUtilities::netMaskFromIpWithSubnet("192.0.2.1/24"), QString("255.255.255.0"));
+        QCOMPARE(NetworkUtilities::netMaskFromIpWithSubnet("192.0.2.1/32"), QString("255.255.255.255"));
+        for (const auto &bad : {"192.0.2.1/-1", "192.0.2.1/33", "192.0.2.1/x", "192.0.2.1/24/8"})
+            QCOMPARE(NetworkUtilities::netMaskFromIpWithSubnet(bad), QString("255.255.255.255"));
+    }
+    void windowsAutostartQuotesPathWithSpaces() {
+        const auto command=AutostartFixture::appPath();
+        QVERIFY(command.startsWith('"'));
+        QCOMPARE(QProcess::splitCommand(command), QStringList({QDir::toNativeSeparators(testApplicationFilePath()),"--autostart"}));
+    }
+    void selectedDnsHonorsLocalSwitchAndRequestedServer() {
+        DnsModelFixture model;
+        model.m_servers = {QJsonObject{{config_key::dns1, protocols::dns::amneziaDnsIp}},
+            QJsonObject{{config_key::dns1, "8.8.8.8"}},
+            QJsonObject{{config_key::containers, QJsonArray{QJsonObject{{config_key::container,"amnezia-dns"}}}}}};
+        QVERIFY(model.getDnsPair(-1).first.isEmpty()); QVERIFY(model.getDnsPair(3).first.isEmpty());
+        QCOMPARE(model.getDnsPair(0), qMakePair(QString("9.9.9.9"), QString("149.112.112.112")));
+        model.m_isAmneziaDnsEnabled = true;
+        QCOMPARE(model.getDnsPair(0), qMakePair(protocols::dns::amneziaDnsIp, QString()));
+        QCOMPARE(model.getDnsPair(1).first, QString("9.9.9.9"));
+        QCOMPARE(model.getDnsPair(2).first, protocols::dns::amneziaDnsIp);
+        model.m_isAmneziaDnsEnabled = false;
+        model.m_settings->secondary = model.m_settings->primary;
+        QVERIFY(model.getDnsPair(0).second.isEmpty());
+        model.m_settings->primary = "invalid"; model.m_settings->secondary = "invalid";
+        QCOMPARE(model.getDnsPair(0), qMakePair(QString("1.1.1.1"), QString()));
+    }
+    void sshPortAndCredentialIdentityAndUtf8Passphrase() {
+        QCOMPARE(SshSessionPolicy::effectivePort(0), 22);
+        QCOMPARE(SshSessionPolicy::effectivePort(2222), 2222);
+        QCOMPARE(SshSessionPolicy::effectivePort(65536), -1);
+        QCOMPARE(SshSessionPolicy::effectivePort(-1), -1);
+        const auto key = SshSessionPolicy::identity("host", "user", 0, "secret");
+        QCOMPARE(key, SshSessionPolicy::identity("host", "user", 22, "secret"));
+        QVERIFY(key != SshSessionPolicy::identity("host", "user", 2222, "secret"));
+        QVERIFY(key != SshSessionPolicy::identity("host", "user", 22, "changed"));
+        QVERIFY(key != SshSessionPolicy::identity("other", "user", 22, "secret"));
+        QVERIFY(key != SshSessionPolicy::identity("host", "other", 22, "secret"));
+        char buffer[5] = {'?', '?', '?', '?', '!'};
+        const QString text = QString::fromUtf8("юя");
+        QVERIFY(!SshSessionPolicy::copyPassphrase(text, buffer, 4));
+        QCOMPARE(buffer[0], '\0'); QCOMPARE(buffer[4], '!');
+        QVERIFY(SshSessionPolicy::copyPassphrase(text, buffer, 5));
+        QCOMPARE(QByteArray(buffer), text.toUtf8());
+        QVERIFY(!SshSessionPolicy::copyPassphrase(text, nullptr, 5));
+        QVERIFY(!SshSessionPolicy::copyPassphrase(text, buffer, 0));
+    }
+    void savedServerPasswordPreservesProfileAndRejectsWrongTarget() {
+        QJsonObject original {{"hostName", "fixture.invalid"}, {"userName", "root"},
+            {"password", "old-fixture"}, {"port", 2222}, {"containers", QJsonArray{QJsonObject{{"config", "preserved"}}}}};
+        // Use the actual production key names, including future schema changes.
+        original.insert(amnezia::config_key::hostName, "fixture.invalid");
+        original.insert(amnezia::config_key::userName, "root");
+        original.insert(amnezia::config_key::password, "old-fixture");
+        PasswordModelFixture model;
+        model.m_servers = {original};
+        QVERIFY(model.canEditProcessedServerPassword());
+        QVERIFY(!model.updateProcessedServerPassword(1, "wrong-target"));
+        QVERIFY(!model.updateProcessedServerPassword(0, ""));
+        QCOMPARE(model.writes, 0);
+        const QString password = QString::fromUtf8("  p@ss:ю  ");
+        QVERIFY(model.updateProcessedServerPassword(0, password));
+        auto expected = original; expected.insert(amnezia::config_key::password, password);
+        QCOMPARE(model.m_servers.at(0).toObject(), expected);
+        QCOMPARE(model.writes, 1);
+        auto key = original; key.insert(amnezia::config_key::password, "-----BEGIN PRIVATE KEY-----fixture");
+        model.m_servers = {key};
+        QVERIFY(!model.updateProcessedServerPassword(0, "replacement"));
+        model.m_servers = {original};
+        model.m_processedServerIndex = -1;
+        QVERIFY(!model.updateProcessedServerPassword(-1, "replacement"));
+    }
+    void localProxyUrlPreservesCredentialsAndRedactsThem() {
+        const QString user = QString::fromUtf8("a:b@c/?#% +ю");
+        const QString password = QString::fromUtf8("p@:/?#% +\tя");
+        const auto encoded = LocalSocksUrl::make(10808, user, password);
+        const QUrl parsed(encoded, QUrl::StrictMode);
+        QVERIFY(parsed.isValid());
+        QCOMPARE(parsed.host(), QString("127.0.0.1"));
+        QCOMPARE(parsed.port(), 10808);
+        QCOMPARE(parsed.userName(QUrl::FullyDecoded), user);
+        QCOMPARE(parsed.password(QUrl::FullyDecoded), password);
+        QVERIFY(parsed.query().isEmpty() && parsed.fragment().isEmpty());
+        const auto safe = LogRedaction::hideProxyCredentials(encoded);
+        QCOMPARE(safe, QString("socks5://[REDACTED]@127.0.0.1:10808"));
+        QCOMPARE(LocalSocksUrl::make(10809), QString("socks5://127.0.0.1:10809"));
+    }
+    void tunOutputHandlesFragmentsAndKeepsWarnings() {
+        Tun2SocksOutput parser;
+        QVERIFY(!parser.feed("[STACK] tun://tun2 <-> socks5://user:").ready);
+        auto first = parser.feed("secret@localhost:1000\n[UDP] normal flow\n");
+        QVERIFY(first.ready);
+        QCOMPARE(first.diagnostics.size(), 1);
+        QVERIFY(!first.diagnostics.first().contains("secret"));
+        QVERIFY(!parser.feed("[STACK] tun://tun2 <-> socks5://localhost:1000\n").ready);
+        auto after = parser.feed("[UDP] normal\nlevel=warning [UDP] symmetric NAT drop packet\nlevel=error [TCP] connection reset\n");
+        QCOMPARE(after.diagnostics.size(), 2);
+        QVERIFY(after.diagnostics.first().contains("drop packet"));
+        for (int i = 0; i < 1000; ++i)
+            QVERIFY(parser.feed("[TCP] normal\n[UDP] normal\n").diagnostics.isEmpty());
+        QCOMPARE(parser.bufferedBytes(), qsizetype(0));
+    }
+    void tunOutputDiscardsWholeOversizedLines() {
+        Tun2SocksOutput parser;
+        QVERIFY(parser.feed(QByteArray(20000, 'x') + "socks5://user:").diagnostics.isEmpty());
+        QVERIFY(parser.bufferedBytes() <= 16384);
+        auto result = parser.feed("secret@localhost\nlevel=error [UDP] failure\n");
+        QCOMPARE(result.diagnostics.size(), 1);
+        QVERIFY(!result.diagnostics.first().contains("secret"));
+        QCOMPARE(parser.bufferedBytes(), qsizetype(0));
+        QVERIFY(parser.feed("[STACK] tun://tun2 <-> socks5://localhost:1\n").ready);
+    }
     void proxyCredentialsNeverReachLogs() {
         QCOMPARE(LogRedaction::hideProxyCredentials("[STACK] tun://tun2 <-> socks5://test-user:test-password@127.0.0.1:63780"),
                  QString("[STACK] tun://tun2 <-> socks5://[REDACTED]@127.0.0.1:63780"));
@@ -157,9 +320,16 @@ private slots:
     void rejectUnknownConfigVersions() {
         QVERIFY(ConfigFormat::supported({{"containers", QJsonArray()}}));
         QVERIFY(ConfigFormat::supported(ConfigFormat::stamp({})));
-        QVERIFY(!ConfigFormat::supported({{"awg", QJsonObject{{"RandomTrailers", true}}}}));
-        QVERIFY(!ConfigFormat::supported({{"last_config", "{\"DisableCookies\":false}"}}));
-        QVERIFY(!ConfigFormat::backendCompatible("[Interface]\nRandomTrailers = true\n"));
+        const QJsonObject toggles{{"awg", QJsonObject{{"RandomTrailers", true}}}};
+        const QJsonObject embedded{{"last_config", "{\"DisableCookies\":false}"}};
+        const QJsonValue text("[Interface]\nRandomTrailers = on\n");
+        QVERIFY(!ConfigFormat::backendCompatible(toggles, false));
+        QVERIFY(!ConfigFormat::backendCompatible(embedded, false));
+        QVERIFY(!ConfigFormat::backendCompatible(text, false));
+        QVERIFY(ConfigFormat::backendCompatible(toggles, true));
+        QVERIFY(ConfigFormat::backendCompatible(embedded, true));
+        QVERIFY(ConfigFormat::backendCompatible(text, true));
+        QCOMPARE(ConfigFormat::supported(toggles), ConfigFormat::nativeAwg31);
         for (const QJsonValue value : {QJsonValue(1), QJsonValue(-1), QJsonValue(0.5), QJsonValue("0"), QJsonValue(true), QJsonValue(QJsonValue::Null)})
             QVERIFY(!ConfigFormat::supported({{"formatVersion", value}}));
     }

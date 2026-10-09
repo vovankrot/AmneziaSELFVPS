@@ -4,10 +4,13 @@
 #include <QTcpSocket>
 #include <QThread>
 #include <QUrl>
+#include <atomic>
+#include <memory>
 
 namespace SocksProbe {
 inline bool connect(const QString &targetHost, quint16 targetPort, int timeoutMs, quint16 socksPort,
-                    const QString &user = {}, const QString &password = {})
+                    const QString &user = {}, const QString &password = {},
+                    const std::shared_ptr<std::atomic_bool> &canceled = {})
 {
     const QByteArray host = QUrl::toAce(targetHost), username = user.toUtf8(), secret = password.toUtf8();
     const bool authenticated = !user.isEmpty() || !password.isEmpty();
@@ -15,18 +18,20 @@ inline bool connect(const QString &targetHost, quint16 targetPort, int timeoutMs
         || (authenticated && (username.isEmpty() || secret.isEmpty() || username.size() > 255 || secret.size() > 255))) return false;
     QElapsedTimer timer; timer.start();
     auto budget = [&] { return qMax(0, timeoutMs - int(timer.elapsed())); };
-    while (budget() > 0 && !QThread::currentThread()->isInterruptionRequested()) {
+    const auto active = [&] { return !QThread::currentThread()->isInterruptionRequested()
+        && (!canceled || !canceled->load()); };
+    while (budget() > 0 && active()) {
         QTcpSocket socket;
         socket.connectToHost(QHostAddress::LocalHost, socksPort);
         auto read = [&](int size) {
-            while (socket.bytesAvailable() < size && budget() > 0) {
+            while (socket.bytesAvailable() < size && budget() > 0 && active()) {
                 socket.waitForReadyRead(qMin(budget(), 100));
                 if (socket.state() != QAbstractSocket::ConnectedState) return QByteArray();
             }
-            return socket.bytesAvailable() >= size ? socket.read(size) : QByteArray();
+            return active() && socket.bytesAvailable() >= size ? socket.read(size) : QByteArray();
         };
         auto send = [&](const QByteArray &bytes) {
-            if (budget() <= 0 || socket.write(bytes) != bytes.size()) return false;
+            if (!active() || budget() <= 0 || socket.write(bytes) != bytes.size()) return false;
             return socket.bytesToWrite() == 0 || socket.waitForBytesWritten(qMin(budget(), 500));
         };
         bool success = false;
@@ -55,8 +60,8 @@ inline bool connect(const QString &targetHost, quint16 targetPort, int timeoutMs
             }
         }
         socket.abort();
-        if (success) return true;
-        if (budget() > 0) QThread::msleep(qMin(budget(), 100));
+        if (success && active()) return true;
+        if (budget() > 0 && active()) QThread::msleep(qMin(budget(), 100));
     }
     return false;
 }

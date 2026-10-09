@@ -342,6 +342,14 @@
         <source>Split tunneling settings were updated, but the selected file could not be started</source>
         <translation>Настройки раздельного туннелирования обновлены, но выбранный файл не удалось запустить</translation>
     </message>
+    <message>
+        <source>The folder is too large to scan. Select the application's own folder.</source>
+        <translation>Папка слишком большая для поиска. Выберите папку самого приложения.</translation>
+    </message>
+    <message>
+        <source>Folder contents changed. Scan the folder again.</source>
+        <translation>Содержимое папки изменилось. Выполните поиск в папке снова.</translation>
+    </message>
 </context>
 <context>
     <name>AppUpdateDialog</name>
@@ -383,6 +391,10 @@
 </context>
 <context>
     <name>AppUpdater</name>
+    <message>
+        <source>Проверяем установщик перед запуском…</source>
+        <translation>Проверяем установщик перед запуском…</translation>
+    </message>
     <message>
         <location filename="../core/appUpdater.cpp" line="+64"/>
         <source>Проверяем релизы GitHub…</source>
@@ -3937,6 +3949,26 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <source>Open application folder</source>
         <translation>Открыть папку с приложениями</translation>
     </message>
+    <message>
+        <source>Add applications from folder "%1" to VPN bypass?</source>
+        <translation>Добавить приложения из папки «%1» в обход VPN?</translation>
+    </message>
+    <message>
+        <source>Found %1 executable files. The game launcher and game must use the same route.</source>
+        <translation>Найдено исполняемых файлов: %1. Клиент запуска и сама игра должны использовать одинаковый маршрут.</translation>
+    </message>
+    <message>
+        <source>…and %1 more files</source>
+        <translation>…и ещё %1 файлов</translation>
+    </message>
+    <message>
+        <source>Scanning…</source>
+        <translation>Поиск…</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation>Добавить</translation>
+    </message>
 </context>
 <context>
     <name>PageSettingsApplication</name>
@@ -4738,6 +4770,8 @@ Recommended: use &quot;Sites not in the list will use VPN&quot; together with th
         <source>Clear server from Amnezia software</source>
         <translation>Очистить сервер от протоколов и сервисов Amnezia</translation>
     </message>
+    <message><source>Изменить сохранённый пароль SSH</source><translation>Изменить сохранённый пароль SSH</translation></message>
+    <message><source>Обновить пароль пользователя для доступа к существующему VPS</source><translation>Обновить пароль пользователя для доступа к существующему VPS</translation></message>
 </context>
 <context>
     <name>PageSettingsServerInfo</name>
@@ -5334,6 +5368,11 @@ Sites hosted outside Russia (CDN/foreign hosting) can be added manually to the e
         <source>Add imported sites to existing ones</source>
         <translation>Добавить импортированные сайты к существующим</translation>
     </message>
+    <message><source>Как использовать список сайтов</source><translation>Как использовать список сайтов</translation></message>
+    <message><source>Сайты из списка — через VPN</source><translation>Сайты из списка — через VPN</translation></message>
+    <message><source>Сайты из списка — без VPN</source><translation>Сайты из списка — без VPN</translation></message>
+    <message><source>Раздельное туннелирование сайтов выключено. Список не применяется.</source><translation>Раздельное туннелирование сайтов выключено. Список не применяется.</translation></message>
+    <message><source>Дополнительное правило прямого доступа по российским IP-адресам. Выбранный режим списка сайтов остаётся прежним.</source><translation>Дополнительное правило прямого доступа по российским IP-адресам. Выбранный режим списка сайтов остаётся прежним.</translation></message>
 </context>
 <context>
     <name>PageSetupWizardApiFreeInfo</name>
@@ -8516,6 +8555,7 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
         <source>Mbps</source>
         <translation>Мбит/с</translation>
     </message>
+    <message><source>Не удалось полностью восстановить сеть после VPN. Повторите отключение перед новым подключением.</source><translation>Не удалось полностью восстановить сеть после VPN. Повторите отключение перед новым подключением.</translation></message>
 </context>
 <context>
     <name>VpnProtocol</name>
@@ -8559,6 +8599,7 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
+    <message><source>Не удалось полностью очистить VPN-сессию. Новое подключение заблокировано до успешной очистки.</source><translation>Не удалось полностью очистить VPN-сессию. Новое подключение заблокировано до успешной очистки.</translation></message>
 </context>
 <context>
     <name>WindowsDaemon</name>
@@ -8573,6 +8614,8 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
         <source>Исключения приложений недоступны. Весь трафик идёт через VPN.</source>
         <translation>Исключения приложений недоступны. Весь трафик идёт через VPN.</translation>
     </message>
+    <message><source>Не удалось обновить сетевые адреса исключений приложений. Проверьте подключение к сети; повторная попытка будет выполнена при её изменении.</source><translation>Не удалось обновить сетевые адреса исключений приложений. Проверьте подключение к сети; повторная попытка будет выполнена при её изменении.</translation></message>
+    <message><source>Исключения приложений ожидают восстановления сетевых адресов.</source><translation>Исключения приложений ожидают восстановления сетевых адресов.</translation></message>
 </context>
 <context>
     <name>WireguardConfigurator</name>
@@ -8589,6 +8632,7 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
         <source>XRay: проверочный сайт недоступен. Соединение сохранено, чтобы не прерывать исключённые приложения. Если VPN не работает, переподключите его вручную.</source>
         <translation>XRay: проверочный сайт недоступен. Соединение сохранено, чтобы не прерывать исключённые приложения. Если VPN не работает, переподключите его вручную.</translation>
     </message>
+    <message><source>Не удалось полностью очистить VPN-сессию. Новое подключение заблокировано до успешной очистки.</source><translation>Не удалось полностью очистить VPN-сессию. Новое подключение заблокировано до успешной очистки.</translation></message>
 </context>
 <context>
     <name>amnezia::ContainerProps</name>
@@ -8647,5 +8691,25 @@ FileZilla или другие SFTP-клиенты, а также смонтир�
         <source>Save</source>
         <translation>Сохранить</translation>
     </message>
+</context>
+<context>
+    <name>ServerPasswordDialog</name>
+    <message><source>Сохранённый пароль SSH</source><translation>Сохранённый пароль SSH</translation></message>
+    <message><source>Пользователь: %1</source><translation>Пользователь: %1</translation></message>
+    <message><source>Укажите пароль, уже установленный на VPS. Он сохранится только в приложении и будет использоваться при следующих SSH-подключениях.</source><translation>Укажите пароль, уже установленный на VPS. Он сохранится только в приложении и будет использоваться при следующих SSH-подключениях.</translation></message>
+    <message><source>Новый сохранённый пароль</source><translation>Новый сохранённый пароль</translation></message>
+    <message><source>Повторите пароль</source><translation>Повторите пароль</translation></message>
+    <message><source>Сохранить</source><translation>Сохранить</translation></message>
+    <message><source>Отмена</source><translation>Отмена</translation></message>
+    <message><source>Не удалось сохранить пароль. Откройте настройки сервера заново.</source><translation>Не удалось сохранить пароль. Откройте настройки сервера заново.</translation></message>
+    <message><source>Пароль SSH сохранён в приложении.</source><translation>Пароль SSH сохранён в приложении.</translation></message>
+</context>
+<context>
+    <name>Hysteria2Protocol</name>
+    <message><source>Не удалось полностью очистить VPN-сессию. Новое подключение заблокировано до успешной очистки.</source><translation>Не удалось полностью очистить VPN-сессию. Новое подключение заблокировано до успешной очистки.</translation></message>
+</context>
+<context>
+    <name>AnyTlsProtocol</name>
+    <message><source>Не удалось полностью очистить VPN-сессию. Новое подключение заблокировано до успешной очистки.</source><translation>Не удалось полностью очистить VPN-сессию. Новое подключение заблокировано до успешной очистки.</translation></message>
 </context>
 </TS>

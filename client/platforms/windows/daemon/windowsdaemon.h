@@ -7,6 +7,7 @@
 
 #include <qpointer.h>
 #include <QSet>
+#include <QHash>
 
 #include "daemon/daemon.h"
 #include "dnsutilswindows.h"
@@ -14,6 +15,7 @@
 #include "windowssplittunnel.h"
 #include "windowstunnelservice.h"
 #include "wireguardutilswindows.h"
+#include <netioapi.h>
 
 #define TUNNEL_SERVICE_NAME L"AmneziaWGTunnel$AmneziaVPN"
 
@@ -27,6 +29,7 @@ class WindowsDaemon final : public Daemon {
   void prepareActivation(const InterfaceConfig& config, int inetAdapterIndex = 0) override;
   bool activateSplitTunnel(const InterfaceConfig& config, int vpnAdapterIndex = 0) override;
   bool appBypassActive() const { return m_appBypassActive; }
+  const QStringList& activeAppBypassPaths() const { return m_activeAppBypassPaths; }
   
   // Site-based split tunneling: add exclusion routes for specified addresses
   void activateSiteExclusionRoutes(const QStringList& excludedAddresses);
@@ -57,9 +60,12 @@ class WindowsDaemon final : public Daemon {
 
   bool m_splitTunnelQuarantined = false;
   bool m_appBypassActive = false;
+  QStringList m_activeAppBypassPaths;
   int m_inetAdapterIndex = -1;
+  QHostAddress m_serverEndpoint;
   QSet<QString> m_siteExclusionRoutes;  // Track created exclusion routes
   QSet<QString> m_geoExclusionRoutes;   // Track geo (RU) exclusion routes
+  QHash<quint64, MIB_IPFORWARD_ROW2> m_ownedExclusionRoutes;
 
   std::unique_ptr<WireguardUtilsWindows> m_wgutils;
   DnsUtilsWindows* m_dnsutils = nullptr;

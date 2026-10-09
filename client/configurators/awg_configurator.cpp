@@ -59,7 +59,7 @@ QString AwgConfigurator::createConfig(const ServerCredentials &credentials, Dock
     for (const char *awg3Key : { config_key::headerProtectionKey, config_key::contentPaddingAddition,
                                  config_key::rekeyAfterTime, config_key::rekeyTimeout,
                                  config_key::rejectAfterTime, config_key::keepaliveTimeout,
-                                 config_key::maxHandshakeAttempts }) {
+                                 config_key::maxHandshakeAttempts, config_key::randomTrailers, config_key::disableCookies }) {
         const QString value = configMap.value(QString::fromLatin1(awg3Key));
         if (!value.isEmpty()) {
             jsonConfig[awg3Key] = value;

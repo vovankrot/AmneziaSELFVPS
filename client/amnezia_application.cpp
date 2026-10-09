@@ -78,9 +78,12 @@ AmneziaApplication::~AmneziaApplication()
     if (m_vpnConnection && m_vpnConnectionThread.isRunning()) {
         const auto connection = m_vpnConnection;
         QMetaObject::invokeMethod(connection.get(), [connection]() {
-            connection->disconnectSlots();
-            connection->disconnectFromVpn();
-            QThread::currentThread()->quit();
+            QObject::connect(connection.get(), &VpnConnection::shutdownFinished, connection.get(),
+                [](bool success) {
+                    if (!success) qCritical() << "Application exits with incomplete VPN cleanup; service recovery is required";
+                    QThread::currentThread()->quit();
+                }, Qt::DirectConnection);
+            connection->shutdown();
         }, Qt::QueuedConnection);
     } else {
         m_vpnConnectionThread.quit();
@@ -91,11 +94,11 @@ AmneziaApplication::~AmneziaApplication()
 
     m_vpnConnectionThread.requestInterruption();
 
-    if (!m_vpnConnectionThread.wait(5000)) {
+    if (!m_vpnConnectionThread.wait(30000)) {
         // Killing a Qt worker and then destroying its objects can corrupt locks
         // and run QProcess destructors on the wrong thread. On application exit,
         // enforce the deadline without destructing objects still in use.
-        qCritical() << "VPN shutdown exceeded 5 seconds; exiting without unsafe thread termination";
+        qCritical() << "VPN shutdown exceeded 30 seconds; exiting without unsafe thread termination";
         std::_Exit(EXIT_FAILURE);
     }
 

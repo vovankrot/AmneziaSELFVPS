@@ -10,6 +10,10 @@ Dialog {
         modal: true
         title: qsTr("Обновление SELFVPS")
         closePolicy: Popup.CloseOnEscape
+        onAboutToHide: {
+            if (typeof AppUpdater !== "undefined" && AppUpdater.busy)
+                AppUpdater.cancel()
+        }
         contentItem: ColumnLayout {
             Label {
                 Layout.fillWidth: true

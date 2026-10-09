@@ -43,7 +43,7 @@ LocalServer::LocalServer(QObject *parent) : QObject(parent),
             qWarning() << "LocalServer: nextPendingConnection returned nullptr";
             return;
         }
-        if (!amnezia::authorizeLocalPeer(socket)) return;
+        if (!m_ipcServer.acceptClient(socket)) return;
         m_serverNode.addHostSideConnection(socket);
 
         if (!m_isRemotingEnabled) {
@@ -53,6 +53,11 @@ LocalServer::LocalServer(QObject *parent) : QObject(parent),
     });
 
     // Init Mozilla Wireguard Daemon
+    server.peerAdmission = [this](QLocalSocket *socket) { return m_ipcServer.acceptClient(socket); };
+    m_ipcServer.recoverNativeTunnel = [] {
+        auto *daemon = Daemon::instance();
+        return !daemon || !daemon->hasActiveTunnel() || daemon->deactivate(false);
+    };
     if (!server.initialize()) {
         logger.error() << "Failed to initialize the server";
         return;

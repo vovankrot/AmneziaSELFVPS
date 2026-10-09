@@ -1,3 +1,4 @@
+#include <cmath>
 #include <QGuiApplication>
 #include <QQmlEngine>
 #include <QQmlContext>
@@ -54,12 +55,19 @@ int main(int argc, char **argv)
         "property bool isConnected: true; property bool isConnectionInProgress: false;"
         "property string actionButtonText: 'Отключиться'; property int clicks: 0;"
         "property string connectionStateText: isConnected ? 'Подключено' : 'Отключено';"
+        "signal connectionStateChanged(); function reconnectToVpn() {}"
         "signal reconnectWithUpdatedContainer(string message);"
         "signal preparingConfig(); function connectButtonClicked() { clicks++; isConnected = !isConnected }");
-    mock("ServersModel", "property int defaultIndex: 0; property bool hasServersFromGatewayApi: false;"
+    QObject *serversMock = mock("ServersModel", "property int defaultIndex: 0; property bool hasServersFromGatewayApi: false;"
+        "property int processedIndex: 3; signal processedServerIndexChanged(); signal dataChanged();"
+        "function canEditProcessedServerPassword() { return true } function isProcessedServerHasWriteAccess() { return true }"
+        "function getProcessedServerData(k) { return k === 'credentialsLogin' ? 'fixture-user' : false }"
+        "property int passwordWrites: 0; property string savedPassword: ''; property int savedIndex: -1;"
+        "function updateProcessedServerPassword(i, p) { passwordWrites++; savedIndex=i; savedPassword=p; return true }"
         "function setProcessedServerIndex(i) {}");
     mock("SettingsController",
-        "property int safeAreaTopMargin: 0; property bool isAdvancedMode: true;"
+        "signal changeSettingsFinished(string message);"
+        "property int safeAreaTopMargin: 0; property int safeAreaBottomMargin: 0; property int imeHeight: 0; property bool isAdvancedMode: true;"
         "property bool isDevModeEnabled: false; property bool startMinimized: false;"
         "property bool isLoggingEnabled: false; function isOnTv() { return false }"
         "property bool isDevGatewayEnv: false; property bool isAutoFailoverEnabled: false; property bool isAwgHeaderProtectionEnabled: false;"
@@ -75,8 +83,8 @@ int main(int argc, char **argv)
     engine.rootContext()->setContextProperty("LanguageModel", languageModel);
     mock("NewsModel", "property bool hasUnread: false;");
     mock("ApiNewsController", "signal fetchNewsFinished(); signal errorOccurred(int errorCode, bool showError);");
-    mock("FocusController", "function resetRootObject() {} function setFocusOnDefaultItem() {}");
-    mock("PageController", "signal closeTopDrawer(); signal restorePageHomeState(); function showNotificationMessage(message) {} function showBusyIndicator(b) {}");
+    mock("FocusController", "function resetRootObject() {} function setFocusOnDefaultItem() {} function pushRootObject(o) {} function dropRootObject(o) {}");
+    mock("PageController", "signal closeTopDrawer(); signal restorePageHomeState(); property int depth: 0; function getDrawerDepth() { return depth } function incrementDrawerDepth() { return ++depth } function decrementDrawerDepth() { --depth } function getInitialPageNavigationBarColor() { return 0xFF1C1D21 } function updateNavigationBarColor(c) {} function showNotificationMessage(message) {} function showBusyIndicator(b) {}");
     QQuickWindow window;
     window.resize(750, 680);
     window.setColor(QColor("#071019"));
@@ -96,6 +104,69 @@ int main(int argc, char **argv)
             }
             return nullptr;
         };
+    // A rejected selection must not move the radio; accepted model changes
+    // update it even when the stored container is read through an invokable.
+    QQmlComponent pickerFixture(&engine);
+    pickerFixture.setData(R"(
+        import QtQuick
+        import "."
+        Item {
+            id: fixture
+            width: parent ? parent.width : 800; height: parent ? parent.height : 670
+            property var stored: ({container: 0})
+            property int xrayRealitySwitcherRefresh: 0
+            property bool acceptSwitch: false
+            property int switchCalls: 0
+            function currentContainer() {
+                fixture.xrayRealitySwitcherRefresh
+                return stored.container
+            }
+            ListModel {
+                id: protocols
+                ListElement { name: "AmneziaWG"; description: "Fixture"; dockerContainer: 0 }
+                ListElement { name: "XRay"; description: "Fixture"; dockerContainer: 1 }
+            }
+            HomeProtocolListDrawer {
+                objectName: "protocolTestDrawer"
+                protocolsModel: protocols
+                currentContainer: fixture.currentContainer()
+                switchFunction: function(value) {
+                    fixture.switchCalls++
+                    if (fixture.acceptSwitch) {
+                        fixture.stored.container=value
+                        fixture.xrayRealitySwitcherRefresh++
+                    }
+                }
+            }
+        }
+    )", QUrl::fromLocalFile(QStringLiteral(SOURCE_ROOT "/Components/protocol-fixture.qml")));
+    auto *pickerRoot=qobject_cast<QQuickItem *>(pickerFixture.create());
+    if (!pickerRoot) qFatal("%s",qPrintable(pickerFixture.errorString()));
+    pickerRoot->setParentItem(window.contentItem());
+    auto *picker=findVisualItem(pickerRoot,"protocolTestDrawer");
+    auto openPicker=[&] { QMetaObject::invokeMethod(picker,"openTriggered"); QTest::qWait(400); };
+    auto clickProtocol=[&](int value) {
+        auto *option=findVisualItem(pickerRoot,"homeProtocolOption_"+QString::number(value));
+        if (!option || !option->isVisible()) qFatal("Protocol option missing");
+        QTest::mouseClick(&window,Qt::LeftButton,Qt::NoModifier,
+                         option->mapToScene(QPointF(option->width()/2,option->height()/2)).toPoint());
+        QTest::qWait(400);
+    };
+    openPicker(); clickProtocol(1);
+    if (pickerRoot->property("switchCalls").toInt()!=1 || picker->property("currentContainer").toInt()!=0)
+        qFatal("Rejected switch changed the protocol selection");
+    pickerRoot->setProperty("acceptSwitch",true);
+    openPicker(); clickProtocol(1); openPicker();
+    auto *chosen=findVisualItem(pickerRoot,"homeProtocolOption_1");
+    auto *previous=findVisualItem(pickerRoot,"homeProtocolOption_0");
+    if (picker->property("currentContainer").toInt()!=1 || !chosen->property("checked").toBool()
+        || previous->property("checked").toBool()) qFatal("Accepted switch did not redraw the protocol selection");
+    connection->setProperty("isConnectionInProgress",true);
+    clickProtocol(0);
+    if (pickerRoot->property("switchCalls").toInt()!=2) qFatal("Busy protocol picker accepted a switch");
+    connection->setProperty("isConnectionInProgress",false);
+    delete pickerRoot;
+    qInfo()<<"PASS: protocol selection follows accepted model updates and rejects busy clicks";
     auto *button = create("Components/ConnectButton.qml");
     button->setX(40); button->setY(40);
     button->setWidth(260);
@@ -187,9 +258,12 @@ int main(int argc, char **argv)
         for (const auto *key : {"Xray", "AnyTls", "Hysteria2", "Vpn", "Other"}) values->insert(key, n++);
         engine.rootContext()->setContextProperty(name, values);
     }
-    mock("ContainerProps", "function supportsSiteSplitTunneling(c) { return true } function containerFromString(s) { return 0 }"
+    mock("ContainerProps", "function defaultProtocol(c) { return 0 } function supportsSiteSplitTunneling(c) { return true } function containerFromString(s) { return 0 }"
          "function isSupportedConfigSharing(c) { return true } function supportsUserManagement(c) { return true }");
     QObject *installController = mock("InstallController",
+         "signal scanServerFinished(bool found); signal rebootProcessedServerFinished(string message);"
+         "signal removeAllContainersFinished(string message); signal cleanupServerFinished(string message);"
+         "signal removeProcessedContainerFinished(string message);"
          "property bool shouldUseAnyTlsVariant: false; property bool hysteria2Updating: false;"
          "property bool hysteria2VersionChecking: false; property bool hysteria2UpdateAvailable: true;"
          "property string hysteria2InstalledVersion: 'v2.11.0'; property int hysteria2UpdateCalls: 0;"
@@ -318,9 +392,9 @@ int main(int argc, char **argv)
     QObject *updater = mock("AppUpdater",
         "property string status: 'Available'; property string availableVersion: '5.0.0.9';"
         "property string releaseNotes: 'Release notes'; property bool busy: false; property bool ready: false;"
-        "property int progress: 0; property int downloads: 0; property int installs: 0;"
+        "property int progress: 0; property int downloads: 0; property int installs: 0; property int cancellations: 0;"
         "function download() { downloads++; } function install() { installs++; }"
-        "function cancel() {} function openRelease() {}");
+        "function cancel() { cancellations++; busy = false; } function openRelease() {}");
     QQmlComponent updateComponent(&engine, QUrl::fromLocalFile(QStringLiteral(SOURCE_ROOT "/Components/AppUpdateDialog.qml")));
     QObject *dialog = updateComponent.create();
     if (!dialog) qFatal("%s", qPrintable(updateComponent.errorString()));
@@ -339,9 +413,64 @@ int main(int argc, char **argv)
     if (updater->property("downloads").toInt() != 1) qFatal("Busy update accepted another download");
     updater->setProperty("busy", false); updater->setProperty("ready", true); clickUpdate();
     if (updater->property("installs").toInt() != 1) qFatal("Verified installer action failed");
-    QMetaObject::invokeMethod(dialog, "close"); delete dialog;
+    QMetaObject::invokeMethod(dialog, "close");
+    QTest::qWait(200);
+    updater->setProperty("busy", true);
+    QMetaObject::invokeMethod(dialog, "open");
+    QTest::qWait(150);
+    QTest::keyClick(&window, Qt::Key_Escape);
+    if (updater->property("cancellations").toInt() != 1)
+        qFatal("Escape cancellation waited for the closing animation");
+    QTest::qWait(250);
+    if (dialog->property("opened").toBool() || updater->property("cancellations").toInt() != 1)
+        qFatal("Escape did not cancel the pending updater operation");
+    delete dialog;
     if (!runtimeErrors.isEmpty()) qFatal("%s", qPrintable(runtimeErrors.join("\n")));
-    qInfo() << "PASS: update dialog download, busy gate and explicit installation action";
+    qInfo() << "PASS: update dialog download, busy gate, explicit installation and Escape cancellation";
+    QObject *previousServersContext = engine.rootContext()->contextProperty("ServersModel").value<QObject *>();
+    engine.rootContext()->setContextProperty("ServersModel", serversMock);
+    auto *serverManagementPage = create("Pages2/PageSettingsServerData.qml");
+    serverManagementPage->setSize(QSizeF(750, 680));
+    QTest::qWait(100);
+    if (!serverManagementPage->property("canEditPassword").toBool()) qFatal("Password action hidden for editable server");
+    delete serverManagementPage;
+    QQmlComponent passwordComponent(&engine, QUrl::fromLocalFile(QStringLiteral(SOURCE_ROOT "/Components/ServerPasswordDialog.qml")));
+    QObject *passwordDialog = passwordComponent.create();
+    if (!passwordDialog) qFatal("%s", qPrintable(passwordComponent.errorString()));
+    passwordDialog->setProperty("parent", QVariant::fromValue(window.contentItem()));
+    passwordDialog->setProperty("serverIndex", 3);
+    passwordDialog->setProperty("login", "fixture-user");
+    QMetaObject::invokeMethod(passwordDialog, "open");
+    QTest::qWait(150);
+    if (!window.grabWindow().save("server-password-runtime.png")) qFatal("Password dialog render failed");
+    auto *passwordInput = passwordDialog->findChild<QObject *>("serverPasswordInput");
+    auto *passwordConfirm = passwordDialog->findChild<QObject *>("serverPasswordConfirmation");
+    auto *passwordSave = passwordDialog->findChild<QQuickItem *>("serverPasswordSave");
+    if (!passwordInput || !passwordConfirm || !passwordSave || passwordSave->isEnabled()
+        || !passwordInput->property("text").toString().isEmpty() || passwordInput->property("echoMode").toInt() != 2)
+        qFatal("Password dialog leaked old text or enabled empty save");
+    passwordInput->setProperty("text", "fixture password");
+    passwordConfirm->setProperty("text", "different");
+    QTest::qWait(20);
+    if (passwordSave->isEnabled()) qFatal("Mismatched password accepted");
+    passwordConfirm->setProperty("text", "fixture password");
+    QTest::qWait(20);
+    const auto passwordPoint = passwordSave->mapToScene(QPointF(passwordSave->width()/2, passwordSave->height()/2)).toPoint();
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, passwordPoint);
+    QTest::qWait(150);
+    if (serversMock->property("passwordWrites").toInt() != 1 || serversMock->property("savedIndex").toInt() != 3
+        || serversMock->property("savedPassword").toString() != "fixture password" || !passwordInput->property("text").toString().isEmpty())
+        qFatal("Password save lost target/value or failed to clear input");
+    QMetaObject::invokeMethod(passwordDialog, "open");
+    QTest::qWait(100);
+    passwordInput->setProperty("text", "cancel fixture");
+    QTest::keyClick(&window, Qt::Key_Escape);
+    QTest::qWait(150);
+    if (serversMock->property("passwordWrites").toInt() != 1 || !passwordInput->property("text").toString().isEmpty())
+        qFatal("Password cancellation saved or retained secret");
+    delete passwordDialog;
+    engine.rootContext()->setContextProperty("ServersModel", previousServersContext);
+    qInfo() << "PASS: saved SSH password masked, confirmed, scoped to server, cleared on save/Escape";
     QObject *trustController = mock("SshHostTrust",
         "property int answers: 0; property bool lastAnswer: false;"
         "function answer(accepted) { answers++; lastAnswer = accepted }");
@@ -420,5 +549,102 @@ int main(int argc, char **argv)
     QMetaObject::invokeMethod(localizedTrust, "close");
     delete localizedTrust;
     qInfo() << "PASS: compiled Russian/English catalogs and live QML retranslation in both directions";
+    if (QCoreApplication::translate("PageSettingsAppSplitTunneling", "Add") != QString::fromUtf8("Добавить"))
+        qFatal("Folder confirmation action is not translated into Russian");
+    QQmlComponent longQuestionComponent(&engine);
+    longQuestionComponent.setData(R"(
+        import QtQuick
+        import "Components"
+        Item {
+            id: fixture
+            property int yesClicks: 0
+            property int noClicks: 0
+            QuestionDrawer {
+                id: question
+                objectName: "longQuestionDrawer"
+                anchors.fill: parent
+                headerText: "Add applications from folder with a long name to VPN bypass?"
+                descriptionText: Array(100).join("components/long-folder-name/RiotClientServices.exe\n")
+                yesButtonText: "Add"
+                noButtonText: "Cancel"
+                yesButtonFunction: function() { fixture.yesClicks++ }
+                noButtonFunction: function() { fixture.noClicks++ }
+            }
+            function showQuestion() { question.openTriggered() }
+            function closeQuestion() { question.closeTriggered() }
+        }
+    )", QUrl::fromLocalFile(QStringLiteral(SOURCE_ROOT "/long-question-fixture.qml")));
+    auto *longQuestion = qobject_cast<QQuickItem *>(longQuestionComponent.create());
+    if (!longQuestion) qFatal("%s", qPrintable(longQuestionComponent.errorString()));
+    longQuestion->setParentItem(window.contentItem());
+    for (const QSize size : {QSize(400, 360), QSize(750, 680)}) {
+        window.resize(size);
+        longQuestion->setSize(size);
+        QMetaObject::invokeMethod(longQuestion, "showQuestion");
+        QTest::qWait(300);
+        auto *drawer = longQuestion->findChild<QObject *>("longQuestionDrawer");
+        if (!std::isfinite(drawer->property("expandedHeight").toDouble())) qFatal("Question height is not finite");
+        for (const QString &name : {QString("questionYesButton"), QString("questionNoButton")}) {
+            auto *item = findVisualItem(longQuestion, name);
+            if (!item || !item->isVisible()) qFatal("Question button missing");
+            const QPointF top = item->mapToScene(QPointF(0, 0));
+            if (top.y() < 0 || top.y() + item->height() > size.height()) { qInfo() << size << name << top << item->height(); qFatal("Question button outside viewport"); }
+            const auto point = item->mapToScene(QPointF(item->width()/2, item->height()/2)).toPoint();
+            QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, point);
+        }
+        if (!window.grabWindow().save("folder-preview-scroll.png")) qFatal("Question preview render failed");
+        QMetaObject::invokeMethod(longQuestion, "closeQuestion");
+        QTest::qWait(250);
+    }
+    if (longQuestion->property("yesClicks").toInt() != 2 || longQuestion->property("noClicks").toInt() != 2)
+        qFatal("Long question buttons did not receive clicks");
+    delete longQuestion;
+    qInfo() << "PASS: long folder preview scrolls while Add/Cancel remain clickable at minimum sizes";
+    mock("GeoipController", "property bool usingBundledList: true; property bool updating: false;"
+        "signal statusChanged();"
+        "property int cidrCount: 1; property int intervalHours: 24; property string lastError: '';"
+        "property string sourceUrl: ''; property string lastUpdateText: ''; property string listPath: '';"
+        "function updateNow() {} function resetSourceToDefault() {}");
+    mock("SitesController", "signal finished(string message); signal errorOccurred(string message);");
+    model("IpIntervalsModel", "property int length: 0;");
+    model("SitesModel", "property bool isTunnelingEnabled: true; property int routeMode: 1;"
+        "property bool bypassRuGeoIp: false; property bool bypassRuGeoSites: false; property bool autoBypassRkn: false;"
+        "signal sitesChanged(); signal splitTunnelingToggled();"
+        "function stateSignature() { return routeMode + ':' + isTunnelingEnabled }"
+        "function toggleSplitTunneling(enabled) { isTunnelingEnabled=enabled; if (enabled && routeMode===0) routeMode=1; splitTunnelingToggled() }"
+        "ListElement { url: '*.fixture.invalid'; ip: '' }");
+    QObject *sites = engine.rootContext()->contextProperty("SitesModel").value<QObject *>();
+    auto *sitePage = create("Pages2/PageSettingsSplitTunneling.qml");
+    sitePage->setSize(QSizeF(750, 680)); QTest::qWait(100);
+    auto *siteSelector = findVisualItem(sitePage, "siteRoutingModeSelector");
+    auto *siteExplanation = findVisualItem(sitePage, "siteRoutingModeExplanation");
+    if (!siteSelector || !siteExplanation || siteSelector->mapToScene(QPointF()).y() > 300 || siteSelector->mapToScene(QPointF()).y() < 0)
+        qFatal("Site mode choice is not visible near the page header");
+    const auto modeOneText = siteSelector->property("text").toString();
+    sites->setProperty("routeMode", 2); QTest::qWait(30);
+    if (siteSelector->property("text").toString() == modeOneText
+        || siteExplanation->property("textString").toString() != QCoreApplication::translate("PageSettingsSplitTunneling", "Sites in the list below will bypass VPN. Everything else goes through VPN."))
+        qFatal("Site mode selector and explanation disagree after external mode change");
+    QMetaObject::invokeMethod(siteSelector, "openTriggered"); QTest::qWait(250);
+    auto *options = findVisualItem(window.contentItem(), "siteRoutingModeOptions");
+    QQuickItem *choice = nullptr;
+    if (!options || !QMetaObject::invokeMethod(options, "itemAtIndex", Q_RETURN_ARG(QQuickItem *, choice), Q_ARG(int, 0)) || !choice)
+        qFatal("Site routing radio choices are missing");
+    auto *radio = choice->property("selectable").value<QQuickItem *>();
+    if (!radio) qFatal("Site routing radio is missing");
+    const auto point = radio->mapToScene(QPointF(radio->width()/2, radio->height()/2)).toPoint();
+    QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, point); QTest::qWait(250);
+    if (sites->property("routeMode").toInt() != 1 || siteSelector->property("text").toString() != modeOneText)
+        qFatal("Site mode mouse click did not select VPN for listed sites");
+    if (siteSelector->mapToScene(QPointF()).y() < 0 || !siteSelector->isVisible())
+        qFatal("Site mode choice scrolled out of view after selection");
+    if (findVisualItem(sitePage, "siteSplitListView")->height() < 200) qFatal("Site list viewport collapsed");
+    if (!window.grabWindow().save("site-mode-runtime.png")) qFatal("Site mode render failed");
+    sites->setProperty("isTunnelingEnabled", false); QTest::qWait(30);
+    if (siteSelector->isEnabled() || siteExplanation->property("textString").toString() != QCoreApplication::translate("PageSettingsSplitTunneling", "Раздельное туннелирование сайтов выключено. Список не применяется."))
+        qFatal("Disabled split tunneling still advertises an active list mode");
+    sitePage->setProperty("isApplicationQuitting", true); delete sitePage;
+    if (!runtimeErrors.isEmpty()) qFatal("%s", qPrintable(runtimeErrors.join("\n")));
+    qInfo() << "PASS: site mode choice at top, live explanation, radio click and disabled state";
     return 0;
 }

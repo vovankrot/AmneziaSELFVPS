@@ -19,6 +19,12 @@ PageType {
     signal lastItemTabClickedSignal()
 
     property bool isServerWithWriteAccess: ServersModel.isProcessedServerHasWriteAccess()
+    property bool canEditPassword: ServersModel.canEditProcessedServerPassword()
+
+    ServerPasswordDialog {
+        id: passwordDialog
+        parent: root
+    }
 
     Connections {
         target: InstallController
@@ -67,6 +73,13 @@ PageType {
 
         function onProcessedServerIndexChanged() {
             root.isServerWithWriteAccess = ServersModel.isProcessedServerHasWriteAccess()
+            root.canEditPassword = ServersModel.canEditProcessedServerPassword()
+            passwordDialog.close()
+        }
+
+        function onDataChanged() {
+            root.isServerWithWriteAccess = ServersModel.isProcessedServerHasWriteAccess()
+            root.canEditPassword = ServersModel.canEditProcessedServerPassword()
         }
     }
 
@@ -101,6 +114,7 @@ PageType {
     }
 
     property list<QtObject> serverActions: [
+        editPassword,
         sshTrustReset,
         check,
         reboot,
@@ -109,6 +123,19 @@ PageType {
         cleanup,
         reset,
     ]
+
+    QtObject {
+        id: editPassword
+        property bool isVisible: root.canEditPassword
+        readonly property string title: qsTr("Изменить сохранённый пароль SSH")
+        readonly property string description: qsTr("Обновить пароль пользователя для доступа к существующему VPS")
+        readonly property var tColor: AmneziaStyle.color.paleGray
+        readonly property var clickedHandler: function() {
+            passwordDialog.serverIndex = ServersModel.processedIndex
+            passwordDialog.login = ServersModel.getProcessedServerData("credentialsLogin")
+            passwordDialog.open()
+        }
+    }
 
     QtObject {
         id: sshTrustReset

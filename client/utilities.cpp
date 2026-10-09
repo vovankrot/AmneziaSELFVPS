@@ -12,6 +12,7 @@
 #include <QJsonObject>
 
 #include "utilities.h"
+#include "core/processImagePolicy.h"
 
 #ifdef Q_OS_WINDOWS
 QString printErrorMessage(DWORD errorCode) {
@@ -219,22 +220,19 @@ bool Utils::killProcessByName(const QString &name)
 {
     qDebug().noquote() << "Kill process" << name;
 #ifdef Q_OS_WIN
+    const QString expected = ProcessImagePolicy::expectedPath(name);
+    if (expected.isEmpty()) return false;
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE)
         return false;
 
-    PROCESSENTRY32W pe32;
+    PROCESSENTRY32W pe32{};
     pe32.dwSize = sizeof(PROCESSENTRY32W);
 
     bool success = false;
 
-    // pe32.szExeFile from Toolhelp32Snapshot is ALWAYS a bare filename ("tun2socks.exe"),
-    // never a full path -- but every caller passes m_process->program(), which is a full
-    // path ("C:/Program Files/AmneziaVPN/xray/tun2socks.exe"). Comparing those directly
-    // never matches, so this function has been silently killing nothing since forever:
-    // every reconnect/protocol-switch left the previous tun2socks.exe running, and they
-    // piled up fighting over the same "tun2" TUN device and SOCKS ports -- root cause of
-    // the crash-loop and "port already in use" failures chased on 2026-08-05. by vovankrot
+    // The snapshot contains bare filenames. Use that only as a fast prefilter;
+    // termination requires the full executable path to match our installed copy.
     const QString targetFileName = QFileInfo(name).fileName();
 
     if (Process32FirstW(hSnapshot, &pe32)) {
@@ -242,8 +240,16 @@ bool Utils::killProcessByName(const QString &name)
             QString exeFile = QString::fromWCharArray(pe32.szExeFile);
 
             if (exeFile.compare(targetFileName, Qt::CaseInsensitive) == 0) {
-                HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pe32.th32ProcessID);
+                HANDLE hProcess = OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_LIMITED_INFORMATION,
+                                              FALSE, pe32.th32ProcessID);
                 if (hProcess != NULL) {
+                    wchar_t image[32768];
+                    DWORD length = 32768;
+                    if (!QueryFullProcessImageNameW(hProcess, 0, image, &length)
+                        || !ProcessImagePolicy::matches(expected, QString::fromWCharArray(image, length))) {
+                        CloseHandle(hProcess);
+                        continue;
+                    }
                     if (TerminateProcess(hProcess, 0)) {
                         success = true;
                     } else {

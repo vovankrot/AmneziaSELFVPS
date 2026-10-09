@@ -52,6 +52,7 @@ namespace libssh {
         ErrorCode fromFileErrorCode(QFileDevice::FileError fileError);
         static int callback(const char *prompt, char *buf, size_t len, int echo, int verify, void *userdata);
 
+        QByteArray m_sessionIdentity;
         ssh_session m_session = nullptr;
         ssh_channel m_channel = nullptr;
         ssh_scp m_scpSession = nullptr;

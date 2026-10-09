@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     SELFVPS build-environment engine: detect and (best-effort) install the
     prerequisites needed to build the Windows / Android / Linux artifacts.
@@ -81,6 +81,7 @@ function Sync-PathFromRegistry {
 }
 
 Sync-PathFromRegistry
+. (Join-Path $PSScriptRoot 'tools\windows-build-tools.ps1')
 
 function Test-Command {
     param([string]$Name)
@@ -88,17 +89,7 @@ function Test-Command {
 }
 
 function Get-VsInstallPath {
-    $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
-    if (Test-Path $vswhere) {
-        $p = & $vswhere -latest -products * `
-            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-            -property installationPath 2>$null | Select-Object -First 1
-        if ($p) { return $p }
-    }
-    $probe = Get-ChildItem 'C:\Program Files\Microsoft Visual Studio\2022' -Directory -ErrorAction SilentlyContinue |
-        Where-Object { Test-Path (Join-Path $_.FullName 'VC\Tools\MSVC') } |
-        Select-Object -First 1 -ExpandProperty FullName
-    return $probe
+    try { return (Get-SelfvpsWindowsToolchain).VsInstallPath } catch { return $null }
 }
 
 function Get-DotnetSdks {
@@ -183,13 +174,13 @@ function Get-Components {
     }
 
     if ($TargetPlatform -eq 'windows') {
-        & $add 'vs2022' 'Visual Studio 2022 (C++ toolset)' 'windows' `
+        & $add 'vs2022' 'Visual Studio (C++ toolset)' 'windows' `
             { $p = Get-VsInstallPath; $script:detail = $p; [bool]$p } `
             'winget install --id Microsoft.VisualStudio.2022.BuildTools -e --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.Windows11SDK.22621"' `
             { Install-VsBuildTools }
 
         & $add 'cmake' 'CMake' 'windows' `
-            { if (Test-Command 'cmake') { $script:detail = ((& cmake --version 2>$null) | Select-Object -First 1) } ; Test-Command 'cmake' } `
+            { try { $tc = Get-SelfvpsWindowsToolchain; $script:detail = $tc.CMakeExe + ' / ' + $tc.VsGenerator; $true } catch { $script:detail = $_.Exception.Message; $false } } `
             'winget install --id Kitware.CMake -e' `
             { Invoke-Winget 'Kitware.CMake' }
 
@@ -198,9 +189,8 @@ function Get-Components {
             'winget install --id Microsoft.DotNet.SDK.8 -e' `
             { Invoke-Winget 'Microsoft.DotNet.SDK.8' }
 
-        & $add 'qt_desktop' "Qt $QtVersion (msvc2022_64)" 'windows' `
-            { $wd = Join-Path $QtDesktopDir "$QtVersion\msvc2022_64\bin\windeployqt.exe"
-              $script:detail = if (Test-Path $wd) { Split-Path (Split-Path $wd -Parent) -Parent } else { '' }; Test-Path $wd } `
+        & $add 'qt_desktop' "Qt 6 (MSVC x64)" 'windows' `
+            { try { $script:detail = Get-SelfvpsQtDesktop -ProjectDir $PSScriptRoot -Roots @($QtDesktopDir); $true } catch { $script:detail = $_.Exception.Message; $false } } `
             "aqt install-qt windows desktop $QtVersion win64_msvc2022_64 -O $QtDesktopDir" `
             { Install-QtDesktop }
     }

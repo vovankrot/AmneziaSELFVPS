@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Build AmneziaVPN Windows installer with the custom WPF setup UI (and optionally Android APK).
 .DESCRIPTION
@@ -29,7 +29,7 @@ param(
     [switch]$SkipBuild,
     [switch]$SkipAndroidApk,
     [switch]$NoElevate,
-    [string]$QtDir = "C:\Qt\6.8.3\msvc2022_64",
+    [string]$QtDir,
     [string]$BuildDir,
     [string]$AndroidQtRoot = "C:\QtAndroid\6.8.3",
     [string]$AndroidSdkRoot = "C:\android-sdk",
@@ -129,6 +129,8 @@ if (-not $InstallerProjectDir) {
     $InstallerProjectDir = Join-Path $ProjectDir $InstallerProjectDir
 }
 
+. (Join-Path $ProjectDir "tools\windows-build-tools.ps1")
+$QtDir = Get-SelfvpsQtDesktop -Requested $QtDir -ProjectDir $ProjectDir
 $QtBinDir = Join-Path $QtDir "bin"
 
 if (-not $AndroidBuildRoot) {
@@ -187,20 +189,26 @@ function Ensure-CompatibleBuildDir {
 
     $cache = Get-Content $cachePath -Raw
     $generator = Get-CMakeCacheValue $cache "CMAKE_GENERATOR"
+    $instance = Get-CMakeCacheValue $cache "CMAKE_GENERATOR_INSTANCE"
     $qt6Dir = Get-CMakeCacheValue $cache "Qt6_DIR"
     $expectedQtPrefix = ($QtDir -replace '\\', '/')
     $reasons = @()
 
-    if ($generator -and $generator -ne "Visual Studio 17 2022") {
+    if ($generator -and $generator -ne $script:VsGenerator) {
         $reasons += "generator is '$generator'"
     }
     if ($qt6Dir -and (($qt6Dir -replace '\\', '/') -notlike "$expectedQtPrefix/*")) {
         $reasons += "Qt cache points to '$qt6Dir'"
     }
 
+    if ($instance -and (($instance -replace '\\', '/').TrimEnd('/') -ne ($script:VsInstallPath -replace '\\', '/').TrimEnd('/'))) {
+        $reasons += "Visual Studio instance changed from '$instance'"
+    }
     if ($reasons.Count -gt 0) {
         Write-Host "  Recreating incompatible build dir: $($reasons -join '; ')" -ForegroundColor Yellow
-        Remove-Item $BuildDir -Recurse -Force
+        $backupDir = "$BuildDir.previous-$(Get-Date -Format yyyyMMdd-HHmmss)"
+        Move-Item $BuildDir $backupDir
+        Write-Host "  Previous build preserved at: $backupDir"
     }
 }
 
@@ -246,37 +254,15 @@ if (-not $dotnetCommand) {
     exit 1
 }
 
-$cmakeCommand = Get-Command cmake -ErrorAction SilentlyContinue
-if (-not $cmakeCommand) {
-    Write-Error "cmake not found in PATH. Install CMake (winget install Kitware.CMake) or run from a Developer PowerShell for VS 2022."
-    exit 1
-}
-
-# Locate Visual Studio 2022 (ANY edition: Community/Professional/Enterprise/BuildTools)
-# via vswhere, so the build does not silently assume the 'Community' edition. Used for
-# dumpbin (transitive Qt6 DLL closure) and the bundled VC++ redistributable.
-$script:VsInstallPath = $null
-$vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
-if (Test-Path $vswhere) {
-    $script:VsInstallPath = & $vswhere -latest -products * `
-        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-        -property installationPath 2>$null | Select-Object -First 1
-}
-if (-not $script:VsInstallPath) {
-    # Fallback: probe the well-known 2022 edition folders.
-    $script:VsInstallPath = Get-ChildItem "C:\Program Files\Microsoft Visual Studio\2022" -Directory -ErrorAction SilentlyContinue |
-        Where-Object { Test-Path (Join-Path $_.FullName "VC\Tools\MSVC") } |
-        Select-Object -First 1 -ExpandProperty FullName
-}
-if (-not $script:VsInstallPath) {
-    Write-Error "Visual Studio 2022 with the C++ toolset (VC.Tools.x86.x64) not found.`nInstall VS 2022 (or Build Tools) with the 'Desktop development with C++' workload:`n  winget install Microsoft.VisualStudio.2022.BuildTools --override `"--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.Windows11SDK.22621`""
-    exit 1
-}
+$toolchain = Get-SelfvpsWindowsToolchain
+$script:VsInstallPath = $toolchain.VsInstallPath
+$script:VsGenerator = $toolchain.VsGenerator
+$script:CMakeExe = $toolchain.CMakeExe
 
 Write-Host "  Qt:         $QtDir" -ForegroundColor Gray
 Write-Host "  dotnet:     $($dotnetCommand.Source)" -ForegroundColor Gray
-Write-Host "  cmake:      $($cmakeCommand.Source)" -ForegroundColor Gray
-Write-Host "  VS 2022:    $script:VsInstallPath" -ForegroundColor Gray
+Write-Host "  cmake:      $script:CMakeExe" -ForegroundColor Gray
+Write-Host "  VS:           $script:VsInstallPath" -ForegroundColor Gray
 Write-Host "  Installer:  $InstallerProjectDir" -ForegroundColor Gray
 
 if (-not $SkipAndroidApk) {
@@ -290,11 +276,12 @@ if (-not $SkipBuild) {
 
     Ensure-CompatibleBuildDir
 
-    & cmake -S $ProjectDir -B $BuildDir -G "Visual Studio 17 2022" -A x64 `
+    & $script:CMakeExe -S $ProjectDir -B $BuildDir -G $script:VsGenerator -A x64 `
+        "-DCMAKE_GENERATOR_INSTANCE=$script:VsInstallPath" `
         "-DCMAKE_PREFIX_PATH=$QtDir"
     if ($LASTEXITCODE -ne 0) { Write-Error "CMake configure failed"; exit 1 }
 
-    & cmake --build $BuildDir --config Release -- /p:UseMultiToolTask=true /m
+    & $script:CMakeExe --build $BuildDir --config Release -- /p:UseMultiToolTask=true /m
     if ($LASTEXITCODE -ne 0) {
         Write-Error "CMake build failed with exit code $LASTEXITCODE"
         exit 1
@@ -596,7 +583,7 @@ if (Test-Path $PrebuiltOverrideDir) {
         Write-Host "  SELFVPS overrides: $($overridden -join ', ')" -ForegroundColor Gray
     }
 } else {
-    Write-Warning "deploy\prebuilt-selfvps\windows\x64 not found - the build will use the submodule's tunnel.dll, which has no AmneziaWG 3 support."
+    throw "deploy\prebuilt-selfvps\windows\x64 is required: this Windows x64 client needs the audited AWG 3.1 tunnel.dll."
 }
 
 if (Test-Path $DeployDataDir) {
@@ -614,6 +601,23 @@ if ($vcRedistSrc -and (Test-Path $vcRedistSrc)) {
 } else {
     Write-Warning "vc_redist.x64.exe NOT found under $script:VsInstallPath\VC\Redist\MSVC.`n           The installer will NOT bundle the VC++ runtime -- end users without it may fail to start the app.`n           Install the 'C++ Redistributable' individual component in the VS Installer."
 }
+
+# Qt 6.8 supports Windows 10 1809. A dependency on the combined system ICU
+# raises this to 1903; never copy a system DLL from the build machine.
+if (-not $dumpbin) { throw "dumpbin is required to audit Windows runtime compatibility" }
+$icuImporters = @()
+Get-ChildItem $StageDir -Recurse -File | Where-Object { $_.Extension -in @('.exe', '.dll') -and $_.Name -ne 'vc_redist.x64.exe' } |
+    ForEach-Object {
+        $imports = & $dumpbin /DEPENDENTS $_.FullName 2>$null
+        if ($LASTEXITCODE -ne 0) { throw "Cannot inspect dependencies of $($_.FullName)" }
+        if ($imports | Where-Object { $_.Trim() -ieq 'icu.dll' }) {
+            $icuImporters += $_.FullName.Substring($StageDir.Length + 1)
+        }
+    }
+$minimumBuild = if ($icuImporters.Count -gt 0) { 18362 } else { 17763 }
+$runtimeManifest = @{ minimumWindowsBuild = $minimumBuild; systemIcuImporters = @($icuImporters) } | ConvertTo-Json -Depth 3
+[System.IO.File]::WriteAllText((Join-Path $StageDir 'runtime-compatibility.json'), $runtimeManifest, (New-Object System.Text.UTF8Encoding($false)))
+Write-Host "  Windows runtime audit: minimum build $minimumBuild, ICU importers: $($icuImporters.Count)"
 
 $stageFileCount = (Get-ChildItem $StageDir -Recurse -File).Count
 Write-Host "  Total staged: $stageFileCount files" -ForegroundColor Gray

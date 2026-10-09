@@ -34,6 +34,7 @@ class Daemon : public QObject {
 
   virtual bool activate(const InterfaceConfig& config);
   virtual bool deactivate(bool emitSignals = true);
+  bool hasActiveTunnel() const { return m_cleanupPending || !m_connections.isEmpty(); }
   virtual QJsonObject getStatus();
 
   // Callback before any Activating measure is done
@@ -85,10 +86,12 @@ class Daemon : public QObject {
     ConnectionState(const InterfaceConfig& config) { m_config = config; }
     QDateTime m_date;
     InterfaceConfig m_config;
+    bool m_peerDeleted = false;
   };
   QMap<InterfaceConfig::HopType, ConnectionState> m_connections;
   QHash<IPAddress, int> m_excludedAddrSet;
   QTimer m_handshakeTimer;
+  bool m_cleanupPending = false;
 };
 
 #endif  // DAEMON_H

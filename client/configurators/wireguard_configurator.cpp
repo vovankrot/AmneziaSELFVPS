@@ -110,7 +110,9 @@ WireguardConfigurator::ConnectionData WireguardConfigurator::prepareWireguardCon
     if (container == DockerContainer::Awg) {
         configPath = amnezia::protocols::awg::serverLegacyConfigPath;
     }
-    QString getIpsScript = QString("cat %1 | grep AllowedIPs").arg(configPath);
+    // An empty peer list is valid on the first install. awk returns success
+    // for that case while retaining a real error for an unreadable config.
+    QString getIpsScript = QString("awk '/AllowedIPs/ { print }' %1").arg(configPath);
     QString stdOut;
     auto cbReadStdOut = [&](const QString &data, libssh::Client &) {
         stdOut += data + "\n";

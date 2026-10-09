@@ -1,0 +1,18 @@
+#include <QtCore>
+#include <QJsonObject>
+#include <QHostAddress>
+class IpcInterface
+{
+    SLOT( int createPrivilegedProcess() );
+    SLOT( bool createTun(const QString &dev, const QString &subnet) );
+    SLOT( bool updateResolvers(const QString &ifname, const QList<QHostAddress> &resolvers) );
+    SLOT( bool enableKillSwitch(const QJsonObject &config, int index) );
+    SLOT( int routeAddList(const QString &gw, const QStringList &ips) );
+    SLOT( bool StopRoutingIpv6() );
+    SLOT( bool StartRoutingIpv6() );
+    SLOT( bool enablePeerTraffic(const QJsonObject &config) );
+    SLOT( bool disableKillSwitch() );
+    SLOT( bool restoreResolvers() );
+    SLOT( bool deleteTun(const QString &device) );
+    SLOT( bool xrayStop() );
+};

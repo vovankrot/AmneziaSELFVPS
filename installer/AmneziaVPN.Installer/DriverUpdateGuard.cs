@@ -28,6 +28,12 @@ internal static class DriverUpdateGuard
         Prepare(NeedsUpdate(source, target), Status, Reset, Stop);
     }
 
+    internal static void PrepareRemoval()
+    {
+        if (RequiresReboot) throw new IOException("Перезагрузите Windows перед удалением: драйвер не завершил предыдущую операцию.");
+        Prepare(true,Status,Reset,Stop);
+    }
+
     static uint Status()
     {
         IntPtr manager = OpenSCManager(null, null, 1);

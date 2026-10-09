@@ -6,6 +6,7 @@
 #include <QJsonDocument>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QtConcurrent/QtConcurrentRun>
 #ifdef Q_OS_WIN
 #include <windows.h>
 #include <shellapi.h>
@@ -18,6 +19,15 @@ AppUpdater::AppUpdater(QObject *parent, QNetworkAccessManager *network) : QObjec
     connect(&m_periodic, &QTimer::timeout, this, [this] { check(false); });
     m_periodic.start();
     QTimer::singleShot(15000, this, [this] { check(false); });
+}
+AppUpdater::~AppUpdater()
+{
+    if (m_verificationCanceled) m_verificationCanceled->store(true);
+    if (m_reply) {
+        disconnect(m_reply, nullptr, this, nullptr);
+        m_reply->abort();
+        m_reply->deleteLater();
+    }
 }
 bool AppUpdater::supported() const
 {
@@ -72,9 +82,10 @@ void AppUpdater::check(bool manual)
         if (m_metadata.size() > 2 * 1024 * 1024) fail(tr("Ответ GitHub слишком большой."));
     });
     connect(reply, &QNetworkReply::finished, this, [this, reply, repo] {
+        bool offer = false;
         const int code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (!m_failed) {
-            if (code == 404) m_status = tr("В этом репозитории пока нет опубликованного релиза.");
+            if (code == 404) { m_release = {}; m_readyPath.clear(); m_status = tr("В этом репозитории пока нет опубликованного релиза."); }
             else if (code == 403 || code == 429) m_status = tr("GitHub ограничил запросы. Повторите проверку позднее.");
             else if (reply->error() != QNetworkReply::NoError || code != 200) m_status = tr("Не удалось проверить обновления: %1").arg(reply->errorString());
             else {
@@ -85,20 +96,25 @@ void AppUpdater::check(bool manual)
                 else {
                     const auto candidate = SelfVpsRelease::parse(json.object(), repo, APP_VERSION);
                     if (candidate.valid()) {
-                        const bool newOffer = candidate.sha256 != m_release.sha256;
-                        if (newOffer) { m_release = candidate; m_readyPath.clear(); }
+                        offer = candidate.version != m_release.version || candidate.sha256 != m_release.sha256
+                            || candidate.size != m_release.size || candidate.download != m_release.download;
+                        if (offer) m_readyPath.clear();
+                        m_release = candidate;
                         m_status = tr("Доступна версия %1.").arg(candidate.version);
-                        if (newOffer) emit updateAvailable();
                     } else {
                         const auto remote = SelfVpsRelease::version(json.object().value("tag_name").toString());
                         if (!remote.isNull() && QVersionNumber::compare(remote.normalized(), SelfVpsRelease::version(APP_VERSION).normalized()) <= 0) {
                             m_release = {}; m_readyPath.clear(); m_status = tr("Установлена актуальная версия.");
-                        } else m_status = tr("Релиз не содержит подходящего x64 установщика с SHA-256. Автоустановка недоступна.");
+                        } else {
+                            m_release = {}; m_readyPath.clear();
+                            m_status = tr("Релиз не содержит подходящего x64 установщика с SHA-256. Автоустановка недоступна.");
+                        }
                     }
                 }
             }
         }
         m_reply.clear(); reply->deleteLater(); m_metadata.clear(); emit changed();
+        if (offer) emit updateAvailable();
     });
     emit changed();
 }
@@ -142,22 +158,68 @@ void AppUpdater::download()
     });
     emit changed();
 }
-void AppUpdater::cancel() { if (busy()) fail(tr("Операция отменена.")); }
+void AppUpdater::cancel()
+{
+    if (m_verification) {
+        ++m_installGeneration;
+        m_verificationCanceled->store(true);
+        disconnect(m_verification, nullptr, this, nullptr);
+        m_verification->cancel();
+        m_verification->deleteLater();
+        m_verification = nullptr;
+        m_status = tr("Операция отменена.");
+        emit changed();
+        return;
+    }
+    if (busy()) fail(tr("Операция отменена."));
+}
 void AppUpdater::openRelease() { if (m_release.valid()) QDesktopServices::openUrl(m_release.page); }
 void AppUpdater::install()
 {
     if (!ready() || busy() || !supported()) return;
-    QFile file(m_readyPath);
-    if (!file.open(QIODevice::ReadOnly) || file.size() != m_release.size) { m_status = tr("Файл обновления недоступен."); emit changed(); return; }
-    QCryptographicHash hash(QCryptographicHash::Sha256);
-    if (!hash.addData(&file) || hash.result().toHex() != m_release.sha256.toLatin1()) { m_readyPath.clear(); m_status = tr("Установщик изменился. Скачайте обновление заново."); emit changed(); return; }
-    file.close();
+    const auto path = m_readyPath;
+    const auto size = m_release.size;
+    const auto hash = m_release.sha256.toLatin1();
+    const auto generation = ++m_installGeneration;
+    m_verificationCanceled = std::make_shared<std::atomic_bool>(false);
+    const auto canceled = m_verificationCanceled;
+    auto *watcher = new QFutureWatcher<InstallerFileCheck::Result>(this);
+    m_verification = watcher;
+    m_status = tr("Проверяем установщик перед запуском…");
+    connect(watcher, &QFutureWatcher<InstallerFileCheck::Result>::finished, this,
+        [this, watcher, path, generation] {
+            if (generation != m_installGeneration || m_verification != watcher || watcher->isCanceled()) return;
+            const auto result = watcher->result();
+            watcher->deleteLater();
+            m_verification = nullptr;
+            m_verificationCanceled.reset();
+            if (result != InstallerFileCheck::Result::Valid) {
+                m_readyPath.clear();
+                m_status = result == InstallerFileCheck::Result::Missing
+                    ? tr("Файл обновления недоступен.")
+                    : tr("Установщик изменился. Скачайте обновление заново.");
+                emit changed();
+                return;
+            }
+            if (m_verifiedInstaller) m_verifiedInstaller(path);
+            else launchVerifiedInstaller(path);
+            emit changed();
+        });
+    watcher->setFuture(QtConcurrent::run([path, size, hash, canceled] {
+        return InstallerFileCheck::run(path, size, hash, canceled);
+    }));
+    emit changed();
+}
+void AppUpdater::launchVerifiedInstaller(const QString &verifiedPath)
+{
 #ifdef Q_OS_WIN
-    const auto path = QDir::toNativeSeparators(m_readyPath).toStdWString();
+    const auto path = QDir::toNativeSeparators(verifiedPath).toStdWString();
     SHELLEXECUTEINFOW info = {}; info.cbSize = sizeof(info); info.fMask = SEE_MASK_NOCLOSEPROCESS;
     info.lpVerb = L"runas"; info.lpFile = path.c_str(); info.lpParameters = L"/update"; info.nShow = SW_SHOWNORMAL;
     if (!ShellExecuteExW(&info)) { m_status = tr("Установка не запущена: UAC отменён или произошла ошибка %1.").arg(GetLastError()); emit changed(); return; }
     if (info.hProcess) CloseHandle(info.hProcess);
     QCoreApplication::quit();
+#else
+    Q_UNUSED(verifiedPath)
 #endif
 }

@@ -6,7 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../installer/AmneziaVPN.Installer/RuntimeCompatibility.cs" Link="RuntimeCompatibility.cs" />
     <Compile Include="../../installer/AmneziaVPN.Installer/InstallFileTransaction.cs" Link="InstallFileTransaction.cs" />
       <Compile Include="../../installer/AmneziaVPN.Installer/DriverUpdateGuard.cs" Link="DriverUpdateGuard.cs" />
+    <Compile Include="../../installer/AmneziaVPN.Installer/InstallerCommandRunner.cs" Link="InstallerCommandRunner.cs" />
   </ItemGroup>
 </Project>

@@ -22,7 +22,7 @@ class InterfaceConfig {
   enum HopType { SingleHop, MultiHopEntry, MultiHopExit };
   Q_ENUM(HopType)
 
-  HopType m_hopType;
+  HopType m_hopType = SingleHop;
   QString m_privateKey;
   QString m_deviceIpv4Address;
   QString m_deviceIpv6Address;
@@ -40,7 +40,7 @@ class InterfaceConfig {
   QStringList m_excludedAddresses;
   QStringList m_vpnDisabledApps;
   QStringList m_allowedDnsServers;
-  bool m_killSwitchEnabled;
+  bool m_killSwitchEnabled = false;
 #if defined(MZ_ANDROID) || defined(MZ_IOS)
   QString m_installationId;
 #endif
@@ -71,6 +71,8 @@ class InterfaceConfig {
   QString m_rejectAfterTime;
   QString m_keepaliveTimeout;
   QString m_maxHandshakeAttempts;
+  QString m_randomTrailers;
+  QString m_disableCookies;
 
   QJsonObject toJson() const;
   QString toWgConf(

@@ -7,6 +7,7 @@
 #include <QScopedPointer>
 #include <QRemoteObjectNode>
 #include <QTimer>
+#include <functional>
 
 #include "protocols/vpnprotocol.h"
 #include "core/defs.h"
@@ -21,6 +22,7 @@
 #endif
 
 using namespace amnezia;
+class AsyncSiteDnsRefresh;
 
 class VpnConnection : public QObject
 {
@@ -47,11 +49,13 @@ public slots:
     void connectToVpn(int serverIndex, const ServerCredentials &credentials, DockerContainer container, const QJsonObject &vpnConfiguration);
     void reconnectToVpn();
     void disconnectFromVpn();
+    void shutdown();
 
     void onKillSwitchModeChanged(bool enabled);
     void disconnectSlots();
 
 signals:
+    void shutdownFinished(bool success);
     void bytesChanged(quint64 receivedBytes, quint64 sentBytes);
     void connectionStateChanged(Vpn::ConnectionState state);
     void vpnProtocolError(amnezia::ErrorCode error);
@@ -71,12 +75,28 @@ protected:
     QSharedPointer<VpnProtocol> m_vpnProtocol;
 
 private:
+    void prepareSiteDnsAndStart();
+    void startConfiguredProtocol();
+    void cancelSiteDnsRefresh();
+    QPointer<AsyncSiteDnsRefresh> m_siteDnsRefresh;
+    QHash<QString, QStringList> m_resolvedSiteIps;
+    void requestCleanup();
+    void protocolStopped(bool success);
+    void cleanupCompleted(bool success, const QString &step = {});
+    bool m_cleanupPending = false;
+    bool m_restoringNetwork = false;
+    bool m_connectionCleanupFailed = false;
+    int m_serverIndex = -1;
+    ServerCredentials m_credentials;
+    bool m_shutdownRequested = false;
+    std::function<void()> m_pendingConnect;
     std::shared_ptr<Settings> m_settings;
     QJsonObject m_vpnConfiguration;
     QJsonObject m_vpnConfigurationBase; // original config before split tunneling / XRay routing
     DockerContainer m_container = DockerContainer::None;
     QJsonObject m_routeMode;
     QString m_remoteAddress;
+    quint64 m_routeGeneration = 0;
     // Protocol we already warned about ("site split works only with XRay") —
     // the toast fires once per protocol, not on every connect/reconnect.
     QString m_lastSiteSplitWarnedProtocol;

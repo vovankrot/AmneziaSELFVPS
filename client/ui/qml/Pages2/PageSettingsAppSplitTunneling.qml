@@ -24,6 +24,7 @@ PageType {
     pageBackgroundVisible: true
 
     readonly property bool pageEnabled: !ConnectionController.isConnectionInProgress
+                                       && !AppSplitTunnelingController.folderScanBusy
     readonly property bool siteSplitTunnelingOverridesAppList: SitesModel.isTunnelingEnabled
     property bool hasPendingChanges: false
     property string pendingDialogKind: ""
@@ -103,6 +104,17 @@ PageType {
 
     Connections {
         target: AppSplitTunnelingController
+
+        function onFolderScanReady(token, folder, names, count) {
+            var heading = qsTr("Add applications from folder \"%1\" to VPN bypass?").arg(root.folderLeafName(folder))
+            var description = qsTr("Found %1 executable files. The game launcher and game must use the same route.").arg(count)
+                    + "\n\n" + names.join("\n")
+            if (count > names.length)
+                description += "\n" + qsTr("…and %1 more files").arg(count - names.length)
+            showQuestionDrawer(heading, description, qsTr("Add"), qsTr("Cancel"),
+                function() { AppSplitTunnelingController.confirmFolderApps(token) },
+                function() { AppSplitTunnelingController.discardFolderApps(token) })
+        }
 
         function onFinished(message) {
             root.updatePendingChanges()
@@ -564,7 +576,7 @@ PageType {
                     visible: Qt.platform.os === "windows"
                     enabled: root.pageEnabled
 
-                    text: qsTr("Folder")
+                    text: AppSplitTunnelingController.folderScanBusy ? qsTr("Scanning…") : qsTr("Folder")
                     leftImageSource: "qrc:/images/controls/folder-open.svg"
 
                     clickedFunc: function() {

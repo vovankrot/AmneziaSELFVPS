@@ -181,7 +181,7 @@ bool Logger::setServiceLogsEnabled(bool enabled)
         qDebug() << "Logger::setServiceLogsEnabled(): Logs transitioned to be " << (enabled ? "enabled" : "disabled");
         return true;
     },[](){
-        qWarning() << "Logger::setServiceLogsEnabled(): Service is not running";
+        qWarning() << "Logger::setServiceLogsEnabled(): service IPC unavailable; this does not establish SCM service state";
         return false;
     });
 #endif
@@ -226,7 +226,7 @@ bool Logger::runNetworkDiagnostics()
         }
         return saveNetworkDiagnosticsResult(reply.returnValue());
     }, []() {
-        qWarning() << "Logger::runNetworkDiagnostics(): Service is not running";
+        qWarning() << "Logger::runNetworkDiagnostics(): service IPC unavailable; this does not establish SCM service state";
         return false;
     });
 #else
@@ -375,7 +375,7 @@ void Logger::clearServiceLogs()
         iface->clearLogs();
         qDebug() << "Logger::clearServiceLogs(): Logs cleared";
     }, []() {
-        qWarning() << "Logger::clearServiceLogs(): Service is not running";
+        qWarning() << "Logger::clearServiceLogs(): service IPC unavailable; this does not establish SCM service state";
     });
 #endif
 }

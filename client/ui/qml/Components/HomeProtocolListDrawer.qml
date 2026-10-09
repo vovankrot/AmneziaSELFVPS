@@ -49,10 +49,6 @@ DrawerType2 {
             }
         }
 
-        ButtonGroup {
-            id: protocolPickerGroup
-        }
-
         ListViewType {
             id: listView
 
@@ -85,34 +81,16 @@ DrawerType2 {
                         descriptionText: description
 
                         checked: dockerContainer === root.currentContainer
-                        checkable: true
+                        // Selection belongs to the model. A click must not move the
+                        // indicator before the controller accepts the protocol switch.
+                        checkable: false
+                        autoExclusive: false
+                        enabled: !ConnectionController.isConnectionInProgress
+                        objectName: "homeProtocolOption_" + dockerContainer
 
-                        ButtonGroup.group: protocolPickerGroup
-
-                        // NEVER test `checked` in here. RadioButton toggles itself and the
-                        // ButtonGroup unchecks its siblings BEFORE clicked() is emitted, so
-                        // `checked` is already true by the time this handler runs -- an
-                        // `if (checked) return` guard therefore swallowed *every* switch.
-                        // That is the actual reason tapping "AmneziaWG v2" moved the radio
-                        // dot but left the tunnel on XRay. Compare against the model-backed
-                        // value instead, which still holds the real current protocol.
-                        //
-                        // The self-toggle also destroys the declarative `checked` binding
-                        // above, so re-establish it -- otherwise the dot stays wherever the
-                        // user last tapped even if the switch never lands. by vovankrot
                         onClicked: {
-                            // Hold onto the drawer and the tapped value first. switchFunction
-                            // repopulates the protocol model, which destroys this delegate --
-                            // any `root` reference after that call resolves against a dead
-                            // context and throws "root is not defined". Close before
-                            // switching, and drive the switch through the captured handle.
-                            // by vovankrot
                             const drawer = root
                             const tapped = dockerContainer
-
-                            checked = Qt.binding(function() {
-                                return dockerContainer === drawer.currentContainer
-                            })
 
                             if (tapped === drawer.currentContainer) {
                                 return

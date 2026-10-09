@@ -68,7 +68,12 @@ bool Daemon::activate(const InterfaceConfig& config) {
   // If the activation abort's for any reason `the `activationFailure` signal is
   // emitted.
   logger.debug() << "Activating interface";
-  auto emit_failure_guard = qScopeGuard([this] { emit activationFailure(); });
+  auto emit_failure_guard = qScopeGuard([this] {
+    m_cleanupPending = true;
+    m_handshakeTimer.stop();
+    emit activationFailure();
+  });
+  if (m_cleanupPending && !deactivate(false)) return false;
 
   if (m_connections.contains(config.m_hopType)) {
     if (supportServerSwitching(config)) {
@@ -121,6 +126,12 @@ bool Daemon::activate(const InterfaceConfig& config) {
     }
   }
 
+  // Record the configuration before creating peers, addresses or routes so a
+  // failed activation can clean up the resources already installed.
+#ifdef Q_OS_WIN
+  m_connections[config.m_hopType] = ConnectionState(config);
+#endif
+
   // Bring the interface up.
   if (supportIPUtils()) {
     if (!iputils()->addInterfaceIPs(config)) {
@@ -133,7 +144,7 @@ bool Daemon::activate(const InterfaceConfig& config) {
 
   // Configure routing for excluded addresses.
   for (const QString& i : config.m_excludedAddresses) {
-    addExclusionRoute(IPAddress(i));
+    if (!addExclusionRoute(IPAddress(i))) return false;
   }
 
   // Add the peer to this interface.
@@ -227,8 +238,9 @@ bool Daemon::delExclusionRoute(const IPAddress& prefix) {
     m_excludedAddrSet[prefix]--;
     return true;
   }
+  if (!wgutils()->deleteExclusionRoute(prefix)) return false;
   m_excludedAddrSet.remove(prefix);
-  return wgutils()->deleteExclusionRoute(prefix);
+  return true;
 }
 
 // static
@@ -453,11 +465,15 @@ bool Daemon::parseConfig(const QJsonObject& obj, InterfaceConfig& config) {
       { "RejectAfterTime", &InterfaceConfig::m_rejectAfterTime },
       { "KeepaliveTimeout", &InterfaceConfig::m_keepaliveTimeout },
       { "MaxHandshakeAttempts", &InterfaceConfig::m_maxHandshakeAttempts },
+      { "RandomTrailers", &InterfaceConfig::m_randomTrailers },
+      { "DisableCookies", &InterfaceConfig::m_disableCookies },
   };
   for (const auto& field : kAwg3Fields) {
     const QJsonValue value = obj.value(QLatin1String(field.first));
     if (!value.isNull() && !value.isUndefined()) {
-      config.*(field.second) = value.toString();
+      config.*(field.second) = value.isBool()
+          ? (value.toBool() ? QStringLiteral("on") : QStringLiteral("off"))
+          : value.toString();
     }
   }
 
@@ -466,6 +482,8 @@ bool Daemon::parseConfig(const QJsonObject& obj, InterfaceConfig& config) {
 
 bool Daemon::deactivate(bool emitSignals) {
   Q_ASSERT(wgutils() != nullptr);
+  m_cleanupPending = true;
+  m_handshakeTimer.stop();
 
   // Deactivate the main interface.
   if (!m_connections.isEmpty()) {
@@ -475,35 +493,47 @@ bool Daemon::deactivate(bool emitSignals) {
     }
   }
 
-  if (emitSignals) {
-    emit disconnected();
-  }
-
   // Cleanup DNS
+  bool cleaned = true;
   if (!dnsutils()->restoreResolvers()) {
     logger.warning() << "Failed to restore DNS resolvers.";
+    cleaned = false;
   }
 
   // Cleanup peers and routing
-  for (const ConnectionState& state : m_connections) {
-    const InterfaceConfig& config = state.m_config;
+  for (ConnectionState& state : m_connections) {
+    InterfaceConfig& config = state.m_config;
     logger.debug() << "Deleting routes for" << config.m_hopType;
-    for (const IPAddress& ip : config.m_allowedIPAddressRanges) {
-      wgutils()->deleteRoutePrefix(ip);
+    for (auto ip = config.m_allowedIPAddressRanges.begin(); ip != config.m_allowedIPAddressRanges.end();) {
+      if (wgutils()->deleteRoutePrefix(*ip)) {
+        ip = config.m_allowedIPAddressRanges.erase(ip);
+      } else {
+        cleaned = false;
+        ++ip;
+      }
     }
-    wgutils()->deletePeer(config);
+    if (!state.m_peerDeleted) {
+      if (wgutils()->deletePeer(config)) state.m_peerDeleted = true;
+      else cleaned = false;
+    }
   }
 
   // Cleanup routing for excluded addresses.
-  for (auto iterator = m_excludedAddrSet.constBegin();
-       iterator != m_excludedAddrSet.constEnd(); ++iterator) {
-    wgutils()->deleteExclusionRoute(iterator.key());
+  for (auto iterator = m_excludedAddrSet.begin(); iterator != m_excludedAddrSet.end();) {
+    if (wgutils()->deleteExclusionRoute(iterator.key())) {
+      iterator = m_excludedAddrSet.erase(iterator);
+    } else {
+      cleaned = false;
+      ++iterator;
+    }
   }
-  m_excludedAddrSet.clear();
-
+  // Keep the interface and session ledger available for a cleanup retry.
+  if (!cleaned || !wgutils()->deleteInterface()) return false;
   m_connections.clear();
-  // Delete the interface
-  return wgutils()->deleteInterface();
+  m_handshakeTimer.stop();
+  m_cleanupPending = false;
+  if (emitSignals) emit disconnected();
+  return true;
 }
 
 QString Daemon::logs() {
@@ -513,6 +543,12 @@ QString Daemon::logs() {
 void Daemon::cleanLogs() { }
 
 bool Daemon::supportServerSwitching(const InterfaceConfig& config) const {
+#ifdef Q_OS_WIN
+  // Windows routes, DNS, service and WFP policy cannot be switched as one
+  // transaction. Use the checked teardown path before changing the peer.
+  Q_UNUSED(config);
+  return false;
+#else
   if (!m_connections.contains(config.m_hopType)) {
     return false;
   }
@@ -524,6 +560,7 @@ bool Daemon::supportServerSwitching(const InterfaceConfig& config) const {
          current.m_deviceIpv6Address == config.m_deviceIpv6Address &&
          current.m_serverIpv4Gateway == config.m_serverIpv4Gateway &&
          current.m_serverIpv6Gateway == config.m_serverIpv6Gateway;
+#endif
 }
 
 bool Daemon::switchServer(const InterfaceConfig& config) {
@@ -578,7 +615,7 @@ QJsonObject Daemon::getStatus() {
   QJsonObject json;
   logger.debug() << "Status request";
 
-  if (!wgutils()->interfaceExists() || m_connections.isEmpty()) {
+  if (m_cleanupPending || !wgutils()->interfaceExists() || m_connections.isEmpty()) {
     json.insert("connected", QJsonValue(false));
     return json;
   }
@@ -586,7 +623,7 @@ QJsonObject Daemon::getStatus() {
   const ConnectionState& connection = m_connections.first();
   QList<WireguardUtils::PeerStatus> peers = wgutils()->getPeerStatus();
   for (const WireguardUtils::PeerStatus& status : peers) {
-    if (status.m_pubkey != connection.m_config.m_serverPublicKey) {
+    if (status.m_pubkey != connection.m_config.m_serverPublicKey || !connection.m_date.isValid()) {
       continue;
     }
     json.insert("connected", QJsonValue(true));

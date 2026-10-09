@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # This scripts copied from Amnezia client to Docker container to /opt/amnezia and launched every time container starts
 
@@ -6,7 +7,7 @@ echo "Container startup"
 #ifconfig eth0:0 $SERVER_IP_ADDRESS netmask 255.255.255.255 up
 
 # kill daemons in case of restart
-wg-quick down /opt/amnezia/awg/wg0.conf
+wg-quick down /opt/amnezia/awg/wg0.conf 2>/dev/null || true
 
 # start daemons if configured
 if [ -f /opt/amnezia/awg/wg0.conf ]; then (wg-quick up /opt/amnezia/awg/wg0.conf); fi

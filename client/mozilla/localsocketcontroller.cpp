@@ -72,13 +72,19 @@ void LocalSocketController::errorOccurred(
   }
 
   qCritical() << "ControllerError";
-  disconnectInternal();
+  m_daemonState = eDisconnected;
+  m_deactivatePending = false;
+  m_pendingActivation = {};
+  m_initializingTimer.stop();
+  emit backendFailed();
 }
 
 void LocalSocketController::disconnectInternal() {
   // We're still eReady as the Deamon is alive
   // and can make a new connection.
   m_daemonState = eReady;
+  m_deactivatePending = false;
+  m_pendingActivation = {};
   m_initializingRetry = 0;
   m_initializingTimer.stop();
   emit disconnected();
@@ -261,23 +267,6 @@ void LocalSocketController::activate(const QJsonObject &rawConfig) {
     json.insert(amnezia::config_key::specialJunk4, wgConfig.value(amnezia::config_key::specialJunk4));
     json.insert(amnezia::config_key::specialJunk5, wgConfig.value(amnezia::config_key::specialJunk5));
 
-    // AmneziaWG 3 fields. wgConfig carries these as top-level values (see
-    // AwgConfigurator::createConfig), but until now nothing copied them into
-    // the JSON actually sent to the daemon over the local pipe -- the daemon
-    // parsed them correctly (daemon.cpp's kAwg3Fields), it just never received
-    // them, so header protection silently never reached the wire. by vovankrot
-    for (const char *awg3Key : { amnezia::config_key::headerProtectionKey,
-                                 amnezia::config_key::contentPaddingAddition,
-                                 amnezia::config_key::rekeyAfterTime,
-                                 amnezia::config_key::rekeyTimeout,
-                                 amnezia::config_key::rejectAfterTime,
-                                 amnezia::config_key::keepaliveTimeout,
-                                 amnezia::config_key::maxHandshakeAttempts }) {
-      const QJsonValue value = wgConfig.value(QLatin1String(awg3Key));
-      if (!value.isUndefined() && !value.toString().isEmpty()) {
-        json.insert(QLatin1String(awg3Key), value);
-      }
-    }
   } else if (!wgConfig.value(amnezia::config_key::junkPacketCount).isUndefined()
              && !wgConfig.value(amnezia::config_key::junkPacketMinSize).isUndefined()
              && !wgConfig.value(amnezia::config_key::junkPacketMaxSize).isUndefined()
@@ -307,22 +296,62 @@ void LocalSocketController::activate(const QJsonObject &rawConfig) {
     json.insert(amnezia::config_key::specialJunk5, wgConfig.value(amnezia::config_key::specialJunk5));
   }
 
+  // Preserve AWG tuning through IPC for both explicit AWG and imported
+  // WG-labelled AWG configurations. Only explicitly present values are sent.
+  for (const char *key : { amnezia::config_key::headerProtectionKey,
+                          amnezia::config_key::contentPaddingAddition,
+                          amnezia::config_key::rekeyAfterTime,
+                          amnezia::config_key::rekeyTimeout,
+                          amnezia::config_key::rejectAfterTime,
+                          amnezia::config_key::keepaliveTimeout,
+                          amnezia::config_key::maxHandshakeAttempts,
+                          amnezia::config_key::randomTrailers,
+                          amnezia::config_key::disableCookies }) {
+    const auto name = QLatin1String(key);
+    const QJsonValue value = wgConfig.value(name);
+    const bool toggle = name == QLatin1String(amnezia::config_key::randomTrailers)
+                     || name == QLatin1String(amnezia::config_key::disableCookies);
+    if ((value.isString() && !value.toString().isEmpty()) || (toggle && value.isBool())) {
+      json.insert(name, value);
+    }
+  }
+
+  sendActivation(json);
+}
+
+void LocalSocketController::sendActivation(const QJsonObject& json) {
+  if (m_deactivatePending) {
+    emit backendFailed();
+    return;
+  }
+  if (m_daemonState != eReady || m_socket->state() != QLocalSocket::ConnectedState) {
+    m_pendingActivation = json;
+    if (m_daemonState != eInitializing) {
+      m_initializingRetry = 0;
+      initializeInternal();
+    }
+    return;
+  }
+  m_pendingActivation = {};
   write(json);
 }
 
 void LocalSocketController::deactivate() {
   logger.debug() << "Deactivating";
 
-  if (m_daemonState != eReady) {
-    logger.debug() << "No disconnect, controller is not ready";
-    emit disconnected();
+  m_deactivatePending = true;
+  m_pendingActivation = {};
+  if (m_daemonState != eReady || m_socket->state() != QLocalSocket::ConnectedState) {
+    if (m_daemonState != eInitializing) {
+      m_initializingRetry = 0;
+      initializeInternal();
+    }
     return;
   }
 
   QJsonObject json;
   json.insert("type", "deactivate");
   write(json);
-  emit disconnected();
 }
 
 void LocalSocketController::checkStatus() {
@@ -422,11 +451,19 @@ void LocalSocketController::parseCommand(const QByteArray& command) {
   logger.debug() << "Parse command:" << type;
 
   if (m_daemonState == eInitializing && type == "status") {
-    m_daemonState = eReady;
+    const auto invalidStatus = [this] {
+      m_daemonState = eDisconnected;
+      m_deactivatePending = false;
+      m_pendingActivation = {};
+      m_initializingTimer.stop();
+      emit initialized(false, false, QDateTime());
+      emit backendFailed();
+    };
 
     QJsonValue connected = obj.value("connected");
     if (!connected.isBool()) {
       logger.error() << "Invalid JSON for status - connected expected";
+      invalidStatus();
       return;
     }
 
@@ -435,17 +472,30 @@ void LocalSocketController::parseCommand(const QByteArray& command) {
       QJsonValue date = obj.value("date");
       if (!date.isString()) {
         logger.error() << "Invalid JSON for status - date expected";
+        invalidStatus();
         return;
       }
 
       datetime = QDateTime::fromString(date.toString());
       if (!datetime.isValid()) {
         logger.error() << "Invalid JSON for status - date is invalid";
+        invalidStatus();
         return;
       }
     }
 
+    m_daemonState = eReady;
+    m_initializingRetry = 0;
+    m_initializingTimer.stop();
+    if (m_deactivatePending) {
+      deactivate();
+      return;
+    }
     emit initialized(true, connected.toBool(), datetime);
+    if (!m_pendingActivation.isEmpty()) {
+      const auto pending = m_pendingActivation;
+      sendActivation(pending);
+    }
     return;
   }
 
@@ -510,6 +560,9 @@ void LocalSocketController::parseCommand(const QByteArray& command) {
   }
 
   if (type == "backendFailure") {
+    m_deactivatePending = false;
+    m_pendingActivation = {};
+    emit backendFailed();
     if (!obj.contains("errorCode")) {
       // report a generic error if we dont know what it is.
       logger.error() << "generic backend failure error";
@@ -543,6 +596,7 @@ void LocalSocketController::parseCommand(const QByteArray& command) {
         Q_ASSERT(false);
         break;
     }
+    return; // A recognized failure is not an invalid command.
   }
 
   if (type == "logs") {

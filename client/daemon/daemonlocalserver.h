@@ -6,6 +6,8 @@
 #define DAEMONLOCALSERVER_H
 
 #include <QLocalServer>
+#include <functional>
+class QLocalSocket;
 
 class DaemonLocalServer final : public QObject {
   Q_DISABLE_COPY_MOVE(DaemonLocalServer)
@@ -15,6 +17,7 @@ class DaemonLocalServer final : public QObject {
   ~DaemonLocalServer();
 
   bool initialize();
+  std::function<bool(QLocalSocket *)> peerAdmission;
 
  private:
   QString daemonPath() const;

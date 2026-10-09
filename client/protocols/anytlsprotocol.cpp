@@ -1,4 +1,11 @@
 #include "anytlsprotocol.h"
+#include "core/tun2socksOutputReader.h"
+#include "core/tun2socksProcessObserver.h"
+#include "core/socksRoutingSetup.h"
+#include "core/localSocksUrl.h"
+#include "core/asyncProcessRequest.h"
+#include "core/asyncTunnelStop.h"
+#include "core/asyncSocksProbe.h"
 
 #include <QDir>
 #include <QElapsedTimer>
@@ -52,7 +59,7 @@ AnyTlsProtocol::AnyTlsProtocol(const QJsonObject &configuration, QObject *parent
     m_dnsServers.push_back(QHostAddress(primaryDns));
     if (primaryDns != amnezia::protocols::dns::amneziaDnsIp) {
         const QString secondaryDns = configuration.value(amnezia::config_key::dns2).toString();
-        m_dnsServers.push_back(QHostAddress(secondaryDns));
+        if (!secondaryDns.isEmpty() && secondaryDns != primaryDns) m_dnsServers.push_back(QHostAddress(secondaryDns));
     }
 
     const QJsonObject anytls = configuration.value(ProtocolProps::key_proto_config_data(Proto::AnyTls)).toObject();
@@ -100,8 +107,14 @@ QString AnyTlsProtocol::buildServerUri() const
 
 ErrorCode AnyTlsProtocol::start()
 {
+    if (cleanupInProgress() || cleanupFailed()) return ErrorCode::AmneziaServiceConnectionFailed;
+    if (!m_stopping && (connectionState() == Vpn::Connecting || connectionState() == Vpn::Connected)) {
+        qWarning() << "Ignoring duplicate protocol start";
+        return ErrorCode::NoError;
+    }
     qDebug() << "AnyTlsProtocol::start()";
     m_stopping = false;
+    m_completedStopSteps.clear();
 
     if (m_serverAddress.isEmpty() || m_password.isEmpty()) {
         qCritical() << "AnyTlsProtocol::start(): incomplete AnyTLS config";
@@ -117,74 +130,70 @@ ErrorCode AnyTlsProtocol::start()
         return ErrorCode::InternalError;
     }
 
-    if (ErrorCode code = startAnyTlsProcess(); code != ErrorCode::NoError) {
-        return code;
-    }
-
-    if (!ensureProxyReachable()) {
-        qWarning() << "Initial AnyTLS proxy probe failed. Retrying once.";
-        if (m_anyTlsProcess) {
-            m_anyTlsProcess->blockSignals(true);
-            m_anyTlsProcess->kill();
-            m_anyTlsProcess->waitForFinished(1500);
-            m_anyTlsProcess->deleteLater();
-            m_anyTlsProcess.clear();
-        }
-        if (ErrorCode code = startAnyTlsProcess(); code != ErrorCode::NoError) {
-            return code;
-        }
-        if (!ensureProxyReachable()) {
-            qCritical() << "AnyTLS proxy probe failed after reconnect attempt";
-            return ErrorCode::InternalError;
-        }
-    }
-
-    return IpcClient::withInterface([&](QSharedPointer<IpcInterfaceReplica> iface) -> ErrorCode {
-        if (!m_xrayRouterConfig.isEmpty()) {
-            if (ErrorCode code = startXrayRouter(iface); code != ErrorCode::NoError) {
-                return code;
-            }
-            if (!ensureXrayRouterReachable()) {
-                qWarning() << "Initial AnyTLS XRay router probe failed. Retrying XRay router once.";
-                auto xrayStop = iface->xrayStop();
-                if (!xrayStop.waitForFinished(2000) || !xrayStop.returnValue()) {
-                    qWarning() << "Failed to stop AnyTLS XRay router before retry";
-                }
-                if (ErrorCode code = startXrayRouter(iface); code != ErrorCode::NoError) {
-                    return code;
-                }
-                if (!ensureXrayRouterReachable()) {
-                    qCritical() << "AnyTLS XRay router probe failed after reconnect attempt";
-                    return ErrorCode::XrayExecutableCrashed;
-                }
-            }
-        }
-        return startTun2Socks();
-    }, [] () {
-        return ErrorCode::AmneziaServiceConnectionFailed;
-    });
+    ++m_startGeneration;
+    setConnectionState(Vpn::ConnectionState::Connecting);
+    startTimeoutTimer();
+    return startAnyTlsProcess();
 }
 
-ErrorCode AnyTlsProtocol::startXrayRouter(const QSharedPointer<IpcInterfaceReplica> &iface)
+void AnyTlsProtocol::afterHelperStarted()
+{
+    if (m_stopping) return;
+    const auto generation = m_startGeneration;
+    const QString host = (m_sni.trimmed().isEmpty() ? QString::fromLatin1(amnezia::protocols::anytls::defaultSni) : m_sni.trimmed());
+    m_startupProbe = new AsyncSocksProbe(this, host, 443, 4500, quint16(m_socksPort), {}, {},
+        [this, generation](bool ok) {
+            if (generation != m_startGeneration || m_stopping) return;
+            m_startupProbe = nullptr;
+            if (!ok) {
+                stop();
+                setLastError(ErrorCode::InternalError);
+                return;
+            }
+            if (m_xrayRouterConfig.isEmpty()) startTun2Socks();
+            else startXrayRouter();
+        });
+}
+
+void AnyTlsProtocol::startXrayRouter()
 {
     try {
         const auto creds = amnezia::serialization::inbounds::EnsureInboundAuth(m_xrayRouterConfig);
         m_xrayRouterUser = creds.username;
         m_xrayRouterPassword = creds.password;
         m_xrayRouterSocksPort = creds.port;
-    } catch (const std::exception &e) {
-        qCritical() << "Failed to prepare AnyTLS XRay router SOCKS inbound:" << e.what();
-        return ErrorCode::InternalError;
+    } catch (const std::exception &) {
+        stop();
+        setLastError(ErrorCode::InternalError);
+        return;
     }
-
-    auto xrayStart = iface->xrayStart(QJsonDocument(m_xrayRouterConfig).toJson());
-    if (!xrayStart.waitForFinished() || !xrayStart.returnValue()) {
-        qCritical() << "Failed to start AnyTLS XRay router";
-        return ErrorCode::XrayExecutableCrashed;
-    }
-
-    qDebug() << "AnyTLS XRay router started on local SOCKS port" << m_xrayRouterSocksPort;
-    return ErrorCode::NoError;
+    const auto iface = IpcClient::InterfaceWithoutWait();
+    const auto generation = m_startGeneration;
+    m_startupReady = new AsyncReplicaReady(this, iface.data(), 10000,
+        [this, iface, generation](bool ready) {
+            if (generation != m_startGeneration || m_stopping) return;
+            m_startupReady = nullptr;
+            if (!ready) { stop(); setLastError(ErrorCode::AmneziaServiceConnectionFailed); return; }
+            const auto config = QJsonDocument(m_xrayRouterConfig).toJson();
+            m_startupSequence = new AsyncIpcSequence(this,
+                {{"xrayStart", [iface, config] { return iface->xrayStart(config); }}},
+                [this, generation](AsyncIpcSequence::Result result, const QString &) {
+                    if (generation != m_startGeneration || m_stopping) return;
+                    m_startupSequence = nullptr;
+                    if (result != AsyncIpcSequence::Result::Success) {
+                        stop(); setLastError(ErrorCode::XrayExecutableCrashed); return;
+                    }
+                    const QString host = (m_sni.trimmed().isEmpty() ? QString::fromLatin1(amnezia::protocols::anytls::defaultSni) : m_sni.trimmed());
+                    m_startupProbe = new AsyncSocksProbe(this, host, 443, 4500,
+                        quint16(m_xrayRouterSocksPort), m_xrayRouterUser, m_xrayRouterPassword,
+                        [this, generation](bool ok) {
+                            if (generation != m_startGeneration || m_stopping) return;
+                            m_startupProbe = nullptr;
+                            if (!ok) { stop(); setLastError(ErrorCode::XrayExecutableCrashed); return; }
+                            startTun2Socks();
+                        });
+                });
+        });
 }
 
 ErrorCode AnyTlsProtocol::startAnyTlsProcess()
@@ -233,94 +242,78 @@ ErrorCode AnyTlsProtocol::startAnyTlsProcess()
                 }
             });
 
-    m_anyTlsProcess->start();
-    if (!m_anyTlsProcess->waitForStarted(3000)) {
-        qCritical() << "AnyTlsProtocol: failed to start anytls-client:" << m_anyTlsProcess->errorString();
-        return ErrorCode::InternalError;
-    }
-
-    qDebug() << "AnyTlsProtocol: anytls-client started, pid=" << m_anyTlsProcess->processId()
-             << "local socks=" << m_socksPort;
+    auto *process = m_anyTlsProcess.data();
+    const auto generation = m_startGeneration;
+    connect(process, &QProcess::started, this, [this, process, generation] {
+        if (m_stopping || generation != m_startGeneration || m_anyTlsProcess.data() != process) return;
+        afterHelperStarted();
+    });
+    connect(process, &QProcess::errorOccurred, this, [this, process, generation](QProcess::ProcessError error) {
+        if (error != QProcess::FailedToStart || m_stopping
+            || generation != m_startGeneration || m_anyTlsProcess.data() != process) return;
+        stop();
+        setLastError(ErrorCode::InternalError);
+    });
+    QTimer::singleShot(3000, this, [this, generation] {
+        if (m_stopping || generation != m_startGeneration) return;
+        if (!m_anyTlsProcess || m_anyTlsProcess->state() != QProcess::Running) {
+            stop();
+            setLastError(ErrorCode::InternalError);
+        }
+    });
+    process->start();
     return ErrorCode::NoError;
 }
 
 void AnyTlsProtocol::stop()
 {
+    if (m_stopping && !cleanupFailed()) return;
     qDebug() << "AnyTlsProtocol::stop()";
     m_stopping = true;
+    ++m_startGeneration;
+    stopTimeoutTimer();
+    if (m_startupProbe) { m_startupProbe->cancel(); m_startupProbe = nullptr; }
+    if (m_startupReady) { m_startupReady->cancel(); m_startupReady = nullptr; }
+    if (m_processRequest) { m_processRequest->cancel(); m_processRequest = nullptr; }
+    if (m_startupSequence) { m_startupSequence->cancel(); m_startupSequence = nullptr; }
+    if (m_routingSetup) { m_routingSetup->cancel(); m_routingSetup = nullptr; }
 
-    constexpr int kIpcTimeoutMs = 2000;
-
-    // Kill tun2socks FIRST and wait for its real exit before touching the TUN
-    // adapter -- see xrayprotocol.cpp::stop() for the full note. Same wedge here.
-    // by vovankrot
-    if (m_tun2socksProcess) {
-        m_tun2socksProcess->blockSignals(true);
-#ifndef Q_OS_WIN
-        m_tun2socksProcess->terminate();
-#else
-        m_tun2socksProcess->kill();
-#endif
-        auto wait = m_tun2socksProcess->waitForFinished(2000);
-        if (!wait.waitForFinished(3000) || !wait.returnValue()) {
-            qWarning() << "tun2socks did not exit within 2s after kill -- proceeding anyway";
-        }
-        m_tun2socksProcess->close();
-        m_tun2socksProcess.reset();
-    }
-
-    IpcClient::withInterface([this](QSharedPointer<IpcInterfaceReplica> iface) {
-        auto disableKillSwitch = iface->disableKillSwitch();
-        if (!disableKillSwitch.waitForFinished(kIpcTimeoutMs) || !disableKillSwitch.returnValue())
-            qWarning() << "Failed to disable killswitch";
-
-        auto StartRoutingIpv6 = iface->StartRoutingIpv6();
-        if (!StartRoutingIpv6.waitForFinished(kIpcTimeoutMs) || !StartRoutingIpv6.returnValue())
-            qWarning() << "Failed to start routing ipv6";
-
-        auto restoreResolvers = iface->restoreResolvers();
-        if (!restoreResolvers.waitForFinished(kIpcTimeoutMs) || !restoreResolvers.returnValue())
-            qWarning() << "Failed to restore resolvers";
-
-        auto deleteTun = iface->deleteTun(tunName);
-        if (!deleteTun.waitForFinished(kIpcTimeoutMs) || !deleteTun.returnValue())
-            qWarning() << "Failed to delete tun";
-
-        if (!m_xrayRouterConfig.isEmpty()) {
-            auto xrayStop = iface->xrayStop();
-            if (!xrayStop.waitForFinished(kIpcTimeoutMs) || !xrayStop.returnValue())
-                qWarning() << "Failed to stop AnyTLS XRay router";
-        }
-    });
-
-    if (m_anyTlsProcess) {
-        m_anyTlsProcess->blockSignals(true);
-        if (m_anyTlsProcess->state() != QProcess::NotRunning) {
-            m_anyTlsProcess->kill();
-            m_anyTlsProcess->waitForFinished(1500);
-        }
-        m_anyTlsProcess->deleteLater();
-        m_anyTlsProcess.clear();
-    }
-
-    setConnectionState(Vpn::ConnectionState::Disconnected);
+    beginAsyncStop();
+    new AsyncTunnelStop(this, m_tun2socksProcess, m_anyTlsProcess.data(),
+        IpcClient::InterfaceWithoutWait(), tunName, !m_xrayRouterConfig.isEmpty(), m_completedStopSteps,
+        [this](bool success, const QString &step) {
+            if (success) {
+                m_tun2socksProcess.reset();
+                if (m_anyTlsProcess) { m_anyTlsProcess->deleteLater(); m_anyTlsProcess.clear(); }
+            } else {
+                qCritical() << "Tunnel cleanup failed at" << step;
+                emit networkPolicyWarning(tr("Не удалось полностью очистить VPN-сессию. Новое подключение заблокировано до успешной очистки."));
+            }
+            finishAsyncStop(success);
+        });
 }
 
 ErrorCode AnyTlsProtocol::startTun2Socks()
 {
-    m_tun2socksProcess = IpcClient::CreatePrivilegedProcess();
-    if (!m_tun2socksProcess || !m_tun2socksProcess->waitForSource()) {
-        return ErrorCode::AmneziaServiceConnectionFailed;
-    }
+    const auto generation = m_startGeneration;
+    m_processRequest = new AsyncProcessRequest(this, IpcClient::InterfaceWithoutWait(),
+        [](int id) { return QUrl(QString("local:%1").arg(amnezia::getIpcProcessUrl(id))); },
+        [this, generation](AsyncProcessRequest::Replica process) {
+            if (m_stopping || generation != m_startGeneration) { if (process) process->close(); return; }
+            m_processRequest = nullptr;
+            if (!process) { stop(); setLastError(ErrorCode::AmneziaServiceConnectionFailed); return; }
+            m_tun2socksProcess = std::move(process);
+            configureTun2Socks();
+        });
+    return ErrorCode::NoError;
+}
 
-    QString proxyUrl;
-    if (!m_xrayRouterConfig.isEmpty() && m_xrayRouterSocksPort > 0) {
-        proxyUrl = QStringLiteral("socks5://%1:%2@127.0.0.1:%3")
-                       .arg(m_xrayRouterUser, m_xrayRouterPassword)
-                       .arg(m_xrayRouterSocksPort);
-    } else {
-        proxyUrl = QStringLiteral("socks5://127.0.0.1:%1").arg(m_socksPort);
-    }
+void AnyTlsProtocol::configureTun2Socks()
+{
+    const bool router = !m_xrayRouterConfig.isEmpty() && m_xrayRouterSocksPort > 0;
+    const QString proxyUrl = router
+        ? LocalSocksUrl::make(quint16(m_xrayRouterSocksPort), m_xrayRouterUser, m_xrayRouterPassword)
+        : LocalSocksUrl::make(quint16(m_socksPort));
 
     m_tun2socksProcess->setProgram(PermittedProcess::Tun2Socks);
     // v2.7.0 logs to stderr, and the Connected transition depends on seeing the
@@ -334,191 +327,60 @@ ErrorCode AnyTlsProtocol::startTun2Socks()
         // full note. Same binary, same caveats apply here.
     });
 
-    connect(m_tun2socksProcess.data(), &IpcProcessInterfaceReplica::readyReadStandardOutput, this, [this]() {
-        auto readAll = m_tun2socksProcess->readAllStandardOutput();
-        if (!readAll.waitForFinished()) {
-            return;
-        }
-        const QString line = readAll.returnValue();
-        if (!line.contains("[TCP]") && !line.contains("[UDP]"))
-            qDebug() << "[tun2socks-anytls]:" << line;
+    auto *outputProcess = m_tun2socksProcess.data();
+    new Tun2SocksOutputReader(outputProcess, this,
+        [this, outputProcess] { return !m_stopping && m_tun2socksProcess.data() == outputProcess; },
+        [this] { setupRouting(); });
 
-        if (line.contains("[STACK] tun://") && line.contains("<-> socks5://")) {
-            disconnect(m_tun2socksProcess.data(), &IpcProcessInterfaceReplica::readyReadStandardOutput, this, nullptr);
-            if (ErrorCode res = setupRouting(); res != ErrorCode::NoError) {
-                stop();
-                setLastError(res);
-            } else {
-                setConnectionState(Vpn::ConnectionState::Connected);
-            }
-        }
-    }, Qt::QueuedConnection);
-
-    connect(m_tun2socksProcess.data(), &IpcProcessInterfaceReplica::finished, this,
-            [this](int exitCode, QProcess::ExitStatus exitStatus) {
-                if (m_stopping || connectionState() == Vpn::ConnectionState::Disconnecting
-                    || connectionState() == Vpn::ConnectionState::Disconnected) {
-                    qDebug() << "Tun2socks (AnyTLS) finished during controlled shutdown, code" << exitCode
-                             << "status" << exitStatus;
-                    return;
-                }
-                if (exitStatus == QProcess::ExitStatus::CrashExit) {
-                    qCritical() << "Tun2socks (AnyTLS) crashed";
-                } else {
-                    qCritical() << "Tun2socks (AnyTLS) exited with code" << exitCode;
-                }
-                stop();
-                setLastError(ErrorCode::Tun2SockExecutableCrashed);
-            }, Qt::QueuedConnection);
+    new Tun2SocksProcessObserver(outputProcess, this,
+        [this, outputProcess] {
+            return !m_stopping && m_tun2socksProcess.data() == outputProcess
+                && connectionState() != Vpn::ConnectionState::Disconnecting
+                && connectionState() != Vpn::ConnectionState::Disconnected;
+        },
+        [this] { stop(); setLastError(ErrorCode::Tun2SockExecutableCrashed); });
 
     m_tun2socksProcess->start();
-    return ErrorCode::NoError;
 }
 
-bool AnyTlsProtocol::ensureProxyReachable()
+void AnyTlsProtocol::setupRouting()
 {
-    const QString host = m_sni.trimmed().isEmpty()
-        ? QString::fromLatin1(amnezia::protocols::anytls::defaultSni)
-        : m_sni.trimmed();
-    return performSocks5Probe(host, 443, 4500, m_socksPort);
-}
-
-bool AnyTlsProtocol::ensureXrayRouterReachable()
-{
-    if (m_xrayRouterSocksPort <= 0) {
-        return false;
+    if (m_stopping) return;
+    if (m_routingSetup) { m_routingSetup->cancel(); m_routingSetup = nullptr; }
+    const auto iface = IpcClient::Interface();
+    if (!iface || !iface->isReplicaValid()) {
+        stop();
+        setLastError(ErrorCode::AmneziaServiceConnectionFailed);
+        return;
     }
-    const QString host = m_sni.trimmed().isEmpty()
-        ? QString::fromLatin1(amnezia::protocols::anytls::defaultSni)
-        : m_sni.trimmed();
-    return performSocks5Probe(host, 443, 4500, m_xrayRouterSocksPort,
-                              m_xrayRouterUser, m_xrayRouterPassword);
-}
-
-bool AnyTlsProtocol::performSocks5Probe(const QString &targetHost, quint16 targetPort, int timeoutMs, int socksPort,
-                                        const QString &user, const QString &password)
-{
-    return SocksProbe::connect(targetHost, targetPort, timeoutMs, quint16(socksPort), user, password);
-}
-
-ErrorCode AnyTlsProtocol::setupRouting()
-{
-    return IpcClient::withInterface([this](QSharedPointer<IpcInterfaceReplica> iface) -> ErrorCode {
-#ifdef Q_OS_WIN
-        const int inetAdapterIndex = NetworkUtilities::AdapterIndexTo(QHostAddress(m_remoteAddress));
-#endif
-        auto createTun = iface->createTun(tunName, amnezia::protocols::anytls::defaultLocalAddr);
-        if (!createTun.waitForFinished() || !createTun.returnValue()) {
-            qCritical() << "AnyTLS: failed to assign IP for TUN";
-            return ErrorCode::InternalError;
-        }
-
-        auto updateResolvers = iface->updateResolvers(tunName, m_dnsServers);
-        if (!updateResolvers.waitForFinished() || !updateResolvers.returnValue()) {
-            qCritical() << "AnyTLS: failed to set DNS resolvers";
-            return ErrorCode::InternalError;
-        }
-
-#ifdef Q_OS_WIN
-        int vpnAdapterIndex = -1;
-        QList<QNetworkInterface> netInterfaces = QNetworkInterface::allInterfaces();
-        for (auto &netInterface : netInterfaces) {
-            for (auto &address : netInterface.addressEntries()) {
-                if (m_vpnLocalAddress == address.ip().toString())
-                    vpnAdapterIndex = netInterface.index();
+    SocksRoutingSetup::Parameters p;
+    p.device = tunName;
+    p.localAddress = amnezia::protocols::anytls::defaultLocalAddr;
+    p.vpnAddress = m_vpnLocalAddress;
+    p.vpnGateway = NetworkUtilities::checkIPv4Format(m_vpnGateway) ? m_vpnGateway : p.localAddress;
+    p.serverAddress = m_remoteAddress;
+    p.externalGateway = m_routeGateway;
+    p.dns = m_dnsServers;
+    p.peerConfig = m_rawConfig;
+    p.allSites = m_routeMode == Settings::RouteMode::VpnAllSites
+              || m_routeMode == Settings::RouteMode::VpnAllExceptSites;
+    p.killSwitch = QVariant(m_rawConfig.value(amnezia::config_key::killSwitchOption).toString()).toBool();
+    p.appSplit = isAppSplitTunnelActive(m_rawConfig);
+    // Per-app routing supplies its own filtering; a global strict block would
+    // also interrupt applications explicitly excluded from this VPN.
+    p.peerConfig.insert(amnezia::config_key::killSwitchOption,
+                        (p.killSwitch && !p.appSplit) ? "true" : "false");
+    m_routingSetup = new AsyncIpcSequence(this, SocksRoutingSetup::steps(iface, p),
+        [this](AsyncIpcSequence::Result result, const QString &step) {
+            m_routingSetup = nullptr;
+            if (m_stopping) return;
+            if (result != AsyncIpcSequence::Result::Success) {
+                qCritical() << "AnyTlsProtocol: routing setup failed at" << step << "result" << int(result);
+                stop();
+                setLastError(ErrorCode::InternalError);
+                return;
             }
-        }
-#else
-        static const int vpnAdapterIndex = 0;
-#endif
-
-        const bool killSwitchEnabled = QVariant(m_rawConfig.value(amnezia::config_key::killSwitchOption).toString()).toBool();
-        const bool appSplitTunnelActive = isAppSplitTunnelActive(m_rawConfig);
-        if (killSwitchEnabled && appSplitTunnelActive) {
-            qDebug() << "AnyTLS: skipping strict killswitch firewall rules while app split tunneling is active";
-        } else if (killSwitchEnabled) {
-            if (vpnAdapterIndex != -1) {
-                QJsonObject config = m_rawConfig;
-                config.insert("vpnServer", m_remoteAddress);
-                auto enableKillSwitch = IpcClient::Interface()->enableKillSwitch(config, vpnAdapterIndex);
-                if (!enableKillSwitch.waitForFinished() || !enableKillSwitch.returnValue()) {
-                    qCritical() << "AnyTLS: failed to enable killswitch";
-                    return ErrorCode::InternalError;
-                }
-            } else {
-                qWarning() << "AnyTLS: vpnAdapterIndex unknown, killswitch skipped";
-            }
-        }
-
-        if (m_routeMode == Settings::RouteMode::VpnAllSites ||
-            m_routeMode == Settings::RouteMode::VpnAllExceptSites) {
-            // Exclude the AnyTLS server's own IP from the TUN via the physical
-            // gateway BEFORE the catch-all subnets. Those subnets (1.0.0.0/8 ...
-            // 128.0.0.0/1) otherwise capture the server endpoint (e.g. 203.0.113.10
-            // sits inside 32.0.0.0/3) into the tunnel, so the AnyTLS client's outer
-            // TCP would loop into the TUN. A /32 via the
-            // physical gateway is more specific, so server traffic bypasses the TUN.
-            // Mirrors XrayProtocol::setupRouting. by vovankrot
-            if (NetworkUtilities::checkIPv4Format(m_remoteAddress)
-                && NetworkUtilities::checkIPv4Format(m_routeGateway)) {
-                const QStringList serverExclusion = { m_remoteAddress + "/32" };
-                auto excludeServer = iface->routeAddList(m_routeGateway, serverExclusion);
-                if (!excludeServer.waitForFinished() || excludeServer.returnValue() != serverExclusion.count()) {
-                    qWarning() << "AnyTLS setupRouting: failed to add server exclusion route for"
-                               << m_remoteAddress << "via" << m_routeGateway;
-                } else {
-                    qDebug() << "AnyTLS setupRouting: excluded server" << m_remoteAddress
-                             << "via" << m_routeGateway;
-                }
-            } else {
-                qWarning() << "AnyTLS setupRouting: cannot exclude server, invalid address/gateway"
-                           << m_remoteAddress << m_routeGateway;
-            }
-
-            static const QStringList subnets = { "1.0.0.0/8", "2.0.0.0/7", "4.0.0.0/6", "8.0.0.0/5",
-                                                 "16.0.0.0/4", "32.0.0.0/3", "64.0.0.0/2", "128.0.0.0/1" };
-            auto routeAddList = iface->routeAddList(m_vpnGateway, subnets);
-            if (!routeAddList.waitForFinished() || routeAddList.returnValue() != subnets.count()) {
-                qCritical() << "AnyTLS: failed to set TUN routes";
-                return ErrorCode::InternalError;
-            }
-        }
-
-#ifdef Q_OS_WIN
-        // Per-app IPv6 filtering is installed by enablePeerTraffic. Global
-        // blackhole routes would also cut off excluded Firefox/CDN connections.
-        if (!appSplitTunnelActive) {
-#endif
-        auto StopRoutingIpv6 = iface->StopRoutingIpv6();
-        if (!StopRoutingIpv6.waitForFinished() || !StopRoutingIpv6.returnValue()) {
-            qCritical() << "AnyTLS: failed to disable IPv6 routing";
-            return ErrorCode::InternalError;
-        }
-#ifdef Q_OS_WIN
-        }
-#endif
-
-#ifdef Q_OS_WIN
-        if (killSwitchEnabled || appSplitTunnelActive) {
-            if (inetAdapterIndex <= 0 || vpnAdapterIndex <= 0) return ErrorCode::InternalError;
-            QJsonObject config = m_rawConfig;
-            config.insert("inetAdapterIndex", inetAdapterIndex);
-            config.insert("vpnAdapterIndex", vpnAdapterIndex);
-            config.insert("vpnGateway", m_vpnGateway);
-            config.insert("vpnServer", m_remoteAddress);
-            config.insert(amnezia::config_key::killSwitchOption,
-                          (killSwitchEnabled && !appSplitTunnelActive) ? "true" : "false");
-            auto enablePeerTraffic = iface->enablePeerTraffic(config);
-            if (!enablePeerTraffic.waitForFinished() || !enablePeerTraffic.returnValue()) return ErrorCode::InternalError;
-        }
-        if (appSplitTunnelActive) {
-            auto restoreIpv6 = iface->StartRoutingIpv6();
-            if (!restoreIpv6.waitForFinished() || !restoreIpv6.returnValue()) {
-                qCritical() << "Failed to restore physical IPv6 routes for excluded apps";
-                return ErrorCode::InternalError;
-            }
-        }
-#endif
-        return ErrorCode::NoError;
-    }, [] () { return ErrorCode::AmneziaServiceConnectionFailed; });
+            stopTimeoutTimer();
+            setConnectionState(Vpn::ConnectionState::Connected);
+        });
 }

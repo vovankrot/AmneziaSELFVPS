@@ -104,6 +104,8 @@ namespace amnezia
         constexpr char rejectAfterTime[] = "RejectAfterTime";
         constexpr char keepaliveTimeout[] = "KeepaliveTimeout";
         constexpr char maxHandshakeAttempts[] = "MaxHandshakeAttempts";
+        constexpr char randomTrailers[] = "RandomTrailers";
+        constexpr char disableCookies[] = "DisableCookies";
 
         constexpr char protocolVersion[] = "protocol_version";
 

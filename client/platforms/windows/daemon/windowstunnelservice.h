@@ -21,8 +21,9 @@ class WindowsTunnelService final : public QObject {
   ~WindowsTunnelService();
 
   bool start(const QString& configData);
-  void stop();
+  bool stop();
   bool isRunning();
+  bool isStopped();
   QString uapiCommand(const QString& command);
 
  signals:
@@ -36,6 +37,7 @@ class WindowsTunnelService final : public QObject {
   QTimer m_timer;
   QThread m_logthread;
   WindowsTunnelLogger* m_logworker = nullptr;
+  QString m_attemptId;
 
   // These are really SC_HANDLEs in disguise.
   void* m_scm = nullptr;

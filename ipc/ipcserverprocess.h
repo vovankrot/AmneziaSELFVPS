@@ -34,8 +34,10 @@ public:
     bool waitForStarted(int msecs) override;
     bool waitForFinished() override;
     bool waitForFinished(int msecs) override;
+    bool isRunning() const { return m_process->state() != QProcess::NotRunning; }
 
 signals:
+    void releaseRequested();
 
 private:
     amnezia::PermittedProcess m_program = amnezia::PermittedProcess::Invalid;

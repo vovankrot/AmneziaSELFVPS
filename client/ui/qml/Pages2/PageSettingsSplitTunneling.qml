@@ -66,10 +66,17 @@ PageType {
     Component.onCompleted: {
         root.initialStateSignature = SitesModel.stateSignature()
         updatePendingChanges()
+        positionResetTimer.restart()
     }
 
     function escapeSearchPattern(text) {
         return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    }
+
+    Timer {
+        id: positionResetTimer
+        interval: 0
+        onTriggered: listView.positionViewAtBeginning()
     }
 
     function searchPattern(text) {
@@ -183,6 +190,7 @@ PageType {
 
         function onRouteModeChanged() {
             root.schedulePendingReconnect()
+            positionResetTimer.restart()
         }
 
         function onSplitTunnelingToggled() {
@@ -267,12 +275,12 @@ PageType {
 
     QtObject {
         id: onlyForwardSites
-        property string name: qsTr("Sites not in the list will bypass VPN")
+        property string name: qsTr("Сайты из списка — через VPN")
         property int type: routeMode.onlyForwardSites
     }
     QtObject {
         id: allExceptSites
-        property string name: qsTr("Sites not in the list will use VPN")
+        property string name: qsTr("Сайты из списка — без VPN")
         property int type: routeMode.allExceptSites
     }
 
@@ -297,6 +305,7 @@ PageType {
 
     ListViewType {
         id: listView
+        objectName: "siteSplitListView"
 
         ScrollBar.vertical: ScrollBarType { policy: ScrollBar.AlwaysOn }
 
@@ -331,7 +340,50 @@ PageType {
                         return
                     }
                     SitesModel.toggleSplitTunneling(checked)
-                    selector.text = root.routeModesModel[getRouteModesModelIndex()].name
+                }
+            }
+
+            DropDownType {
+                id: selector
+                objectName: "siteRoutingModeSelector"
+
+                Layout.fillWidth: true
+                Layout.topMargin: 12
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+
+                text: root.routeModesModel[getRouteModesModelIndex()].name
+
+                drawerHeight: 0.4375
+                drawerParent: root
+
+                enabled: root.pageEnabled && SitesModel.isTunnelingEnabled
+
+                headerText: qsTr("Как использовать список сайтов")
+
+                listView: ListViewWithRadioButtonType {
+                    objectName: "siteRoutingModeOptions"
+                    rootWidth: root.width
+
+                    model: root.routeModesModel
+
+                    selectedIndex: getRouteModesModelIndex()
+
+                    clickedFunction: function() {
+                        selector.text = Qt.binding(function() { return root.routeModesModel[getRouteModesModelIndex()].name })
+                        selector.closeTriggered()
+                        if (SitesModel.routeMode !== root.routeModesModel[selectedIndex].type) {
+                            SitesModel.routeMode = root.routeModesModel[selectedIndex].type
+                            root.updatePendingChanges()
+                        }
+                    }
+
+                    Connections {
+                        target: SitesModel
+                        function onRouteModeChanged() {
+                            selectedIndex = getRouteModesModelIndex()
+                        }
+                    }
                 }
             }
 
@@ -352,9 +404,12 @@ PageType {
                 Layout.leftMargin: 16
                 Layout.rightMargin: 16
 
-            textString: SitesModel.routeMode === routeMode.onlyForwardSites
-                        ? qsTr("Sites in the list below will go through VPN. Everything else bypasses VPN.")
-                        : qsTr("Sites in the list below will bypass VPN. Everything else goes through VPN.")
+                objectName: "siteRoutingModeExplanation"
+                textString: !SitesModel.isTunnelingEnabled
+                            ? qsTr("Раздельное туннелирование сайтов выключено. Список не применяется.")
+                            : SitesModel.routeMode === routeMode.allExceptSites
+                              ? qsTr("Sites in the list below will bypass VPN. Everything else goes through VPN.")
+                              : qsTr("Sites in the list below will go through VPN. Everything else bypasses VPN.")
                 iconPath: "qrc:/images/controls/info.svg"
 
                 visible: root.pageEnabled
@@ -381,7 +436,7 @@ PageType {
                 Layout.topMargin: 16
 
                 text: qsTr("Russian sites without VPN")
-                descriptionText: qsTr("Sites with Russian IP addresses will be accessed directly without VPN. For sites on foreign hosting, add them manually to the exclusion list.")
+                descriptionText: qsTr("Дополнительное правило прямого доступа по российским IP-адресам. Выбранный режим списка сайтов остаётся прежним.")
 
                 enabled: root.pageEnabled && SitesModel.isTunnelingEnabled
                 checked: SitesModel.bypassRuGeoIp
@@ -636,53 +691,6 @@ PageType {
                 Layout.topMargin: 8
             }
 
-            DropDownType {
-                id: selector
-
-                Layout.fillWidth: true
-                Layout.topMargin: 32
-                Layout.leftMargin: 16
-                Layout.rightMargin: 16
-
-                drawerHeight: 0.4375
-                drawerParent: root
-
-                enabled: root.pageEnabled
-
-                headerText: qsTr("Default for sites not in the list")
-
-                listView: ListViewWithRadioButtonType {
-                    rootWidth: root.width
-
-                    model: root.routeModesModel
-
-                    selectedIndex: getRouteModesModelIndex()
-
-                    clickedFunction: function() {
-                        selector.text = selectedText
-                        selector.closeTriggered()
-                        if (SitesModel.routeMode !== root.routeModesModel[selectedIndex].type) {
-                            SitesModel.routeMode = root.routeModesModel[selectedIndex].type
-                            root.updatePendingChanges()
-                        }
-                    }
-
-                    Component.onCompleted: {
-                        if (root.routeModesModel[selectedIndex].type === SitesModel.routeMode) {
-                            selector.text = selectedText
-                        } else {
-                            selector.text = root.routeModesModel[0].name
-                        }
-                    }
-
-                    Connections {
-                        target: SitesModel
-                        function onRouteModeChanged() {
-                            selectedIndex = getRouteModesModelIndex()
-                        }
-                    }
-                }
-            }
 
             Item {
                 width: 1

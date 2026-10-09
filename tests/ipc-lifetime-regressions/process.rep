@@ -1,0 +1,5 @@
+#include <QProcess>
+class Process
+{
+    SLOT( close() );
+};

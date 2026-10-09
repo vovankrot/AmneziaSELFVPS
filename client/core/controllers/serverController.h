@@ -95,6 +95,7 @@ public:
 
 private:
 
+    ErrorCode verifyProtocolIsReady(const ServerCredentials &credentials, DockerContainer container, const QJsonObject &config);
     ErrorCode isServerPortBusy(const ServerCredentials &credentials, DockerContainer container, const QJsonObject &config);
     bool isReinstallContainerRequired(DockerContainer container, const QJsonObject &oldConfig, const QJsonObject &newConfig);
     ErrorCode isUserInSudo(const ServerCredentials &credentials, DockerContainer container);

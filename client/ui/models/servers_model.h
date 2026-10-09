@@ -108,6 +108,8 @@ public slots:
     bool isDefaultServerFromApi();
 
     bool isProcessedServerHasWriteAccess();
+    bool canEditProcessedServerPassword() const;
+    bool updateProcessedServerPassword(int expectedIndex, const QString &password);
     bool isDefaultServerHasWriteAccess();
     bool hasServerWithWriteAccess();
 

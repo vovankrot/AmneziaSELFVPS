@@ -99,7 +99,7 @@ bool DnsUtilsWindows::updateResolversWin32(
     }
   }
 
-  DNS_INTERFACE_SETTINGS settings;
+  DNS_INTERFACE_SETTINGS settings{};
   settings.Version = DNS_INTERFACE_SETTINGS_VERSION1;
   settings.Flags = DNS_SETTING_NAMESERVER | DNS_SETTING_SEARCHLIST;
   settings.Domain = nullptr;
@@ -131,54 +131,34 @@ bool DnsUtilsWindows::updateResolversWin32(
   return ((v4result == NO_ERROR) && (v6result == NO_ERROR));
 }
 
-constexpr const char* netshFlushTemplate =
-    "interface %1 set dnsservers name=%2 address=none valdiate=no "
-    "register=both\r\n";
-constexpr const char* netshAddTemplate =
-    "interface %1 add dnsservers name=%2 address=%3 validate=no\r\n";
-
 bool DnsUtilsWindows::updateResolversNetsh(
     int ifindex, const QList<QHostAddress>& resolvers) {
-  QProcess netsh;
-  netsh.setProgram("netsh");
-  netsh.start();
-  if (!netsh.waitForStarted(WINDOWS_NETSH_TIMEOUT_MSEC)) {
-    logger.error() << "Failed to start netsh";
-    return false;
-  }
-
-  QTextStream cmdstream(&netsh);
-
-  // Flush DNS servers
-  QString v4flush = QString(netshFlushTemplate).arg("ipv4").arg(ifindex);
-  QString v6flush = QString(netshFlushTemplate).arg("ipv6").arg(ifindex);
-  logger.debug() << "netsh write:" << v4flush.trimmed();
-  cmdstream << v4flush;
-  logger.debug() << "netsh write:" << v6flush.trimmed();
-  cmdstream << v6flush;
-
-  // Add new DNS servers
+  if (ifindex <= 0) return false;
   for (const QHostAddress& addr : resolvers) {
-    const char* family = "ipv4";
-    if (addr.protocol() == QAbstractSocket::IPv6Protocol) {
-      family = "ipv6";
+    if (addr.isNull()) return false;
+  }
+  // Interactive netsh can exit successfully even after a failed command.
+  // Execute each command separately and check its own exit status.
+  const auto run = [](const QStringList& arguments) {
+    QProcess netsh;
+    netsh.start(QStringLiteral("netsh"), arguments);
+    if (!netsh.waitForStarted(WINDOWS_NETSH_TIMEOUT_MSEC)) return false;
+    if (!netsh.waitForFinished(WINDOWS_NETSH_TIMEOUT_MSEC)) {
+      netsh.kill();
+      netsh.waitForFinished(WINDOWS_NETSH_TIMEOUT_MSEC);
+      return false;
     }
-    QString nsAddr = addr.toString();
-    QString nsCommand =
-        QString(netshAddTemplate).arg(family).arg(ifindex).arg(nsAddr);
-    logger.debug() << "netsh write:" << nsCommand.trimmed();
-    cmdstream << nsCommand;
+    return netsh.exitStatus() == QProcess::NormalExit && netsh.exitCode() == 0;
+  };
+  const QString name = QString("name=%1").arg(ifindex);
+  for (const auto& family : {QString("ipv4"), QString("ipv6")}) {
+    if (!run({"interface", family, "set", "dnsservers", name, "source=static", "address=none", "validate=no", "register=both"})) return false;
   }
-
-  // Exit and cleanup netsh
-  cmdstream << "exit\r\n";
-  cmdstream.flush();
-  if (!netsh.waitForFinished(WINDOWS_NETSH_TIMEOUT_MSEC)) {
-    logger.error() << "Failed to exit netsh";
-    return false;
+  for (const QHostAddress& addr : resolvers) {
+    const QString family = addr.protocol() == QAbstractSocket::IPv6Protocol ? "ipv6" : "ipv4";
+    if (!run({"interface", family, "add", "dnsservers", name, "address=" + addr.toString(), "validate=no"})) return false;
   }
-
-  return netsh.exitCode() == 0;
+  return true;
 }
 
 bool DnsUtilsWindows::restoreResolvers() {
@@ -193,6 +173,7 @@ bool DnsUtilsWindows::restoreResolvers() {
   error = GetIfEntry2(&entry);
   if (error == ERROR_FILE_NOT_FOUND) {
     // If the interface no longer exists, there is nothing to restore.
+    m_luid = 0;
     return true;
   }
   if (error != NO_ERROR) {
@@ -201,8 +182,9 @@ bool DnsUtilsWindows::restoreResolvers() {
   }
 
   QList<QHostAddress> empty;
-  if (m_setInterfaceDnsSettingsProcAddr == nullptr) {
-    return updateResolversNetsh(entry.InterfaceIndex, empty);
-  }
-  return updateResolversWin32(entry.InterfaceGuid, empty);
+  const bool restored = m_setInterfaceDnsSettingsProcAddr == nullptr
+      ? updateResolversNetsh(entry.InterfaceIndex, empty)
+      : updateResolversWin32(entry.InterfaceGuid, empty);
+  if (restored) m_luid = 0;
+  return restored;
 }

@@ -36,25 +36,45 @@ DrawerType2 {
         }
 
         Header2TextType {
+            id: questionHeader
             Layout.fillWidth: true
             Layout.topMargin: 16
             Layout.rightMargin: 16
             Layout.leftMargin: 16
 
             text: root.headerText
+            maximumLineCount: 3
+            elide: Text.ElideRight
         }
 
-        ParagraphTextType {
+        Flickable {
+            id: descriptionScroll
+            objectName: "questionDescriptionScroll"
             Layout.fillWidth: true
             Layout.topMargin: 8
             Layout.rightMargin: 16
             Layout.leftMargin: 16
+            Layout.preferredHeight: Math.min(description.implicitHeight,
+                Math.max(0, root.height - questionHeader.implicitHeight
+                         - yesButton.implicitHeight - (noButton.visible ? noButton.implicitHeight : 0)
+                         - 140 - SettingsController.safeAreaBottomMargin))
+            contentWidth: width
+            contentHeight: description.implicitHeight
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            ScrollBar.vertical: ScrollBarType {}
 
-            text: root.descriptionText
+            ParagraphTextType {
+                id: description
+                width: descriptionScroll.width
+                wrapMode: Text.Wrap
+                text: root.descriptionText
+            }
         }
 
         BasicButtonType {
             id: yesButton
+            objectName: "questionYesButton"
             Layout.fillWidth: true
             Layout.topMargin: 16
             Layout.rightMargin: 16
@@ -71,6 +91,7 @@ DrawerType2 {
 
         BasicButtonType {
             id: noButton
+            objectName: "questionNoButton"
             Layout.fillWidth: true
             Layout.rightMargin: 16
             Layout.leftMargin: 16

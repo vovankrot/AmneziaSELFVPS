@@ -46,7 +46,6 @@ public:
     bool StopRoutingIpv6();
 
     bool createTun(const QString &dev, const QString &subnet);
-    void suspendWcmSvc(bool suspend);
     bool updateResolvers(const QString& ifname, const QList<QHostAddress>& resolvers);
     bool restoreResolvers();
 
@@ -56,18 +55,12 @@ private:
     RouterWin(RouterWin const &) = delete;
     RouterWin& operator= (RouterWin const&) = delete;
 
-    DWORD GetServicePid(LPCWSTR serviceName);
-    BOOL ListProcessThreads(DWORD dwOwnerPID);
-    BOOL EnableDebugPrivilege();
-    BOOL InitNtFunctions();
-    BOOL SuspendProcess(BOOL fSuspend, DWORD dwProcessId);
 
     QNetworkInterface findLoopbackIface();
 
 private:
     RouterWin() {m_dnsUtil = new DnsUtilsWindows(this);}
     QMultiMap<QString, MIB_IPFORWARDROW> m_ipForwardRows;
-    bool m_suspended = false;
     DnsUtilsWindows *m_dnsUtil; 
 };
 

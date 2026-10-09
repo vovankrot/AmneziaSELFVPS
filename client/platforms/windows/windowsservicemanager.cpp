@@ -130,7 +130,8 @@ bool WindowsServiceManager::stopService() {
     logger.warning() << ("Service stop not possible, as its not running");
   }
 
-  bool ok = ControlService(m_service, SERVICE_CONTROL_STOP, NULL);
+  SERVICE_STATUS stoppedStatus{};
+  bool ok = ControlService(m_service, SERVICE_CONTROL_STOP, &stoppedStatus);
   if (ok) {
     logger.debug() << ("Service stop requested");
     startPolling(SERVICE_STOPPED, 10);

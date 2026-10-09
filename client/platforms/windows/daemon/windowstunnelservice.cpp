@@ -7,7 +7,13 @@
 #include <Windows.h>
 
 #include <QDateTime>
+#include <QElapsedTimer>
 #include <QScopeGuard>
+#include <QFileInfo>
+#include <QSysInfo>
+#include <QUuid>
+
+#include "wintunDeviceDiagnostics.h"
 
 #include "leakdetector.h"
 #include "logger.h"
@@ -28,6 +34,21 @@ Logger logger("WindowsTunnelService");
 static bool stopAndDeleteTunnelService(SC_HANDLE service);
 static bool waitForServiceStatus(SC_HANDLE service, DWORD expectedStatus);
 
+static void logServiceSnapshot(SC_HANDLE service, const char* phase, const QString& attempt) {
+  SERVICE_STATUS_PROCESS status{};
+  DWORD bytes = 0;
+  if (!QueryServiceStatusEx(service, SC_STATUS_PROCESS_INFO,
+      reinterpret_cast<LPBYTE>(&status), sizeof(status), &bytes)) {
+    logger.error() << "Tunnel attempt" << attempt << phase << "status query failed; win32=" << GetLastError();
+    return;
+  }
+  logger.info() << "Tunnel attempt" << attempt << phase
+      << "state=" << status.dwCurrentState << "pid=" << status.dwProcessId
+      << "win32Exit=" << status.dwWin32ExitCode << "serviceExit=" << status.dwServiceSpecificExitCode
+      << "checkpoint=" << status.dwCheckPoint << "waitHintMs=" << status.dwWaitHint
+      << "acceptedControls=" << status.dwControlsAccepted;
+}
+
 WindowsTunnelService::WindowsTunnelService(QObject* parent) : QObject(parent) {
   MZ_COUNT_CTOR(WindowsTunnelService);
   logger.debug() << "WindowsTunnelService created.";
@@ -42,8 +63,8 @@ WindowsTunnelService::WindowsTunnelService(QObject* parent) : QObject(parent) {
       OpenService((SC_HANDLE)m_scm, TUNNEL_SERVICE_NAME, SERVICE_ALL_ACCESS);
   if (service != nullptr) {
     logger.info() << "Tunnel already exists. Terminating it.";
-    stopAndDeleteTunnelService(service);
-    CloseServiceHandle(service);
+    if (stopAndDeleteTunnelService(service)) CloseServiceHandle(service);
+    else m_service = service;
   }
 
   connect(&m_timer, &QTimer::timeout, this, &WindowsTunnelService::timeout);
@@ -55,10 +76,10 @@ WindowsTunnelService::~WindowsTunnelService() {
   CloseServiceHandle((SC_HANDLE)m_scm);
 }
 
-void WindowsTunnelService::stop() {
+bool WindowsTunnelService::stop() {
   SC_HANDLE service = (SC_HANDLE)m_service;
   if (service) {
-    stopAndDeleteTunnelService(service);
+    if (!stopAndDeleteTunnelService(service)) return false;
     CloseServiceHandle(service);
     m_service = nullptr;
   }
@@ -70,6 +91,7 @@ void WindowsTunnelService::stop() {
     m_logthread.wait();
     m_logworker = nullptr;
   }
+  return true;
 }
 
 bool WindowsTunnelService::isRunning() {
@@ -83,6 +105,12 @@ bool WindowsTunnelService::isRunning() {
   }
 
   return status.dwCurrentState == SERVICE_RUNNING;
+}
+
+bool WindowsTunnelService::isStopped() {
+  if (!m_service) return true;
+  SERVICE_STATUS status{};
+  return QueryServiceStatus((SC_HANDLE)m_service, &status) && status.dwCurrentState == SERVICE_STOPPED;
 }
 
 void WindowsTunnelService::timeout() {
@@ -105,26 +133,48 @@ void WindowsTunnelService::timeout() {
   }
 
   logger.debug() << "The service is not active";
+  logServiceSnapshot((SC_HANDLE)m_service, "runtime-failure", m_attemptId);
+  for (const auto& detail : WintunDeviceDiagnostics::recentFailures()) logger.error() << detail;
+  // Report this failure once, rather than repeating it every two seconds.
+  m_timer.stop();
   emit backendFailure();
 }
 
 bool WindowsTunnelService::start(const QString& configData) {
+  if (m_service && !stop()) return false;
+  m_attemptId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+  QElapsedTimer attemptTime;
+  attemptTime.start();
   logger.debug() << "Starting the tunnel service";
+  logger.info() << "Tunnel attempt" << m_attemptId << "begin; OS=" << QSysInfo::prettyProductName()
+                << "kernel=" << QSysInfo::kernelVersion() << "arch=" << QSysInfo::currentCpuArchitecture();
+  for (const auto& filename : {QStringLiteral("tunnel.dll"), QStringLiteral("wintun.dll")}) {
+    const QFileInfo file(qApp->applicationDirPath() + "/" + filename);
+    logger.info() << "Tunnel attempt" << m_attemptId << "binary=" << filename
+                  << "exists=" << file.exists() << "size=" << file.size()
+                  << "modifiedUtc=" << file.lastModified().toUTC().toString(Qt::ISODate);
+  }
 
-  m_logworker = new WindowsTunnelLogger(WindowsCommons::tunnelLogFile());
+  m_logworker = new WindowsTunnelLogger(WindowsCommons::tunnelLogFile(), nullptr, m_attemptId);
   m_logworker->moveToThread(&m_logthread);
   connect(&m_logthread, &QThread::finished, m_logworker, &QObject::deleteLater);
   m_logthread.start();
 
   SC_HANDLE scm = (SC_HANDLE)m_scm;
   SC_HANDLE service = nullptr;
+  bool created = false;
   auto guard = qScopeGuard([&] {
     if (service) {
-      CloseServiceHandle(service);
+      if (created && !stopAndDeleteTunnelService(service)) {
+        // Preserve the handle so cleanup can retry a partially started service.
+        m_service = service;
+      } else {
+        CloseServiceHandle(service);
+      }
     }
     m_logthread.quit();
     m_logthread.wait();
-    delete m_logworker;
+    // QThread::finished owns deletion via deleteLater, including start failure.
     m_logworker = nullptr;
   });
 
@@ -133,6 +183,8 @@ bool WindowsTunnelService::start(const QString& configData) {
   if (service) {
     logger.debug() << "An existing service has been detected. Let's close it.";
     if (!stopAndDeleteTunnelService(service)) {
+      m_service = service;
+      service = nullptr;
       return false;
     }
     CloseServiceHandle(service);
@@ -157,6 +209,7 @@ bool WindowsTunnelService::start(const QString& configData) {
     WindowsUtils::windowsLog("Failed to create the tunnel service");
     return false;
   }
+  created = true;
 
   SERVICE_DESCRIPTION sd = {
       (wchar_t*)L"Manages the Amnezia VPN tunnel connection"};
@@ -178,9 +231,12 @@ bool WindowsTunnelService::start(const QString& configData) {
     WindowsUtils::windowsLog("Failed to start the service");
     return false;
   }
+  logServiceSnapshot(service, "start-accepted", m_attemptId);
 
   if (waitForServiceStatus(service, SERVICE_RUNNING)) {
     logger.debug() << "The tunnel service is up and running";
+    logServiceSnapshot(service, "running", m_attemptId);
+    logger.info() << "Tunnel attempt" << m_attemptId << "ready; elapsedMs=" << attemptTime.elapsed();
     guard.dismiss();
     m_service = service;
     m_timer.start(WINDOWS_TUNNEL_MONITOR_TIMEOUT_MSEC);
@@ -188,6 +244,11 @@ bool WindowsTunnelService::start(const QString& configData) {
   }
 
   logger.error() << "Failed to run the tunnel service";
+  logServiceSnapshot(service, "start-failure", m_attemptId);
+  logger.error() << "Tunnel attempt" << m_attemptId << "failed; elapsedMs=" << attemptTime.elapsed();
+  for (const auto& detail : WintunDeviceDiagnostics::recentFailures()) {
+    logger.error() << "Tunnel attempt" << m_attemptId << detail;
+  }
 
   SERVICE_STATUS status;
   if (!QueryServiceStatus(service, &status)) {
@@ -227,7 +288,7 @@ static bool stopAndDeleteTunnelService(SC_HANDLE service) {
 
   logger.debug() << "Proceeding with the deletion";
 
-  if (!DeleteService(service)) {
+  if (!DeleteService(service) && GetLastError() != ERROR_SERVICE_MARKED_FOR_DELETE) {
     WindowsUtils::windowsLog("Failed to delete the service");
     return false;
   }
@@ -238,34 +299,58 @@ static bool stopAndDeleteTunnelService(SC_HANDLE service) {
 QString WindowsTunnelService::uapiCommand(const QString& command) {
   // Create a pipe to the tunnel service.
   LPTSTR tunnelName = (LPTSTR)TEXT(TUNNEL_NAMED_PIPE);
+  if (!WaitNamedPipe(tunnelName, 1000)) {
+    WindowsUtils::windowsLog("Failed to wait for named pipes");
+    return {};
+  }
   HANDLE pipe = CreateFile(tunnelName, GENERIC_READ | GENERIC_WRITE, 0, nullptr,
-                           OPEN_EXISTING, 0, nullptr);
+                           OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr);
   if (pipe == INVALID_HANDLE_VALUE) {
     return QString();
   }
 
   auto guard = qScopeGuard([&] { CloseHandle(pipe); });
-  if (!WaitNamedPipe(tunnelName, 1000)) {
-    WindowsUtils::windowsLog("Failed to wait for named pipes");
-    return QString();
-  }
-
   DWORD mode = PIPE_READMODE_BYTE;
   if (!SetNamedPipeHandleState(pipe, &mode, nullptr, nullptr)) {
     WindowsUtils::windowsLog("Failed to set the read-mode on pipe");
     return QString();
   }
 
+  // Bound the entire exchange, including a service that accepts the command
+  // but never completes its response. Never leave stack buffers in pending IO.
+  HANDLE event = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+  if (!event) return {};
+  auto eventGuard = qScopeGuard([&] { CloseHandle(event); });
+  QElapsedTimer deadline;
+  deadline.start();
+  const auto transfer = [&](bool writing, void* buffer, DWORD size, DWORD& count) {
+    if (deadline.elapsed() >= 5000) return false;
+    OVERLAPPED operation{};
+    operation.hEvent = event;
+    ResetEvent(event);
+    count = 0;
+    const BOOL completed = writing ? WriteFile(pipe, buffer, size, &count, &operation)
+                                   : ReadFile(pipe, buffer, size, &count, &operation);
+    if (!completed && GetLastError() != ERROR_IO_PENDING) return false;
+    const qint64 remaining = 5000 - deadline.elapsed();
+    if (!completed && (remaining <= 0 || WaitForSingleObject(event, DWORD(remaining)) != WAIT_OBJECT_0)) {
+      CancelIoEx(pipe, &operation);
+      GetOverlappedResult(pipe, &operation, &count, TRUE);
+      return false;
+    }
+    return GetOverlappedResult(pipe, &operation, &count, FALSE) && count > 0;
+  };
+
   // Write the UAPI command into the pipe.
   QByteArray message = command.toLocal8Bit();
-  DWORD written;
   while (!message.endsWith("\n\n")) {
     message.append('\n');
   }
-  if (!WriteFile(pipe, message.constData(), message.length(), &written,
-                 nullptr)) {
-    WindowsUtils::windowsLog("Failed to write into the pipe");
-    return QString();
+  DWORD offset = 0;
+  while (offset < DWORD(message.size())) {
+    DWORD written = 0;
+    if (!transfer(true, message.data() + offset, DWORD(message.size()) - offset, written)) return {};
+    offset += written;
   }
 
   // Receive the response from the pipe.
@@ -273,11 +358,9 @@ QString WindowsTunnelService::uapiCommand(const QString& command) {
   while (!reply.contains("\n\n")) {
     char buffer[512];
     DWORD read = 0;
-    if (!ReadFile(pipe, buffer, sizeof(buffer), &read, nullptr)) {
-      break;
-    }
-
+    if (!transfer(false, buffer, sizeof(buffer), read)) return {};
     reply.append(buffer, read);
+    if (reply.size() > 1024 * 1024) return {};
   }
 
   return QString::fromUtf8(reply).trimmed();
@@ -286,23 +369,38 @@ QString WindowsTunnelService::uapiCommand(const QString& command) {
 // static
 static bool waitForServiceStatus(SC_HANDLE service, DWORD expectedStatus) {
   int tries = 0;
+  DWORD previousState = MAXDWORD;
+  DWORD previousCheckpoint = MAXDWORD;
   while (tries < 30) {
-    SERVICE_STATUS status;
+    SERVICE_STATUS status{};
     if (!QueryServiceStatus(service, &status)) {
       WindowsUtils::windowsLog("Failed to retrieve the service status");
       return false;
     }
 
+    if (status.dwCurrentState != previousState || status.dwCheckPoint != previousCheckpoint) {
+      logger.info() << "Tunnel service wait; expected=" << expectedStatus << "state=" << status.dwCurrentState
+                    << "elapsedMs=" << tries * 1000 << "win32Exit=" << status.dwWin32ExitCode
+                    << "serviceExit=" << status.dwServiceSpecificExitCode
+                    << "checkpoint=" << status.dwCheckPoint << "waitHintMs=" << status.dwWaitHint;
+      previousState = status.dwCurrentState;
+      previousCheckpoint = status.dwCheckPoint;
+    }
     if (status.dwCurrentState == expectedStatus) {
       return true;
     }
-
-    logger.warning() << "The service is not in the right status yet.";
+    if (expectedStatus == SERVICE_RUNNING && status.dwCurrentState == SERVICE_STOPPED) {
+      logger.error() << "Tunnel startup ended before SERVICE_RUNNING; win32Exit=" << status.dwWin32ExitCode
+                     << "serviceExit=" << status.dwServiceSpecificExitCode;
+      return false;
+    }
 
     Sleep(1000);
     ++tries;
   }
 
+  logger.error() << "Tunnel service wait timed out; expected=" << expectedStatus
+                 << "lastState=" << previousState << "elapsedMs=" << tries * 1000;
   return false;
 }
 

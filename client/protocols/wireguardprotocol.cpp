@@ -39,6 +39,8 @@ WireguardProtocol::WireguardProtocol(const QJsonObject &configuration, QObject *
 
     connect(m_impl.get(), &ControllerImpl::disconnected, this,
             [this]() { setConnectionState(Vpn::ConnectionState::Disconnected); });
+    connect(m_impl.get(), &ControllerImpl::backendFailed, this,
+            [this]() { setLastError(ErrorCode::AmneziaServiceConnectionFailed); });
     m_impl->initialize(nullptr, nullptr);
 }
 

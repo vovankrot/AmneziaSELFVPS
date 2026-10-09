@@ -1,5 +1,6 @@
 #include "sshclient.h"
 #include "sshHostTrust.h"
+#include "sshSessionPolicy.h"
 
 #include <QElapsedTimer>
 #include <QEventLoop>
@@ -26,9 +27,8 @@ namespace libssh {
 
     int Client::callback(const char *prompt, char *buf, size_t len, int echo, int verify, void *userdata)
     {
-        auto passphrase = m_passphraseCallback();
-        passphrase.toStdString().copy(buf, passphrase.size() + 1);
-        return 0;
+        if (!m_passphraseCallback) return SSH_ERROR;
+        return SshSessionPolicy::copyPassphrase(m_passphraseCallback(), buf, len) ? 0 : SSH_ERROR;
     }
 
     // Keep the TCP connection alive during long, output-silent remote commands
@@ -72,6 +72,11 @@ namespace libssh {
             return ErrorCode::ServerCancelInstallation;
         }
 
+        const int requestedPort = SshSessionPolicy::effectivePort(credentials.port);
+        if (requestedPort < 0) return ErrorCode::InternalError;
+        const auto requestedIdentity = SshSessionPolicy::identity(credentials.hostName, credentials.userName,
+                                                                 requestedPort, credentials.secretData);
+        if (m_session && m_sessionIdentity != requestedIdentity) disconnectFromHost();
         if (m_session != nullptr) {
             if (!ssh_is_connected(m_session)) {
                 ssh_free(m_session);
@@ -88,15 +93,18 @@ namespace libssh {
                 return ErrorCode::InternalError;
             }
 
-            int port = credentials.port;
+            unsigned int port = unsigned(requestedPort);
             int logVerbosity = SSH_LOG_NOLOG;
             long connectTimeout = 30; // seconds
             std::string hostIp = credentials.hostName.toStdString();
-            std::string hostUsername = credentials.userName.toStdString() + "@" + hostIp;
+            std::string hostUsername = credentials.userName.toStdString();
 
-            ssh_options_set(m_session, SSH_OPTIONS_HOST, hostIp.c_str());
-            ssh_options_set(m_session, SSH_OPTIONS_PORT, &port);
-            ssh_options_set(m_session, SSH_OPTIONS_USER, hostUsername.c_str());
+            if (ssh_options_set(m_session, SSH_OPTIONS_HOST, hostIp.c_str()) != SSH_OK
+                || ssh_options_set(m_session, SSH_OPTIONS_PORT, &port) != SSH_OK
+                || ssh_options_set(m_session, SSH_OPTIONS_USER, hostUsername.c_str()) != SSH_OK) {
+                disconnectFromHost();
+                return ErrorCode::InternalError;
+            }
             ssh_options_set(m_session, SSH_OPTIONS_LOG_VERBOSITY, &logVerbosity);
             ssh_options_set(m_session, SSH_OPTIONS_TIMEOUT, &connectTimeout);
 
@@ -181,6 +189,7 @@ namespace libssh {
                 }
             }
         }
+        m_sessionIdentity = requestedIdentity;
         return ErrorCode::NoError;
     }
 
@@ -197,6 +206,7 @@ namespace libssh {
 
     void Client::disconnectFromHost()
     {
+        m_sessionIdentity.clear();
         if (m_session != nullptr) {
             if (ssh_is_connected(m_session)) {
                 ssh_disconnect(m_session);

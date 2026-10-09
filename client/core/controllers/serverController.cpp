@@ -10,6 +10,8 @@
 #include <QJsonObject>
 #include <QLoggingCategory>
 #include <QPointer>
+#include <QScopeGuard>
+#include "core/protocolInstallHealth.h"
 #include <QRegularExpression>
 #include <QTemporaryFile>
 #include <QThread>
@@ -187,11 +189,11 @@ ErrorCode ServerController::runContainerScript(const ServerCredentials &credenti
     QString fileName = "/opt/amnezia/" + Utils::getRandomString(16) + ".sh";
     script.replace("\r", "");
 
-    // Ensure script ends with explicit exit 0 — some Alpine/bash combos
-    // return exit code 2 from docker exec despite script completing successfully
-    if (!script.trimmed().endsWith("exit 0")) {
-        script.append("\nexit 0\n");
-    }
+    const bool strict = container == DockerContainer::WireGuard || container == DockerContainer::Awg
+        || container == DockerContainer::Awg2 || container == DockerContainer::Xray
+        || container == DockerContainer::XrayReality || container == DockerContainer::SSXray
+        || container == DockerContainer::Hysteria2 || container == DockerContainer::AnyTls;
+    if (!strict && !script.trimmed().endsWith("exit 0")) script.append("\nexit 0\n");
 
     const QByteArray scriptBytes = script.toUtf8();
     const QString scriptHash = shortSha256Hex(scriptBytes);
@@ -210,8 +212,8 @@ ErrorCode ServerController::runContainerScript(const ServerCredentials &credenti
 
     emit logLineReady(tr("Container script uploaded to %1 in %2.").arg(fileName, containerName));
 
-    QString runner =
-            QString("sudo docker exec $CONTAINER_NAME %2 %1 ").arg(fileName, (container == DockerContainer::Socks5Proxy ? "sh" : "bash"));
+    QString runner = QString("sudo docker exec $CONTAINER_NAME %2 %1 ").arg(fileName,
+        container == DockerContainer::Socks5Proxy ? "sh" : strict ? "bash -e" : "bash");
 
     auto defaultStdErrLogger = [this](const QString &data, libssh::Client &) -> ErrorCode {
         const QString trimmed = data.trimmed();
@@ -551,10 +553,20 @@ ErrorCode ServerController::setupContainer(const ServerCredentials &credentials,
         QString psOut;
         auto cb = [&](const QString &data, libssh::Client &) { psOut += data; return ErrorCode::NoError; };
         auto cbIgnore = [](const QString &, libssh::Client &) { return ErrorCode::NoError; };
-        runScript(credentials,
+        e = runScript(credentials,
                   QStringLiteral("sudo docker ps -q --filter 'name=^%1$'").arg(cName),
                   cb, cbIgnore);
+        if (e != ErrorCode::NoError) return e;
         containerRunningForBackup = !psOut.trimmed().isEmpty();
+        if (!containerRunningForBackup && (isWgLike || isXrayLike)) {
+            QString allOut;
+            auto cbAll = [&](const QString &data, libssh::Client &) { allOut += data; return ErrorCode::NoError; };
+            e = runScript(credentials,QString("sudo docker ps -aq --filter 'name=^%1$'").arg(cName),cbAll,cbIgnore);
+            if (e != ErrorCode::NoError) return e;
+            // A stopped installation cannot be read with docker exec. Do not
+            // silently replace its identity and clients with a fresh install.
+            if (!allOut.trimmed().isEmpty()) return ErrorCode::ServerCheckFailed;
+        }
     }
 
     if (isWgLike && containerRunningForBackup) {
@@ -572,17 +584,21 @@ ErrorCode ServerController::setupContainer(const ServerCredentials &credentials,
             keyDir = QStringLiteral("/opt/amnezia/awg");
         }
         backup.wgConfig = getTextFileFromContainer(container, credentials, cfgPath, be);
-        if (be == ErrorCode::NoError && !backup.wgConfig.isEmpty() && backup.wgConfig.contains("[Peer]")) {
+        if (be != ErrorCode::NoError) return be;
+        if (be == ErrorCode::NoError && !backup.wgConfig.isEmpty()) {
             backup.wgPrivateKey = getTextFileFromContainer(container, credentials,
                 keyDir + "/wireguard_server_private_key.key", be);
+            if (be != ErrorCode::NoError) return be;
             backup.wgPublicKey = getTextFileFromContainer(container, credentials,
                 (container == DockerContainer::WireGuard)
                     ? amnezia::protocols::wireguard::serverPublicKeyPath
                     : amnezia::protocols::awg::serverPublicKeyPath, be);
+            if (be != ErrorCode::NoError) return be;
             backup.wgPsk = getTextFileFromContainer(container, credentials,
                 (container == DockerContainer::WireGuard)
                     ? amnezia::protocols::wireguard::serverPskKeyPath
                     : amnezia::protocols::awg::serverPskKeyPath, be);
+            if (be != ErrorCode::NoError) return be;
             backup.hasWg = !backup.wgPrivateKey.isEmpty();
             if (backup.hasWg) {
                 qDebug().noquote() << "Backed up WG/AWG config with peers before reinstall";
@@ -594,18 +610,25 @@ ErrorCode ServerController::setupContainer(const ServerCredentials &credentials,
         ErrorCode be;
         backup.xrayConfig = getTextFileFromContainer(container, credentials,
             amnezia::protocols::xray::serverConfigPath, be);
+        if (be != ErrorCode::NoError) return be;
         if (be == ErrorCode::NoError && !backup.xrayConfig.isEmpty()) {
-            backup.xrayPublicKey = getTextFileFromContainer(container, credentials,
-                amnezia::protocols::xray::PublicKeyPath, be);
-            backup.xrayPrivateKey = getTextFileFromContainer(container, credentials,
-                amnezia::protocols::xray::PrivateKeyPath, be);
-            backup.xrayShortId = getTextFileFromContainer(container, credentials,
-                amnezia::protocols::xray::shortidPath, be);
+            // mKCP uses UUID + Salamander, while these key files belong to REALITY.
+            if (container == DockerContainer::XrayReality) {
+                backup.xrayPublicKey = getTextFileFromContainer(container, credentials,
+                    amnezia::protocols::xray::PublicKeyPath, be);
+                if (be != ErrorCode::NoError) return be;
+                backup.xrayPrivateKey = getTextFileFromContainer(container, credentials,
+                    amnezia::protocols::xray::PrivateKeyPath, be);
+                if (be != ErrorCode::NoError) return be;
+                backup.xrayShortId = getTextFileFromContainer(container, credentials,
+                    amnezia::protocols::xray::shortidPath, be);
+                if (be != ErrorCode::NoError) return be;
+            }
             backup.xrayUuid = getTextFileFromContainer(container, credentials,
                 amnezia::protocols::xray::uuidPath, be);
             backup.xrayXhttpPath = getTextFileFromContainer(container, credentials,
                 amnezia::protocols::xray::xhttpPathPath, be);
-            backup.hasXray = !backup.xrayPrivateKey.isEmpty();
+            backup.hasXray = true;
             if (backup.hasXray) {
                 qDebug().noquote() << "Backed up Xray config before reinstall";
             }
@@ -629,25 +652,66 @@ ErrorCode ServerController::setupContainer(const ServerCredentials &credentials,
     }
     // ===== End backup =====
 
-    emit logLineReady(tr("Removing old container..."));
-    removeContainer(credentials, container);
-    if (m_cancelInstallation.load()) {
-        emit logLineReady(tr("Cancelled after: remove container"));
-        return ErrorCode::ServerCancelInstallation;
+    const bool retainPrevious = isWgLike || isXrayLike
+        || container == DockerContainer::SSXray
+        || container == DockerContainer::Hysteria2 || container == DockerContainer::AnyTls;
+    // Build before stopping the previous installation. Its image ID and
+    // writable layer remain attached to a retained container until health passes.
+    if (retainPrevious) {
+        emit logLineReady(tr("Building container..."));
+        e = buildContainerWorker(credentials, container, config);
+        if (e != ErrorCode::NoError) return e;
     }
-    emit logLineReady(tr("Step completed: remove old container"));
+    if (m_cancelInstallation.load()) return ErrorCode::ServerCancelInstallation;
 
-    emit logLineReady(tr("Building container..."));
-    e = buildContainerWorker(credentials, container, config);
-    if (e) {
-        emit logLineReady(tr("Build container failed: %1").arg(errorString(e)));
-        return e;
+    const QString currentName = ContainerProps::containerToString(container);
+    const QString previousName = currentName + "-selfvps-backup-" + Utils::getRandomString(12);
+    bool installationReady = false;
+    bool newContainerAttempted = false;
+    auto rollbackPrevious = qScopeGuard([&] {
+        if (!retainPrevious || installationReady) return;
+        // Cancellation must not prevent the bounded recovery operation itself.
+        const bool cancelled = m_cancelInstallation.exchange(false);
+        m_sshClient.resetCancel();
+        auto restoreCancellation = qScopeGuard([&] {
+            if (cancelled) {
+                m_cancelInstallation.store(true);
+                m_sshClient.requestCancel();
+            }
+        });
+        const QString cleanup = newContainerAttempted
+            ? QString("current=$(sudo docker ps -aq --filter 'name=^%1$') || exit 1; "
+                      "if [ -n \"$current\" ]; then sudo docker rm -f %1 >/dev/null || exit 1; fi; ")
+                  .arg(currentName) : QString();
+        const QString rollback = cleanup + QString(
+            "existing=$(sudo docker ps -aq --filter 'name=^%1$') || exit 1; "
+            "if [ -n \"$existing\" ]; then "
+            "sudo docker rename %1 %2 && %3; fi")
+            .arg(previousName, currentName, containerRunningForBackup
+                ? QString("sudo docker start %1 >/dev/null").arg(currentName) : QString("true"));
+        const auto rollbackError = runScript(credentials,rollback,nullptr,nullptr,15000,45000);
+        if (rollbackError != ErrorCode::NoError) {
+            emit logLineReady(tr("Restoring previous container failed: %1").arg(errorString(rollbackError)));
+        }
+    });
+    if (retainPrevious) {
+        e = runScript(credentials, QString(
+            "existing=$(sudo docker ps -aq --filter 'name=^%1$') || exit 1; "
+            "if [ -n \"$existing\" ]; then "
+            "sudo docker stop %1 >/dev/null && "
+            "{ sudo docker rename %1 %2 || { %3; exit 1; }; }; fi")
+            .arg(currentName, previousName, containerRunningForBackup
+                ? QString("sudo docker start %1 >/dev/null").arg(currentName) : QString("true")));
+        if (e != ErrorCode::NoError) return e;
+    } else {
+        // Preserve the existing excluded OpenVPN installation path.
+        e = removeContainer(credentials,container);
+        if (e != ErrorCode::NoError) return e;
+        e = buildContainerWorker(credentials,container,config);
+        if (e != ErrorCode::NoError) return e;
     }
-    if (m_cancelInstallation.load()) {
-        emit logLineReady(tr("Cancelled after: build container"));
-        return ErrorCode::ServerCancelInstallation;
-    }
-    emit logLineReady(tr("Step completed: build container"));
+    if (m_cancelInstallation.load()) return ErrorCode::ServerCancelInstallation;
+    newContainerAttempted = true;
 
     emit logLineReady(tr("Starting container..."));
     e = runContainerWorker(credentials, container, config);
@@ -673,6 +737,16 @@ ErrorCode ServerController::setupContainer(const ServerCredentials &credentials,
         qDebug().noquote() << "Restored OpenVPN PKI after reinstall";
     }
 
+    if (container == DockerContainer::Hysteria2 || container == DockerContainer::AnyTls) {
+        const QString directory = container == DockerContainer::Hysteria2 ? "hysteria2" : "anytls";
+        e = runScript(credentials,QString(
+            "set -o pipefail\nexisting=$(sudo docker ps -aq --filter 'name=^%1$') || exit 1; "
+            "if [ -n \"$existing\" ]; then "
+            "sudo docker cp %1:/opt/amnezia/%3 - | sudo docker cp - %2:/opt/amnezia/; fi")
+            .arg(previousName,currentName,directory));
+        if (e != ErrorCode::NoError) return e;
+    }
+
     emit logLineReady(tr("Configuring container..."));
     e = configureContainerWorker(credentials, container, config);
     if (e) {
@@ -680,7 +754,7 @@ ErrorCode ServerController::setupContainer(const ServerCredentials &credentials,
         // Self-heal: never leave a running-but-configless zombie behind — it would
         // poison the container scan (ServerCheckFailed/200) on every future install.
         emit logLineReady(tr("Removing incomplete container to keep the server clean..."));
-        removeContainer(credentials, container);
+        if (!retainPrevious) removeContainer(credentials, container);
         return e;
     }
     if (m_cancelInstallation.load()) {
@@ -705,27 +779,32 @@ ErrorCode ServerController::setupContainer(const ServerCredentials &credentials,
         }
 
         // Restore key files (overwrite newly generated ones)
-        uploadTextFileToContainer(container, credentials,
+        e = uploadTextFileToContainer(container, credentials,
             QString::fromUtf8(backup.wgPrivateKey).trimmed(),
             keyDir + "/wireguard_server_private_key.key",
             libssh::ScpOverwriteMode::ScpOverwriteExisting);
-        uploadTextFileToContainer(container, credentials,
+        if (e != ErrorCode::NoError) return e;
+        e = uploadTextFileToContainer(container, credentials,
             QString::fromUtf8(backup.wgPublicKey).trimmed(),
             (container == DockerContainer::WireGuard)
                 ? amnezia::protocols::wireguard::serverPublicKeyPath
                 : amnezia::protocols::awg::serverPublicKeyPath,
             libssh::ScpOverwriteMode::ScpOverwriteExisting);
-        uploadTextFileToContainer(container, credentials,
+        if (e != ErrorCode::NoError) return e;
+        e = uploadTextFileToContainer(container, credentials,
             QString::fromUtf8(backup.wgPsk).trimmed(),
             (container == DockerContainer::WireGuard)
                 ? amnezia::protocols::wireguard::serverPskKeyPath
                 : amnezia::protocols::awg::serverPskKeyPath,
             libssh::ScpOverwriteMode::ScpOverwriteExisting);
+        if (e != ErrorCode::NoError) return e;
 
         // Read fresh config (has new [Interface] with potentially updated port/junk params)
         ErrorCode re;
         QByteArray freshConfig = getTextFileFromContainer(container, credentials, cfgPath, re);
-        if (re == ErrorCode::NoError && !freshConfig.isEmpty()) {
+        if (re != ErrorCode::NoError) return re;
+        if (freshConfig.isEmpty()) return ErrorCode::ServerCheckFailed;
+        {
             QString freshStr = QString::fromUtf8(freshConfig);
             QString backupStr = QString::fromUtf8(backup.wgConfig);
             QString oldPrivKey = QString::fromUtf8(backup.wgPrivateKey).trimmed();
@@ -733,6 +812,19 @@ ErrorCode ServerController::setupContainer(const ServerCredentials &credentials,
             // Replace PrivateKey in fresh [Interface] with the backed-up one
             QRegularExpression privKeyRe(QStringLiteral("PrivateKey\\s*=\\s*.+"));
             freshStr.replace(privKeyRe, "PrivateKey = " + oldPrivKey);
+
+            // Header protection is shared with every existing client. Restore
+            // its key as well as the WireGuard identity instead of minting a new one.
+            const QRegularExpression hpkRe(QStringLiteral("(?m)^HeaderProtectionKey\\s*=\\s*([^\\r\\n]+)$"));
+            const auto oldHpk = hpkRe.match(backupStr);
+            if (oldHpk.hasMatch()) {
+                if (!hpkRe.match(freshStr).hasMatch()) return ErrorCode::ServerCheckFailed;
+                const QString key = oldHpk.captured(1).trimmed();
+                freshStr.replace(hpkRe,"HeaderProtectionKey = " + key);
+                e = uploadTextFileToContainer(container,credentials,key,
+                    keyDir + "/awg_header_protection.key",libssh::ScpOverwriteMode::ScpOverwriteExisting);
+                if (e != ErrorCode::NoError) return e;
+            }
 
             // Append old [Peer] sections from backup
             int peerIdx = backupStr.indexOf(QStringLiteral("[Peer]"));
@@ -743,16 +835,11 @@ ErrorCode ServerController::setupContainer(const ServerCredentials &credentials,
             }
 
             // Upload merged config
-            uploadTextFileToContainer(container, credentials, freshStr, cfgPath,
+            e = uploadTextFileToContainer(container, credentials, freshStr, cfgPath,
                 libssh::ScpOverwriteMode::ScpOverwriteExisting);
+            if (e != ErrorCode::NoError) return e;
 
-            // Apply with syncconf
-            QString bin = (container == DockerContainer::Awg2) ? "awg" : "wg";
-            QString iface = (container == DockerContainer::Awg2) ? "awg0" : "wg0";
-            QString syncScript = QStringLiteral(
-                "%1 syncconf %2 <(%1-quick strip %3)"
-            ).arg(bin, iface, cfgPath);
-            runContainerScript(credentials, container, syncScript);
+            // startupContainerWorker brings up the interface with this merged config.
 
             qDebug().noquote() << "Restored WG/AWG peers after reinstall";
         }
@@ -761,47 +848,57 @@ ErrorCode ServerController::setupContainer(const ServerCredentials &credentials,
     // ===== Restore Xray clients and keys =====
     if (backup.hasXray) {
         // Restore key files
-        uploadTextFileToContainer(container, credentials,
-            QString::fromUtf8(backup.xrayPublicKey).trimmed(),
-            amnezia::protocols::xray::PublicKeyPath,
-            libssh::ScpOverwriteMode::ScpOverwriteExisting);
-        uploadTextFileToContainer(container, credentials,
-            QString::fromUtf8(backup.xrayPrivateKey).trimmed(),
-            amnezia::protocols::xray::PrivateKeyPath,
-            libssh::ScpOverwriteMode::ScpOverwriteExisting);
-        uploadTextFileToContainer(container, credentials,
-            QString::fromUtf8(backup.xrayShortId).trimmed(),
-            amnezia::protocols::xray::shortidPath,
-            libssh::ScpOverwriteMode::ScpOverwriteExisting);
+        if (container == DockerContainer::XrayReality) {
+            e = uploadTextFileToContainer(container, credentials,
+                QString::fromUtf8(backup.xrayPublicKey).trimmed(),
+                amnezia::protocols::xray::PublicKeyPath,
+                libssh::ScpOverwriteMode::ScpOverwriteExisting);
+            if (e != ErrorCode::NoError) return e;
+            e = uploadTextFileToContainer(container, credentials,
+                QString::fromUtf8(backup.xrayPrivateKey).trimmed(),
+                amnezia::protocols::xray::PrivateKeyPath,
+                libssh::ScpOverwriteMode::ScpOverwriteExisting);
+            if (e != ErrorCode::NoError) return e;
+            e = uploadTextFileToContainer(container, credentials,
+                QString::fromUtf8(backup.xrayShortId).trimmed(),
+                amnezia::protocols::xray::shortidPath,
+                libssh::ScpOverwriteMode::ScpOverwriteExisting);
+            if (e != ErrorCode::NoError) return e;
+        }
         if (!backup.xrayUuid.isEmpty()) {
-            uploadTextFileToContainer(container, credentials,
+            e = uploadTextFileToContainer(container, credentials,
                 QString::fromUtf8(backup.xrayUuid).trimmed(),
                 amnezia::protocols::xray::uuidPath,
                 libssh::ScpOverwriteMode::ScpOverwriteExisting);
+            if (e != ErrorCode::NoError) return e;
         }
         if (!backup.xrayXhttpPath.isEmpty()) {
-            uploadTextFileToContainer(container, credentials,
+            e = uploadTextFileToContainer(container, credentials,
                 QString::fromUtf8(backup.xrayXhttpPath).trimmed(),
                 amnezia::protocols::xray::xhttpPathPath,
                 libssh::ScpOverwriteMode::ScpOverwriteExisting);
+            if (e != ErrorCode::NoError) return e;
         }
 
         // Merge old clients into the new server config
         ErrorCode re;
         QByteArray freshXray = getTextFileFromContainer(container, credentials,
             amnezia::protocols::xray::serverConfigPath, re);
-        if (re == ErrorCode::NoError) {
+        if (re != ErrorCode::NoError) return re;
+        {
             QJsonDocument freshDoc = QJsonDocument::fromJson(freshXray);
             QJsonDocument backupDoc = QJsonDocument::fromJson(backup.xrayConfig);
 
-            if (freshDoc.isObject() && backupDoc.isObject()) {
+            if (!freshDoc.isObject() || !backupDoc.isObject()) return ErrorCode::ServerCheckFailed;
+            {
                 QJsonObject freshObj = freshDoc.object();
                 QJsonObject backupObj = backupDoc.object();
 
                 QJsonArray freshInbounds = freshObj["inbounds"].toArray();
                 QJsonArray backupInbounds = backupObj["inbounds"].toArray();
 
-                if (!freshInbounds.isEmpty() && !backupInbounds.isEmpty()) {
+                if (freshInbounds.isEmpty() || backupInbounds.isEmpty()) return ErrorCode::ServerCheckFailed;
+                {
                     QJsonObject freshInbound = freshInbounds[0].toObject();
                     QJsonObject freshSettings = freshInbound["settings"].toObject();
                     QJsonArray freshClients = freshSettings["clients"].toArray();
@@ -855,15 +952,13 @@ ErrorCode ServerController::setupContainer(const ServerCredentials &credentials,
                     freshObj["inbounds"] = freshInbounds;
 
                     // Upload merged config
-                    uploadTextFileToContainer(container, credentials,
+                    e = uploadTextFileToContainer(container, credentials,
                         QString::fromUtf8(QJsonDocument(freshObj).toJson(QJsonDocument::Indented)),
                         amnezia::protocols::xray::serverConfigPath,
                         libssh::ScpOverwriteMode::ScpOverwriteExisting);
+                    if (e != ErrorCode::NoError) return e;
 
-                    // Restart xray to apply
-                    runContainerScript(credentials, container,
-                        QStringLiteral("killall -KILL xray 2>/dev/null; "
-                                       "nohup xray -config /opt/amnezia/xray/server.json >/dev/null 2>&1 &"));
+                    // The final startup applies the restored clients and identity.
 
                     qDebug().noquote() << "Restored Xray clients after reinstall";
                 }
@@ -873,11 +968,19 @@ ErrorCode ServerController::setupContainer(const ServerCredentials &credentials,
     // ===== End restore =====
 
     emit logLineReady(tr("Setting up firewall..."));
-    setupServerFirewall(credentials);
+    e = setupServerFirewall(credentials);
+    if (e != ErrorCode::NoError) return e;
     emit logLineReady(tr("Step completed: firewall setup"));
 
     emit logLineReady(tr("Running startup script..."));
-    return startupContainerWorker(credentials, container, config);
+    e = startupContainerWorker(credentials, container, config);
+    if (e != ErrorCode::NoError) return e;
+    installationReady = true;
+    if (retainPrevious) {
+        e = runScript(credentials,QString("existing=$(sudo docker ps -aq --filter 'name=^%1$') || exit 1; if [ -n \"$existing\" ]; then sudo docker rm -v %1 >/dev/null; fi").arg(previousName));
+        if (e != ErrorCode::NoError) return e;
+    }
+    return ErrorCode::NoError;
 }
 
 ErrorCode ServerController::updateContainer(const ServerCredentials &credentials, DockerContainer container, const QJsonObject &oldConfig,
@@ -1166,8 +1269,13 @@ ErrorCode ServerController::runContainerWorker(const ServerCredentials &credenti
         return ErrorCode::NoError;
     };
 
+    const bool strict = container == DockerContainer::WireGuard || container == DockerContainer::Awg
+        || container == DockerContainer::Awg2 || container == DockerContainer::Xray
+        || container == DockerContainer::XrayReality || container == DockerContainer::SSXray
+        || container == DockerContainer::Hysteria2 || container == DockerContainer::AnyTls;
     ErrorCode e = runScript(credentials,
-                            replaceVars(amnezia::scriptData(ProtocolScriptType::run_container, container),
+                            (strict ? QString("set -e\n") : QString())
+                            + replaceVars(amnezia::scriptData(ProtocolScriptType::run_container, container),
                                         genVarsForScript(credentials, container, config)),
                             cbReadStdOut,
                             cbReadStdErr);
@@ -1239,6 +1347,31 @@ ErrorCode ServerController::configureContainerWorker(const ServerCredentials &cr
     return e;
 }
 
+ErrorCode ServerController::verifyProtocolIsReady(const ServerCredentials &credentials, DockerContainer container, const QJsonObject &config)
+{
+    using Kind = ProtocolInstallHealth::Kind;
+    Kind kind;
+    QString fallback;
+    switch (container) {
+    case DockerContainer::WireGuard: kind=Kind::WireGuard; fallback=protocols::wireguard::defaultPort; break;
+    case DockerContainer::Awg: kind=Kind::AwgLegacy; fallback=protocols::awg::defaultPort; break;
+    case DockerContainer::Awg2: kind=Kind::Awg; fallback=protocols::awg::defaultPort; break;
+    case DockerContainer::Xray:
+    case DockerContainer::XrayReality: kind=Kind::Xray; fallback=protocols::xray::defaultPort; break;
+    case DockerContainer::SSXray: kind=Kind::Xray; fallback=protocols::ssxray::defaultPort; break;
+    case DockerContainer::Hysteria2: kind=Kind::Hysteria2; fallback=protocols::hysteria2::defaultPort; break;
+    case DockerContainer::AnyTls: kind=Kind::AnyTls; fallback=protocols::anytls::defaultPort; break;
+    default: return ErrorCode::NoError;
+    }
+    const auto protocol=config.value(ContainerProps::containerTypeToProtocolString(container)).toObject();
+    const auto value=protocol.value(config_key::port);
+    const int port=value.isDouble() ? value.toInt() : value.toString(fallback).toInt();
+    const QString probe=ProtocolInstallHealth::probe(ContainerProps::containerToString(container),kind,port);
+    if (probe.isEmpty()) return ErrorCode::ServerCheckFailed;
+    const QString script=QString("for attempt in $(seq 1 15); do %1 && exit 0; sleep 1; done; exit 1").arg(probe);
+    return runScript(credentials,script,nullptr,nullptr,30000,45000);
+}
+
 ErrorCode ServerController::startupContainerWorker(const ServerCredentials &credentials, DockerContainer container, const QJsonObject &config)
 {
     QString script = amnezia::scriptData(ProtocolScriptType::container_startup, container);
@@ -1265,10 +1398,12 @@ ErrorCode ServerController::startupContainerWorker(const ServerCredentials &cred
     emit logLineReady(tr("Startup script uploaded for %1.").arg(containerName));
     emit logLineReady(tr("Launching startup script in %1.").arg(containerName));
 
-    return runScript(credentials,
+    e = runScript(credentials,
                      replaceVars("sudo docker exec -d $CONTAINER_NAME sh -c \"chmod a+x /opt/amnezia/start.sh && "
                                  "/opt/amnezia/start.sh\"",
                                  genVarsForScript(credentials, container, config)));
+    if (e != ErrorCode::NoError) return e;
+    return verifyProtocolIsReady(credentials,container,config);
 }
 
 ServerController::Vars ServerController::genVarsForScript(const ServerCredentials &credentials, DockerContainer container,

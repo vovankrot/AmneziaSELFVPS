@@ -16,6 +16,8 @@ class AppSplitTunnelingController : public QObject
 {
     Q_OBJECT
 public:
+    Q_PROPERTY(bool folderScanBusy READ folderScanBusy NOTIFY folderScanBusyChanged)
+    bool folderScanBusy() const { return m_folderScanBusy; }
     explicit AppSplitTunnelingController(const std::shared_ptr<Settings> &settings,
                                          const QSharedPointer<AppSplitTunnelingModel> &sitesModel,
                                          ConnectionController *connectionController,
@@ -27,15 +29,22 @@ public slots:
     void addApp(const QString &appPath);
     void addApps(QVector<QPair<QString, QString>> apps);
     void addAppsFromFolder(const QString &folderPath);
+    void confirmFolderApps(int token);
+    void discardFolderApps(int token);
     void launchTargetBypassingVpn(const QString &targetPath);
     void removeApp(const int index);
     void removeGroup(const QString &groupFolder);
 
 signals:
+    void folderScanBusyChanged();
+    void folderScanReady(int token, const QString &folder, const QStringList &names, int count);
     void errorOccurred(const QString &errorMessage);
     void finished(const QString &message);
 
 private:
+    bool m_folderScanBusy = false;
+    int m_folderScanToken = 0;
+    QVector<amnezia::InstalledAppInfo> m_pendingFolderApps;
     void clearPendingBypassLaunch();
     void showGlobalError(const QString &errorMessage, bool raiseWindow = true);
     bool finishPendingBypassLaunch();

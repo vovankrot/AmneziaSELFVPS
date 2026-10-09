@@ -16,6 +16,8 @@ public:
     static IpcClient& Instance();
 
     static QSharedPointer<IpcInterfaceReplica> Interface();
+    // Returns the replica immediately; callers must await readiness asynchronously.
+    static QSharedPointer<IpcInterfaceReplica> InterfaceWithoutWait();
     static QSharedPointer<IpcProcessInterfaceReplica> CreatePrivilegedProcess();
 
     template <typename Func>

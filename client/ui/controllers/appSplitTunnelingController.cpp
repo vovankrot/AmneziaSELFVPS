@@ -3,6 +3,9 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QDirIterator>
+#include <QFutureWatcher>
+#include <QtConcurrent/QtConcurrentRun>
+#include "core/appFolderScan.h"
 #include <QFileInfo>
 #include <QMetaObject>
 
@@ -189,65 +192,75 @@ void AppSplitTunnelingController::addApp(const QString &appPath)
 
 void AppSplitTunnelingController::addApps(QVector<QPair<QString, QString>> apps)
 {
-    for (const auto &app : apps) {
-        InstalledAppInfo appInfo { app.first, app.second, "" };
-
-        m_appSplitTunnelingModel->addApp(appInfo);
-    }
+    QVector<InstalledAppInfo> selected;
+    selected.reserve(apps.size());
+    for (const auto &app : apps) selected.append({app.first, app.second, ""});
+    m_appSplitTunnelingModel->addAppsBatch(selected);
     emit finished(tr("The selected applications have been added"));
 }
 
 void AppSplitTunnelingController::addAppsFromFolder(const QString &folderPath)
 {
-    const QString normalizedFolderPath = normalizeAppPath(folderPath);
-    QDir folder(normalizedFolderPath);
-    if (!folder.exists()) {
-        emit errorOccurred(tr("The selected folder does not exist"));
-        return;
-    }
-
-    QDirIterator iterator(normalizedFolderPath,
-                          QStringList() << "*.exe",
-                          QDir::Files | QDir::NoSymLinks,
-                          QDirIterator::Subdirectories);
-
-    int addedCount = 0;
-    QString lastAddedAppName;
-    bool foundExecutable = false;
-    while (iterator.hasNext()) {
-        foundExecutable = true;
-
-        const QString normalizedAppPath = normalizeAppPath(iterator.next());
-        if (normalizedAppPath.isEmpty()) {
-            continue;
+    if (m_folderScanBusy) return;
+    const QString folder = normalizeAppPath(folderPath);
+    m_pendingFolderApps.clear();
+    const int token = ++m_folderScanToken;
+    m_folderScanBusy = true;
+    emit folderScanBusyChanged();
+    auto *watcher = new QFutureWatcher<AppFolderScan::Result>(this);
+    connect(watcher, &QFutureWatcher<AppFolderScan::Result>::finished, this, [this, watcher, token, folder] {
+        const auto result = watcher->result();
+        watcher->deleteLater();
+        m_folderScanBusy = false;
+        emit folderScanBusyChanged();
+        if (token != m_folderScanToken) return;
+        if (result.error == AppFolderScan::Error::MissingFolder) {
+            emit errorOccurred(tr("The selected folder does not exist"));
+            return;
         }
+        if (result.error == AppFolderScan::Error::LimitExceeded) {
+            emit errorOccurred(tr("The folder is too large to scan. Select the application's own folder."));
+            return;
+        }
+        if (result.apps.isEmpty()) {
+            emit errorOccurred(tr("No executable files were found in the selected folder"));
+            return;
+        }
+        m_pendingFolderApps = result.apps;
+        QStringList names;
+        const QDir root(folder);
+        for (const auto &app : result.apps) {
+            if (names.size() == 12) break;
+            names.append(root.relativeFilePath(app.appPath));
+        }
+        emit folderScanReady(token, folder, names, result.apps.size());
+    });
+    watcher->setFuture(QtConcurrent::run([folder] { return AppFolderScan::scan(folder); }));
+}
 
-        InstalledAppInfo appInfo { "", "", normalizedAppPath };
-        QFileInfo fileInfo(normalizedAppPath);
-        appInfo.appName = fileInfo.fileName();
-        appInfo.groupFolder = normalizedFolderPath; // tag so the UI can group and remove the whole folder at once
+void AppSplitTunnelingController::discardFolderApps(int token)
+{
+    if (token != m_folderScanToken) return;
+    ++m_folderScanToken;
+    m_pendingFolderApps.clear();
+}
 
-        if (m_appSplitTunnelingModel->addApp(appInfo)) {
-            ++addedCount;
-            lastAddedAppName = appInfo.appName;
+void AppSplitTunnelingController::confirmFolderApps(int token)
+{
+    if (token != m_folderScanToken || m_pendingFolderApps.isEmpty()) return;
+    const auto selected = std::move(m_pendingFolderApps);
+    ++m_folderScanToken;
+    for (const auto &app : selected) {
+        if (!isSupportedSplitTunnelAppPath(app.appPath)) {
+            emit errorOccurred(tr("Folder contents changed. Scan the folder again."));
+            return;
         }
     }
-
-    if (!foundExecutable) {
-        emit errorOccurred(tr("No executable files were found in the selected folder"));
-        return;
-    }
-
-    if (addedCount == 0) {
+    const int added = m_appSplitTunnelingModel->addAppsBatch(selected);
+    if (!added) {
         emit errorOccurred(tr("All applications from the selected folder have already been added"));
         return;
     }
-
-    if (addedCount == 1) {
-        emit finished(tr("Application added: %1").arg(lastAddedAppName));
-        return;
-    }
-
     emit finished(tr("The selected applications have been added"));
 }
 

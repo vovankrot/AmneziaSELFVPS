@@ -55,6 +55,7 @@ bool DaemonLocalServer::initialize() {
 
     QLocalSocket* socket = m_server.nextPendingConnection();
     Q_ASSERT(socket);
+    if (peerAdmission && !peerAdmission(socket)) return;
 
     DaemonLocalServerConnection* connection =
         new DaemonLocalServerConnection(&m_server, socket);

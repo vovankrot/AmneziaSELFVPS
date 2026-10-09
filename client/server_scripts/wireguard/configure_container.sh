@@ -1,3 +1,5 @@
+set -e
+umask 077
 mkdir -p /opt/amnezia/wireguard
 cd /opt/amnezia/wireguard
 WIREGUARD_SERVER_PRIVATE_KEY=$(wg genkey)

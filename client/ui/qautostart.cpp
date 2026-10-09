@@ -55,7 +55,7 @@ void Autostart::setAutostart(bool autostart) {
 }
 
 QString Autostart::appPath() {
-    return QCoreApplication::applicationFilePath() + " --autostart";
+    return QStringLiteral("\"%1\" --autostart").arg(QDir::toNativeSeparators(QCoreApplication::applicationFilePath()));
 }
 
 #elif defined Q_OS_MACX

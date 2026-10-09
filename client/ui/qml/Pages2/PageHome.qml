@@ -144,6 +144,7 @@ PageType {
     }
 
     function defaultContainer() {
+        root.xrayRealitySwitcherRefresh
         return ServersModel.getDefaultServerData("defaultContainer")
     }
 

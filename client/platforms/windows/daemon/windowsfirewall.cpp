@@ -114,6 +114,7 @@ WindowsFirewall* WindowsFirewall::create(QObject* parent) {
   }
   logger.debug() << "Filter engine opened successfully.";
   if (!initSublayer()) {
+    FwpmEngineClose0(engineHandle);
     return nullptr;
   }
   s_instance = new WindowsFirewall(engineHandle, parent);
@@ -127,9 +128,10 @@ WindowsFirewall::WindowsFirewall(HANDLE session, QObject* parent)
 
 WindowsFirewall::~WindowsFirewall() {
   MZ_COUNT_DTOR(WindowsFirewall);
-  if (m_sessionHandle != INVALID_HANDLE_VALUE) {
-    CloseHandle(m_sessionHandle);
+  if (m_sessionHandle && m_sessionHandle != INVALID_HANDLE_VALUE) {
+    FwpmEngineClose0(m_sessionHandle);
   }
+  if (s_instance == this) s_instance = nullptr;
 }
 
 // static
@@ -200,56 +202,60 @@ bool WindowsFirewall::initSublayer() {
   return true;
 }
 
-bool WindowsFirewall::enableInterface(int vpnAdapterIndex) {
-// Checks if the FW_Rule was enabled succesfully,
-// disables the whole killswitch and returns false if not.
-#define FW_OK(rule)                                                       \
-  {                                                                       \
-    auto result = FwpmTransactionBegin(m_sessionHandle, NULL);            \
-    if (result != ERROR_SUCCESS) {                                        \
-      disableKillSwitch();                                                \
-      return false;                                                       \
-    }                                                                     \
-    if (!rule) {                                                          \
-      FwpmTransactionAbort0(m_sessionHandle);                             \
-      disableKillSwitch();                                                \
-      return false;                                                       \
-    }                                                                     \
-    result = FwpmTransactionCommit0(m_sessionHandle);                     \
-    if (result != ERROR_SUCCESS) {                                        \
-      logger.error() << "FwpmTransactionCommit0 failed. Return value:.\n" \
-                     << result;                                           \
-      return false;                                                       \
-    }                                                                     \
+bool WindowsFirewall::enableInterface(int vpnAdapterIndex, bool replaceExistingRules, const QStringList& allowedRanges) {
+  // All baseline rules belong to one transaction, including the no-adapter
+  // IPv4/IPv6 block. A failed update must preserve the existing policy.
+  auto result = FwpmTransactionBegin(m_sessionHandle, NULL);
+  if (result != ERROR_SUCCESS) return false;
+  const auto originalActiveRules = m_activeRules;
+  const auto originalPeerRules = m_peerRules;
+  auto cleanup = qScopeGuard([&] {
+    const auto abortResult = FwpmTransactionAbort0(m_sessionHandle);
+    if (abortResult != ERROR_SUCCESS)
+      logger.error() << "Firewall transaction abort failed:" << abortResult;
+    m_activeRules = originalActiveRules;
+    m_peerRules = originalPeerRules;
+  });
+
+  // Replacement is part of the same transaction. Do not clear the old
+  // baseline before knowing the new one can be installed and committed.
+  if (replaceExistingRules) {
+    for (const auto id : originalActiveRules) {
+      result = FwpmFilterDeleteById0(m_sessionHandle, id);
+      if (result != ERROR_SUCCESS && result != FWP_E_FILTER_NOT_FOUND) return false;
+    }
+    for (const auto id : originalPeerRules) {
+      result = FwpmFilterDeleteById0(m_sessionHandle, id);
+      if (result != ERROR_SUCCESS && result != FWP_E_FILTER_NOT_FOUND) return false;
+    }
+    m_activeRules.clear();
+    m_peerRules.clear();
   }
 
   logger.info() << "Enabling Killswitch Using Adapter:" << vpnAdapterIndex;
-  if (vpnAdapterIndex < 0)
-  {
-    IPAddress allv4("0.0.0.0/0");
-    if (!blockTrafficTo(allv4, MED_WEIGHT,
-                        "Block Internet", "killswitch")) {
-        return false;
-    }
-    IPAddress allv6("::/0");
-    if (!blockTrafficTo(allv6, MED_WEIGHT,
-                        "Block Internet", "killswitch")) {
-      return false;
-    }
-  } else
-  FW_OK(allowTrafficOfAdapter(vpnAdapterIndex, MED_WEIGHT,
-                                  "Allow usage of VPN Adapter"));
-  FW_OK(allowDHCPTraffic(MED_WEIGHT, "Allow DHCP Traffic"));
-  FW_OK(allowHyperVTraffic(MAX_WEIGHT, "Allow Hyper-V Traffic"));
-  FW_OK(allowTrafficForAppOnAll(getCurrentPath(), MAX_WEIGHT,
-                                "Allow all for AmneziaVPN.exe"));
-  FW_OK(blockTrafficOnPort(53, MED_WEIGHT, "Block all DNS"));
-  FW_OK(allowLoopbackTraffic(MED_WEIGHT,
-                             "Allow Loopback traffic on device %1"));
+  if (vpnAdapterIndex < 0) {
+    if (!blockTrafficTo(IPAddress("0.0.0.0/0"), MED_WEIGHT, "Block Internet", "killswitch")
+        || !blockTrafficTo(IPAddress("::/0"), MED_WEIGHT, "Block Internet", "killswitch")) return false;
+  } else if (!allowTrafficOfAdapter(vpnAdapterIndex, MED_WEIGHT, "Allow usage of VPN Adapter")) {
+    return false;
+  }
+  if (!allowDHCPTraffic(MED_WEIGHT, "Allow DHCP Traffic")
+      || !allowHyperVTraffic(MAX_WEIGHT, "Allow Hyper-V Traffic")
+      || !allowTrafficForAppOnAll(getCurrentPath(), MAX_WEIGHT, "Allow all for AmneziaVPN.exe")
+      || !blockTrafficOnPort(53, MED_WEIGHT, "Block all DNS")
+      || !allowLoopbackTraffic(MED_WEIGHT, "Allow Loopback traffic on device %1")) return false;
 
+  for (const auto& range : allowedRanges) {
+    if (!allowTrafficTo(IPAddress(range), HIGH_WEIGHT, "Allow killswitch bypass traffic", "killswitch-range")) return false;
+  }
+  result = FwpmTransactionCommit0(m_sessionHandle);
+  if (result != ERROR_SUCCESS) {
+    logger.error() << "FwpmTransactionCommit0 failed with error:" << result;
+    return false;
+  }
+  cleanup.dismiss();
   logger.debug() << "Killswitch on! Rules:" << m_activeRules.length();
   return true;
-#undef FW_OK
 }
 
 // Allow unprotected traffic sent to the following local address ranges.
@@ -257,12 +263,12 @@ bool WindowsFirewall::enableLanBypass(const QList<IPAddress>& ranges) {
   // Start the firewall transaction
   auto result = FwpmTransactionBegin(m_sessionHandle, NULL);
   if (result != ERROR_SUCCESS) {
-    disableKillSwitch();
     return false;
   }
+  const auto originalRuleCount = m_activeRules.size();
   auto cleanup = qScopeGuard([&] {
     FwpmTransactionAbort0(m_sessionHandle);
-    disableKillSwitch();
+    m_activeRules.resize(originalRuleCount);
   });
 
   // Blocking unprotected traffic
@@ -283,21 +289,34 @@ bool WindowsFirewall::enableLanBypass(const QList<IPAddress>& ranges) {
 }
 
 // Allow unprotected traffic sent to the following address ranges.
-bool WindowsFirewall::allowTrafficRange(const QStringList& ranges) {
+bool WindowsFirewall::allowTrafficRange(const QStringList& ranges, bool replaceExistingRanges) {
   // Start the firewall transaction
   auto result = FwpmTransactionBegin(m_sessionHandle, NULL);
   if (result != ERROR_SUCCESS) {
-    disableKillSwitch();
     return false;
   }
+  const auto originalActiveRules = m_activeRules;
+  const auto originalPeerRules = m_peerRules;
   auto cleanup = qScopeGuard([&] {
-      FwpmTransactionAbort0(m_sessionHandle);
-      disableKillSwitch();
+    const auto abortResult = FwpmTransactionAbort0(m_sessionHandle);
+    if (abortResult != ERROR_SUCCESS)
+      logger.error() << "Firewall transaction abort failed:" << abortResult;
+    m_activeRules = originalActiveRules;
+    m_peerRules = originalPeerRules;
   });
+
+  const QString peer = QStringLiteral("killswitch-range");
+  if (replaceExistingRanges) {
+    for (const auto id : m_peerRules.values(peer)) {
+      const auto deletion = FwpmFilterDeleteById0(m_sessionHandle, id);
+      if (deletion != ERROR_SUCCESS && deletion != FWP_E_FILTER_NOT_FOUND) return false;
+    }
+    m_peerRules.remove(peer);
+  }
 
   for (const QString& addr : ranges) {
     logger.debug() << "Allow killswitch exclude: " << addr;
-    if (!allowTrafficTo(QHostAddress(addr), HIGH_WEIGHT, "Allow killswitch bypass traffic")) {
+    if (!allowTrafficTo(IPAddress(addr), HIGH_WEIGHT, "Allow killswitch bypass traffic", peer)) {
       return false;
     }
   }
@@ -317,13 +336,24 @@ bool WindowsFirewall::enablePeerTraffic(const InterfaceConfig& config) {
   // Start the firewall transaction
   auto result = FwpmTransactionBegin(m_sessionHandle, NULL);
   if (result != ERROR_SUCCESS) {
-    disableKillSwitch();
     return false;
   }
+  const auto originalActiveRules = m_activeRules;
+  const auto originalPeerRules = m_peerRules;
   auto cleanup = qScopeGuard([&] {
-    FwpmTransactionAbort0(m_sessionHandle);
-    disableKillSwitch();
+    const auto abortResult = FwpmTransactionAbort0(m_sessionHandle);
+    if (abortResult != ERROR_SUCCESS)
+      logger.error() << "Firewall transaction abort failed:" << abortResult;
+    m_activeRules = originalActiveRules;
+    m_peerRules = originalPeerRules;
   });
+
+  // Replace this peer atomically; repeated setup must not accumulate permits.
+  for (const auto id : m_peerRules.values(config.m_serverPublicKey)) {
+    result = FwpmFilterDeleteById0(m_sessionHandle, id);
+    if (result != ERROR_SUCCESS && result != FWP_E_FILTER_NOT_FOUND) return false;
+  }
+  m_peerRules.remove(config.m_serverPublicKey);
 
   // Build the firewall rules for this peer.
   logger.info() << "Enabling traffic for peer"
@@ -420,21 +450,20 @@ bool WindowsFirewall::enablePeerTraffic(const InterfaceConfig& config) {
 
 bool WindowsFirewall::disablePeerTraffic(const QString& pubkey) {
   auto result = FwpmTransactionBegin(m_sessionHandle, NULL);
-  auto cleanup = qScopeGuard([&] {
-    if (result != ERROR_SUCCESS) {
-      FwpmTransactionAbort0(m_sessionHandle);
-    }
-  });
   if (result != ERROR_SUCCESS) {
     logger.error() << "FwpmTransactionBegin0 failed. Return value:.\n"
                    << result;
     return false;
   }
+  auto cleanup = qScopeGuard([&] {
+    const auto aborted = FwpmTransactionAbort0(m_sessionHandle);
+    if (aborted != ERROR_SUCCESS) logger.error() << "Peer filter rollback failed:" << aborted;
+  });
 
   logger.info() << "Disabling traffic for peer" << pubkey;
   for (const auto& filterID : m_peerRules.values(pubkey)) {
-    FwpmFilterDeleteById0(m_sessionHandle, filterID);
-    m_peerRules.remove(pubkey, filterID);
+    const auto deletion = FwpmFilterDeleteById0(m_sessionHandle, filterID);
+    if (deletion != ERROR_SUCCESS && deletion != FWP_E_FILTER_NOT_FOUND) return false;
   }
 
   // Commit!
@@ -444,6 +473,8 @@ bool WindowsFirewall::disablePeerTraffic(const QString& pubkey) {
                    << result;
     return false;
   }
+  cleanup.dismiss();
+  m_peerRules.remove(pubkey);
   return true;
 }
 
@@ -453,23 +484,24 @@ bool WindowsFirewall::disableKillSwitch() {
 
 bool WindowsFirewall::allowAllTraffic() {
     auto result = FwpmTransactionBegin(m_sessionHandle, NULL);
-    auto cleanup = qScopeGuard([&] {
-        if (result != ERROR_SUCCESS) {
-            FwpmTransactionAbort0(m_sessionHandle);
-        }
-    });
     if (result != ERROR_SUCCESS) {
       logger.error() << "FwpmTransactionBegin0 failed. Return value:.\n"
                      << result;
       return false;
     }
+    auto cleanup = qScopeGuard([&] {
+        const auto aborted = FwpmTransactionAbort0(m_sessionHandle);
+        if (aborted != ERROR_SUCCESS) logger.error() << "Firewall removal rollback failed:" << aborted;
+    });
 
     for (const auto& filterID : m_peerRules.values()) {
-      FwpmFilterDeleteById0(m_sessionHandle, filterID);
+      const auto deletion = FwpmFilterDeleteById0(m_sessionHandle, filterID);
+      if (deletion != ERROR_SUCCESS && deletion != FWP_E_FILTER_NOT_FOUND) return false;
     }
 
     for (const auto& filterID : std::as_const(m_activeRules)) {
-      FwpmFilterDeleteById0(m_sessionHandle, filterID);
+      const auto deletion = FwpmFilterDeleteById0(m_sessionHandle, filterID);
+      if (deletion != ERROR_SUCCESS && deletion != FWP_E_FILTER_NOT_FOUND) return false;
     }
 
            // Commit!
@@ -479,6 +511,7 @@ bool WindowsFirewall::allowAllTraffic() {
                      << result;
       return false;
     }
+    cleanup.dismiss();
     m_peerRules.clear();
     m_activeRules.clear();
     logger.debug() << "Firewall Disabled!";
@@ -488,13 +521,18 @@ bool WindowsFirewall::allowAllTraffic() {
 bool WindowsFirewall::enableIpv6AppBypass(const QStringList& appPaths) {
   if (appPaths.isEmpty()) return false;
   const QString peer = QStringLiteral("selfvps-app-bypass-ipv6");
-  if (m_peerRules.contains(peer) && !disablePeerTraffic(peer)) return false;
   const auto oldRules = m_peerRules;
   if (FwpmTransactionBegin0(m_sessionHandle, 0) != ERROR_SUCCESS) return false;
   auto rollback = qScopeGuard([&] {
-    FwpmTransactionAbort0(m_sessionHandle);
+    const auto aborted = FwpmTransactionAbort0(m_sessionHandle);
+    if (aborted != ERROR_SUCCESS) logger.error() << "IPv6 policy rollback failed:" << aborted;
     m_peerRules = oldRules;
   });
+  for (const auto id : m_peerRules.values(peer)) {
+    const auto result = FwpmFilterDeleteById0(m_sessionHandle, id);
+    if (result != ERROR_SUCCESS && result != FWP_E_FILTER_NOT_FOUND) return false;
+  }
+  m_peerRules.remove(peer);
   // The SOCKS/TUN path transports IPv4. Block native IPv6 for other apps,
   // but allow explicitly excluded executables on their physical interface.
   // Do not install system-wide IPv6 blackhole routes: these also break bypass.
@@ -814,12 +852,12 @@ bool WindowsFirewall::allowDHCPTraffic(uint8_t weight, const QString& title) {
     conds[1].fieldKey = FWPM_CONDITION_IP_LOCAL_PORT;
     conds[1].matchType = FWP_MATCH_EQUAL;
     conds[1].conditionValue.type = FWP_UINT16;
-    conds[1].conditionValue.uint16 = (68);
+    conds[1].conditionValue.uint16 = (546);
 
     conds[2].fieldKey = FWPM_CONDITION_IP_REMOTE_PORT;
     conds[2].matchType = FWP_MATCH_EQUAL;
     conds[2].conditionValue.type = FWP_UINT16;
-    conds[2].conditionValue.uint16 = 67;
+    conds[2].conditionValue.uint16 = 547;
 
     // Assemble the Filter base
     FWPM_FILTER0 filter;
@@ -848,12 +886,12 @@ bool WindowsFirewall::allowDHCPTraffic(uint8_t weight, const QString& title) {
     conds[1].fieldKey = FWPM_CONDITION_IP_LOCAL_PORT;
     conds[1].matchType = FWP_MATCH_EQUAL;
     conds[1].conditionValue.type = FWP_UINT16;
-    conds[1].conditionValue.uint16 = (68);
+    conds[1].conditionValue.uint16 = (546);
 
     conds[2].fieldKey = FWPM_CONDITION_IP_REMOTE_PORT;
     conds[2].matchType = FWP_MATCH_EQUAL;
     conds[2].conditionValue.type = FWP_UINT16;
-    conds[2].conditionValue.uint16 = 67;
+    conds[2].conditionValue.uint16 = 547;
 
     // Assemble the Filter base
     FWPM_FILTER0 filter;
@@ -1089,16 +1127,28 @@ bool WindowsFirewall::enableFilter(FWPM_FILTER0* filter, const QString& title,
 
 bool WindowsFirewall::allowLoopbackTraffic(uint8_t weight,
                                            const QString& title) {
-  QList<QNetworkInterface> networkInterfaces =
-      QNetworkInterface::allInterfaces();
-  for (const auto& iface : networkInterfaces) {
-    if (iface.type() != QNetworkInterface::Loopback) {
-      continue;
-    }
-    if (!allowTrafficOfAdapter(iface.index(), weight,
-                               title.arg(iface.name()))) {
-      return false;
-    }
+  // ALE can report local traffic without the loopback adapter's interface
+  // index. Match the actual WFP loopback flag, including policy reauthorization,
+  // instead of depending on Qt's adapter enumeration. Never permit a LAN or
+  // Internet destination through this rule.
+  FWPM_FILTER_CONDITION0 condition{};
+  condition.fieldKey = FWPM_CONDITION_FLAGS;
+  condition.matchType = FWP_MATCH_FLAGS_ALL_SET;
+  condition.conditionValue.type = FWP_UINT32;
+  condition.conditionValue.uint32 = FWP_CONDITION_FLAG_IS_LOOPBACK;
+  FWPM_FILTER0 filter{};
+  filter.filterCondition = &condition;
+  filter.numFilterConditions = 1;
+  filter.action.type = FWP_ACTION_PERMIT;
+  filter.weight.type = FWP_UINT8;
+  filter.weight.uint8 = weight;
+  filter.subLayerKey = ST_FW_WINFW_BASELINE_SUBLAYER_KEY;
+  const GUID layers[] = {FWPM_LAYER_ALE_AUTH_CONNECT_V4, FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V4,
+                         FWPM_LAYER_ALE_AUTH_CONNECT_V6, FWPM_LAYER_ALE_AUTH_RECV_ACCEPT_V6};
+  for (const auto& layer : layers) {
+    filter.layerKey = layer;
+    if (!enableFilter(&filter, title.arg(QStringLiteral("loopback")),
+                      QStringLiteral("Allow local loopback communication"))) return false;
   }
   return true;
 }

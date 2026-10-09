@@ -1,6 +1,10 @@
 #include "coreController.h"
 #include "core/sshHostTrust.h"
 #include "core/appUpdater.h"
+#ifdef AMNEZIA_DESKTOP
+#include "core/ipcclient.h"
+#endif
+#include "ui/qautostart.h"
 
 #include <QDirIterator>
 #include <QTranslator>
@@ -407,14 +411,47 @@ void CoreController::initTranslationsUpdatedHandler()
 
 void CoreController::initAutoConnectHandler()
 {
+#ifdef Q_OS_WIN
+    // Repair existing unquoted Run entries, only when autostart is enabled.
+    if (Autostart::isAutostart()) Autostart::setAutostart(true);
+#endif
     if (m_settingsController->isAutoConnectEnabled() && m_serversModel->getDefaultServerIndex() >= 0) {
-        QTimer::singleShot(1000, this, [this]() { m_connectionController->openConnection(); });
+        auto *startup = new QTimer(this);
+        startup->setInterval(1000);
+        connect(startup, &QTimer::timeout, this, [this, startup, attempts = 0]() mutable {
+            if (!m_settingsController->isAutoConnectEnabled() || m_serversModel->getDefaultServerIndex() < 0
+                || m_connectionController->isConnected() || m_connectionController->isConnectionInProgress()) {
+                startup->stop(); startup->deleteLater(); return;
+            }
+#ifdef AMNEZIA_DESKTOP
+            // During Windows logon the service may still be starting. Wait
+            // asynchronously, with a bounded deadline and no repeated dial.
+            const auto iface = IpcClient::InterfaceWithoutWait();
+            if ((!iface || !iface->isReplicaValid()) && ++attempts < 10) return;
+#endif
+            startup->stop(); startup->deleteLater();
+            m_connectionController->openConnection();
+        });
+        startup->start();
     }
 }
 
 void CoreController::initAmneziaDnsToggledHandler()
 {
     connect(m_settingsController.get(), &SettingsController::amneziaDnsToggled, m_serversModel.get(), &ServersModel::toggleAmneziaDns);
+    // Rebuild the whole configuration so adapter DNS, proxy routing and WFP
+    // permits use the same pair. Coalesce edits to the two DNS fields.
+    auto *dnsUpdate = new QTimer(this);
+    dnsUpdate->setSingleShot(true);
+    dnsUpdate->setInterval(300);
+    const auto schedule = [dnsUpdate]() { dnsUpdate->start(); };
+    connect(m_settingsController.get(), &SettingsController::primaryDnsChanged, this, schedule);
+    connect(m_settingsController.get(), &SettingsController::secondaryDnsChanged, this, schedule);
+    connect(m_settingsController.get(), &SettingsController::amneziaDnsToggled, this, schedule);
+    connect(dnsUpdate, &QTimer::timeout, this, [this]() {
+        if (m_connectionController->isConnected() || m_connectionController->isConnectionInProgress())
+            m_connectionController->onCurrentContainerUpdated();
+    });
 }
 
 void CoreController::initPrepareConfigHandler()

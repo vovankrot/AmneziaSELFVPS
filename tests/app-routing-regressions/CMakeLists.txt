@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 3.25)
+project(AppRoutingRegressions LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_AUTOMOC ON)
+find_package(Qt6 REQUIRED COMPONENTS Core Test)
+add_executable(app-routing-regressions main.cpp
+    ../../client/ui/models/appSplitTunnelingModel.cpp ../../client/ui/models/appSplitTunnelingModel.h)
+target_include_directories(app-routing-regressions PRIVATE stubs ../.. ../../client)
+target_link_libraries(app-routing-regressions PRIVATE Qt6::Core Qt6::Test)
+enable_testing()
+add_test(NAME app-routing-regressions COMMAND app-routing-regressions)

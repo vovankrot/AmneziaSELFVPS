@@ -39,14 +39,14 @@ class WindowsFirewall final : public QObject {
   static const GUID& baselineSublayerKey();
   ~WindowsFirewall() override;
 
-  bool enableInterface(int vpnAdapterIndex);
+  bool enableInterface(int vpnAdapterIndex, bool replaceExistingRules = false, const QStringList& allowedRanges = {});
   bool enableLanBypass(const QList<IPAddress>& ranges);
   bool enableIpv6AppBypass(const QStringList& appPaths);
   bool enablePeerTraffic(const InterfaceConfig& config);
   bool disablePeerTraffic(const QString& pubkey);
   bool disableKillSwitch();
   bool allowAllTraffic();
-  bool allowTrafficRange(const QStringList& ranges);
+  bool allowTrafficRange(const QStringList& ranges, bool replaceExistingRanges = false);
 
  private:
   static bool initSublayer();

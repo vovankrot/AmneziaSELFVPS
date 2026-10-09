@@ -1,4 +1,10 @@
 #include "xrayprotocol.h"
+#include "core/tun2socksOutputReader.h"
+#include "core/tun2socksProcessObserver.h"
+#include "core/socksRoutingSetup.h"
+#include "core/localSocksUrl.h"
+#include "core/asyncProcessRequest.h"
+#include "core/asyncTunnelStop.h"
 
 #include "core/ipcclient.h"
 #include "core/serialization/serialization.h"
@@ -9,6 +15,8 @@
 #include <exception>
 
 #include <QCryptographicHash>
+#include <QFutureWatcher>
+#include <QtConcurrent/QtConcurrentRun>
 #include <QElapsedTimer>
 #include <QHostAddress>
 #include <QJsonArray>
@@ -43,7 +51,7 @@ XrayProtocol::XrayProtocol(const QJsonObject &configuration, QObject *parent) : 
     m_dnsServers.push_back(QHostAddress(primaryDns));
     if (primaryDns != amnezia::protocols::dns::amneziaDnsIp) {
         const QString secondaryDns = configuration.value(amnezia::config_key::dns2).toString();
-        m_dnsServers.push_back(QHostAddress(secondaryDns));
+        if (!secondaryDns.isEmpty() && secondaryDns != primaryDns) m_dnsServers.push_back(QHostAddress(secondaryDns));
     }
 
     QJsonObject xrayConfiguration = configuration.value(ProtocolProps::key_proto_config_data(Proto::Xray)).toObject();
@@ -63,21 +71,6 @@ XrayProtocol::~XrayProtocol()
 }
 
 namespace {
-bool waitForSocketBytes(QTcpSocket &socket, qint64 minBytes, int timeoutMs)
-{
-    QElapsedTimer timer;
-    timer.start();
-
-    while (socket.bytesAvailable() < minBytes) {
-        const int remaining = timeoutMs - static_cast<int>(timer.elapsed());
-        if (remaining <= 0 || !socket.waitForReadyRead(qMin(remaining, 250))) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 bool isAppSplitTunnelActive(const QJsonObject &config)
 {
     const auto appsRouteMode = static_cast<Settings::AppsRouteMode>(
@@ -90,8 +83,14 @@ bool isAppSplitTunnelActive(const QJsonObject &config)
 
 ErrorCode XrayProtocol::start()
 {
+    if (cleanupInProgress() || cleanupFailed()) return ErrorCode::AmneziaServiceConnectionFailed;
+    if (!m_stopping && (connectionState() == Vpn::Connecting || connectionState() == Vpn::Connected)) {
+        qWarning() << "Ignoring duplicate protocol start";
+        return ErrorCode::NoError;
+    }
     qDebug() << "XrayProtocol::start()";
     m_stopping = false;
+    m_completedStopSteps.clear();
 
     try {
         const auto creds = amnezia::serialization::inbounds::EnsureInboundAuth(m_xrayConfig);
@@ -103,30 +102,12 @@ ErrorCode XrayProtocol::start()
         return ErrorCode::InternalError;
     }
 
-    // Ensure DNS resolves over the tunnel via DoH (TCP). Plain UDP DNS does not
-    // return reliably through VLESS+Reality(+vision), so names never resolved
-    // and sites would not open even though the proxy itself worked. by vovankrot
+    // Preserve imported DNS/routing; disable the incompatible outbound mux.
     ensureDnsOverDoh(m_xrayConfig);
 
-    return IpcClient::withInterface([&](QSharedPointer<IpcInterfaceReplica> iface) {
-        ErrorCode error = startXrayProcess(iface);
-        if (error != ErrorCode::NoError) {
-            return error;
-        }
-
-        // Preflight removed: it was one honest TLS-through-tunnel probe (~3.5s), and on
-        // any transient network hiccup the old code retried the whole xray start once
-        // more (another ~3.5s), then returned XrayExecutableCrashed. VpnConnection saw
-        // that, kicked off a reconnect, which restarted this whole function, which
-        // probed again -- a lavine that on 2026-08-05 14:59 spawned four consecutive
-        // reconnects in 20s over a single dropped health-check, leaving stray
-        // tun2socks.exe copies fighting over the TUN device. runHealthCheck()'s three-
-        // in-a-row failure gate is the honest signal; a single preflight can never be.
-        // by vovankrot
-        return startTun2Socks();
-    }, [] () {
-        return ErrorCode::AmneziaServiceConnectionFailed;
-    });
+    setConnectionState(Vpn::ConnectionState::Connecting);
+    startTimeoutTimer();
+    return startTun2Socks();
 }
 
 void XrayProtocol::ensureDnsOverDoh(QJsonObject &config)
@@ -150,17 +131,6 @@ void XrayProtocol::ensureDnsOverDoh(QJsonObject &config)
     }
 }
 
-ErrorCode XrayProtocol::startXrayProcess(const QSharedPointer<IpcInterfaceReplica> &iface)
-{
-    auto xrayStart = iface->xrayStart(QJsonDocument(m_xrayConfig).toJson());
-    if (!xrayStart.waitForFinished() || !xrayStart.returnValue()) {
-        qCritical() << "Failed to start xray";
-        return ErrorCode::XrayExecutableCrashed;
-    }
-
-    return ErrorCode::NoError;
-}
-
 void XrayProtocol::stop()
 {
     // Guard against reentrant / duplicate stop() calls. VpnConnection calls stop()
@@ -172,96 +142,69 @@ void XrayProtocol::stop()
     // stop, firewall clear and routing teardown twice back-to-back, which is what left
     // the daemon in a wedged state on 2026-07-26 (16:45-16:53 window). Single-stop
     // semantics; start() resets m_stopping. by vovankrot
-    if (m_stopping) {
-        qDebug() << "XrayProtocol::stop() already ran, skipping duplicate, this=" << static_cast<void *>(this);
-        return;
-    }
+    if (m_stopping && !cleanupFailed()) return;
 
     qDebug() << "XrayProtocol::stop() this=" << static_cast<void *>(this)
               << "m_healthTimer=" << static_cast<void *>(m_healthTimer)
               << "thread=" << QThread::currentThread();
     m_stopping = true;
+    stopTimeoutTimer();
+    if (m_processRequest) { m_processRequest->cancel(); m_processRequest = nullptr; }
+    if (m_startupSequence) { m_startupSequence->cancel(); m_startupSequence = nullptr; }
+    if (m_routingSetup) { m_routingSetup->cancel(); m_routingSetup = nullptr; }
     cancelHealthCheck();
 
-    // Use short timeouts (2s) to prevent disconnect from hanging
-    // if service is slow to respond. Default Qt RO timeout is 30s!
-    constexpr int kIpcTimeoutMs = 2000;
+    beginAsyncStop();
+    new AsyncTunnelStop(this, m_tun2socksProcess, nullptr,
+        IpcClient::InterfaceWithoutWait(), tunName, true, m_completedStopSteps,
+        [this](bool success, const QString &step) {
+            if (success) {
+                m_tun2socksProcess.reset();
 
-    // tun2socks is the CONSUMER of both the tun adapter and xray's SOCKS listener --
-    // it must go down first. The old order deleted the tun adapter and killed xray's
-    // SOCKS backend while tun2socks still held an open handle/connection to both,
-    // which made tun2socks crash (QProcess::Crashed) instead of exiting cleanly on
-    // every disconnect (observed 2026-08-05: "from tcp:... [proxy]" traffic flowing
-    // normally, then Xray::stopXray() immediately followed by tun2socks crashing).
-    // by vovankrot
-    if (m_tun2socksProcess) {
-        m_tun2socksProcess->blockSignals(true);
-
-#ifndef Q_OS_WIN
-        m_tun2socksProcess->terminate();
-#else
-        // terminate() does nothing useful on Windows -- kill is TerminateProcess()
-        m_tun2socksProcess->kill();
-#endif
-
-        // CRITICAL: kill()/terminate() over the IPC replica are ASYNCHRONOUS slots
-        // that return immediately, well before the child process actually exits on
-        // the service side. If we proceed to deleteTun()/xrayStop() while tun2socks
-        // is still alive it keeps an open handle on the TUN device, deleteTun blocks
-        // on the driver, every subsequent IPC call times out (2s each), and the
-        // service ends up in a wedged state where killswitch stays on, IPv6 stays
-        // blackholed, and the tun2 adapter is orphaned -- exactly the "интернет
-        // упорно не работал, помогла только перезагрузка + остановка службы" chase
-        // on 2026-08-11 06:10:44 (five consecutive 2s IPC timeouts). Wait for the
-        // real process exit BEFORE releasing the TUN device below. by vovankrot
-        auto waitForFinished = m_tun2socksProcess->waitForFinished(2000);
-        if (!waitForFinished.waitForFinished(3000) || !waitForFinished.returnValue()) {
-            qWarning() << "tun2socks did not exit within 2s after kill -- proceeding anyway";
-        }
-
-        m_tun2socksProcess->close();
-        m_tun2socksProcess.reset();
-    }
-
-    IpcClient::withInterface([](QSharedPointer<IpcInterfaceReplica> iface) {
-        auto disableKillSwitch = iface->disableKillSwitch();
-        if (!disableKillSwitch.waitForFinished(kIpcTimeoutMs) || !disableKillSwitch.returnValue())
-            qWarning() << "Failed to disable killswitch";
-
-        auto StartRoutingIpv6 = iface->StartRoutingIpv6();
-        if (!StartRoutingIpv6.waitForFinished(kIpcTimeoutMs) || !StartRoutingIpv6.returnValue())
-            qWarning() << "Failed to start routing ipv6";
-
-        auto restoreResolvers = iface->restoreResolvers();
-        if (!restoreResolvers.waitForFinished(kIpcTimeoutMs) || !restoreResolvers.returnValue())
-            qWarning() << "Failed to restore resolvers";
-
-        auto deleteTun = iface->deleteTun(tunName);
-        if (!deleteTun.waitForFinished(kIpcTimeoutMs) || !deleteTun.returnValue())
-            qWarning() << "Failed to delete tun";
-
-        auto xrayStop = iface->xrayStop();
-        if (!xrayStop.waitForFinished(kIpcTimeoutMs) || !xrayStop.returnValue())
-            qWarning() << "Failed to stop xray";
-    });
-
-    setConnectionState(Vpn::ConnectionState::Disconnected);
+            } else {
+                qCritical() << "Tunnel cleanup failed at" << step;
+                emit networkPolicyWarning(tr("Не удалось полностью очистить VPN-сессию. Новое подключение заблокировано до успешной очистки."));
+            }
+            finishAsyncStop(success);
+        });
 }
 
 ErrorCode XrayProtocol::startTun2Socks()
 {
-    m_tun2socksProcess = IpcClient::CreatePrivilegedProcess();
-    if (!m_tun2socksProcess->waitForSource()) {
-        return ErrorCode::AmneziaServiceConnectionFailed;
-    }
+    const auto iface = IpcClient::InterfaceWithoutWait();
+    m_processRequest = new AsyncProcessRequest(this, iface,
+        [](int id) { return QUrl(QString("local:%1").arg(amnezia::getIpcProcessUrl(id))); },
+        [this, iface](AsyncProcessRequest::Replica process) {
+            m_processRequest = nullptr;
+            if (m_stopping) { if (process) process->close(); return; }
+            if (!process) {
+                stop();
+                setLastError(ErrorCode::AmneziaServiceConnectionFailed);
+                return;
+            }
+            m_tun2socksProcess = std::move(process);
+            const auto config = QJsonDocument(m_xrayConfig).toJson();
+            m_startupSequence = new AsyncIpcSequence(this,
+                {{"xrayStart", [iface, config] { return iface->xrayStart(config); }}},
+                [this](AsyncIpcSequence::Result result, const QString &) {
+                    m_startupSequence = nullptr;
+                    if (m_stopping) return;
+                    if (result != AsyncIpcSequence::Result::Success) {
+                        stop();
+                        setLastError(ErrorCode::XrayExecutableCrashed);
+                        return;
+                    }
+                    configureTun2Socks();
+                });
+        });
+    return ErrorCode::NoError;
+}
+
+void XrayProtocol::configureTun2Socks()
+{
 
     // SOCKS port + creds were prepared in start() via EnsureInboundAuth.
-    QString proxyUrl;
-    if (!m_socksUser.isEmpty() && !m_socksPassword.isEmpty()) {
-        proxyUrl = QString("socks5://%1:%2@127.0.0.1:%3").arg(m_socksUser, m_socksPassword).arg(m_socksPort);
-    } else {
-        proxyUrl = QString("socks5://127.0.0.1:%1").arg(m_socksPort);
-    }
+    const QString proxyUrl = LocalSocksUrl::make(quint16(m_socksPort), m_socksUser, m_socksPassword);
 
     m_tun2socksProcess->setProgram(PermittedProcess::Tun2Socks);
     // CRITICAL: tun2socks v2.7.0 logs to STDERR (zap/JSON), whereas the old c8f8cb5
@@ -290,67 +233,20 @@ ErrorCode XrayProtocol::startTun2Socks()
         // before) and `--tcp-auto-tuning` remains opt-in/unused here. by vovankrot
     });
 
-    connect(m_tun2socksProcess.data(), &IpcProcessInterfaceReplica::readyReadStandardOutput, this, [this]() {
-        if (m_stopping || !m_tun2socksProcess) {
-            return;
-        }
+    auto *outputProcess = m_tun2socksProcess.data();
+    new Tun2SocksOutputReader(outputProcess, this,
+        [this, outputProcess] { return !m_stopping && m_tun2socksProcess.data() == outputProcess; },
+        [this] { setupRouting(); });
 
-        auto readAllStandardOutput = m_tun2socksProcess->readAllStandardOutput();
-        if (!readAllStandardOutput.waitForFinished()) {
-            qWarning() << "Failed to read output from tun2socks";
-            return;
-        }
-
-        const QString line = readAllStandardOutput.returnValue();
-
-        if (!line.contains("[TCP]") && !line.contains("[UDP]"))
-            qDebug() << "[tun2socks]:" << line;
-        
-        if (line.contains("[STACK] tun://") && line.contains("<-> socks5://")) {
-            disconnect(m_tun2socksProcess.data(), &IpcProcessInterfaceReplica::readyReadStandardOutput, this, nullptr);
-
-            if (ErrorCode res = setupRouting(); res != ErrorCode::NoError) {
-                stop();
-                setLastError(res);
-            } else {
-                setConnectionState(Vpn::ConnectionState::Connected);
-                scheduleHealthCheck();
-            }
-        }
-    }, Qt::QueuedConnection);
-
-    connect(m_tun2socksProcess.data(), &IpcProcessInterfaceReplica::finished, this, [this](int exitCode, QProcess::ExitStatus exitStatus) {
-        if (m_stopping || connectionState() == Vpn::ConnectionState::Disconnecting
-            || connectionState() == Vpn::ConnectionState::Disconnected) {
-            qDebug() << "Tun2socks (xray) finished during controlled shutdown, code" << exitCode
-                     << "status" << exitStatus;
-            return;
-        }
-
-        // Rapid server/protocol switch: user hits Disconnect -> a new XrayProtocol is
-        // already being constructed BEFORE this old protocol's finished() drains. At
-        // that moment connectionState() has flipped to Connecting for the NEW protocol,
-        // so the shutdown guard above does not trigger, and we treat a clean exit-0
-        // from the old tun2socks as a fatal error (804) -- see 2026-08-05 15:23:11
-        // where an exit code of 0 raised Tun2SockExecutableCrashed anyway. A clean
-        // exit is not a crash; only NormalExit with a NON-zero code counts as one.
-        // by vovankrot
-        if (exitStatus == QProcess::ExitStatus::NormalExit && exitCode == 0) {
-            qDebug() << "Tun2socks (xray) exited cleanly during a protocol switch, ignoring";
-            return;
-        }
-
-        if (exitStatus == QProcess::ExitStatus::CrashExit) {
-            qCritical() << "Tun2socks process crashed!";
-        } else {
-            qCritical() << QString("Tun2socks process was closed with %1 exit code").arg(exitCode);
-        }
-        stop();
-        setLastError(ErrorCode::Tun2SockExecutableCrashed);
-    }, Qt::QueuedConnection);
+    new Tun2SocksProcessObserver(outputProcess, this,
+        [this, outputProcess] {
+            return !m_stopping && m_tun2socksProcess.data() == outputProcess
+                && connectionState() != Vpn::ConnectionState::Disconnecting
+                && connectionState() != Vpn::ConnectionState::Disconnected;
+        },
+        [this] { stop(); setLastError(ErrorCode::Tun2SockExecutableCrashed); });
 
     m_tun2socksProcess->start();
-    return ErrorCode::NoError;
 }
 
 int XrayProtocol::localSocksPort() const
@@ -385,340 +281,47 @@ QString XrayProtocol::probeHost() const
     return QString::fromLatin1(amnezia::protocols::xray::defaultSite);
 }
 
-quint16 XrayProtocol::probePort() const
+void XrayProtocol::setupRouting()
 {
-    bool ok = false;
-    const quint16 configuredPort = m_rawConfig.value(config_key::port)
-                                       .toString(QString::fromLatin1(amnezia::protocols::xray::defaultPort))
-                                       .toUShort(&ok);
-    return ok && configuredPort > 0 ? configuredPort : 443;
-}
-
-bool XrayProtocol::ensureProxyReachable()
-{
-    // Same fix as runHealthCheck(): performSocks5Probe() only proved the LOCAL SOCKS
-    // inbound ACKed a CONNECT, which xray does before dialing the remote server at
-    // all -- it could never actually detect an unreachable server. This preflight
-    // runs right after xray starts, before TUN/routing/killswitch are touched, so a
-    // real end-to-end TLS probe here is the earliest honest signal for "can this
-    // server actually be reached from this network at all" -- exactly the question
-    // that could not be answered live on 2026-08-05 (server 2 access.log stayed
-    // empty through an entire "Connected" session). by vovankrot
-    qDebug() << "XrayProtocol::ensureProxyReachable() probing" << probeHost() << ":443 through the tunnel...";
-    const bool ok = performTunnelDataProbe(probeHost(), 443, 3500);
-    qDebug() << "XrayProtocol::ensureProxyReachable() result:" << ok;
-    return ok;
-}
-
-// performSocks5Probe() only proves the LOCAL SOCKS inbound answered -- xray replies
-// 0x05 0x00 to a CONNECT request immediately, before it has dialed the remote server
-// at all. So that probe stays green even when the server is completely unreachable,
-// which is exactly how a dead tunnel kept reporting "Connected" with passing health
-// checks on 2026-08-05 (server access.log showed zero entries for the whole session).
-//
-// This probe instead completes a real TLS handshake with the real target THROUGH the
-// tunnel: bytes must travel client -> xray -> server -> internet and back, so it
-// cannot succeed unless the tunnel genuinely carries traffic. by vovankrot
-bool XrayProtocol::performTunnelDataProbe(const QString &targetHost, quint16 targetPort, int timeoutMs)
-{
-    QNetworkProxy proxy(QNetworkProxy::Socks5Proxy, QStringLiteral("127.0.0.1"),
-                        static_cast<quint16>(localSocksPort()));
-    if (!m_socksUser.isEmpty() && !m_socksPassword.isEmpty()) {
-        proxy.setUser(m_socksUser);
-        proxy.setPassword(m_socksPassword);
+    if (m_stopping) return;
+    if (m_routingSetup) { m_routingSetup->cancel(); m_routingSetup = nullptr; }
+    const auto iface = IpcClient::Interface();
+    if (!iface || !iface->isReplicaValid()) {
+        stop();
+        setLastError(ErrorCode::AmneziaServiceConnectionFailed);
+        return;
     }
-
-    QSslSocket socket;
-    socket.setProxy(proxy);
-    // The probe only needs to prove bytes flow end to end; a hostname/cert mismatch on
-    // a censor's interception box would still be a real round trip, and refusing it
-    // here would turn a working-but-MITMed link into a reconnect loop.
-    socket.setPeerVerifyMode(QSslSocket::QueryPeer);
-    socket.connectToHostEncrypted(targetHost, targetPort);
-
-    if (!socket.waitForEncrypted(timeoutMs)) {
-        qWarning() << "XRay tunnel data probe failed for" << targetHost << targetPort
-                   << ":" << socket.errorString();
-        socket.abort();
-        return false;
-    }
-
-    socket.disconnectFromHost();
-    qDebug() << "XRay tunnel data probe succeeded for" << targetHost << targetPort;
-    return true;
-}
-
-bool XrayProtocol::performSocks5Probe(const QString &targetHost, quint16 targetPort, int timeoutMs)
-{
-    const QByteArray hostBytes = targetHost.toUtf8();
-    if (hostBytes.isEmpty() || hostBytes.size() > 255) {
-        qWarning() << "Skipping XRay proxy probe because target host is invalid:" << targetHost;
-        return false;
-    }
-
-    QElapsedTimer timer;
-    timer.start();
-
-    while (timer.elapsed() < timeoutMs) {
-        const int remaining = timeoutMs - static_cast<int>(timer.elapsed());
-        if (remaining <= 0) {
-            break;
-        }
-
-        QTcpSocket socket;
-        socket.connectToHost(QHostAddress::LocalHost, localSocksPort());
-        if (!socket.waitForConnected(qMin(remaining, 700))) {
-            QThread::msleep(150);
-            continue;
-        }
-
-        // Offer NO_AUTH (0x00) and USERNAME/PASSWORD (0x02). xray accepts whichever it has configured.
-        socket.write(QByteArray::fromHex("05020002"));
-        if (!socket.waitForBytesWritten(qMin(remaining, 500)) || !waitForSocketBytes(socket, 2, qMin(remaining, 700))) {
-            socket.disconnectFromHost();
-            QThread::msleep(150);
-            continue;
-        }
-
-        const QByteArray authReply = socket.read(2);
-        if (authReply.size() < 2 || quint8(authReply.at(0)) != 0x05) {
-            socket.disconnectFromHost();
-            QThread::msleep(150);
-            continue;
-        }
-        const quint8 chosenMethod = quint8(authReply.at(1));
-        if (chosenMethod == 0x02) {
-            // RFC 1929 username/password sub-negotiation.
-            const QByteArray userBytes = m_socksUser.toUtf8();
-            const QByteArray passBytes = m_socksPassword.toUtf8();
-            if (userBytes.size() > 255 || passBytes.size() > 255 || userBytes.isEmpty() || passBytes.isEmpty()) {
-                socket.disconnectFromHost();
-                QThread::msleep(150);
-                continue;
+    SocksRoutingSetup::Parameters p;
+    p.device = tunName;
+    p.localAddress = amnezia::protocols::xray::defaultLocalAddr;
+    p.vpnAddress = m_vpnLocalAddress;
+    p.vpnGateway = NetworkUtilities::checkIPv4Format(m_vpnGateway) ? m_vpnGateway : p.localAddress;
+    p.serverAddress = m_remoteAddress;
+    p.externalGateway = m_routeGateway;
+    p.dns = m_dnsServers;
+    p.peerConfig = m_rawConfig;
+    p.allSites = m_routeMode == Settings::RouteMode::VpnAllSites
+              || m_routeMode == Settings::RouteMode::VpnAllExceptSites;
+    p.killSwitch = QVariant(m_rawConfig.value(amnezia::config_key::killSwitchOption).toString()).toBool();
+    p.appSplit = isAppSplitTunnelActive(m_rawConfig);
+    // Per-app routing supplies its own filtering; a global strict block would
+    // also interrupt applications explicitly excluded from this VPN.
+    p.peerConfig.insert(amnezia::config_key::killSwitchOption,
+                        (p.killSwitch && !p.appSplit) ? "true" : "false");
+    m_routingSetup = new AsyncIpcSequence(this, SocksRoutingSetup::steps(iface, p),
+        [this](AsyncIpcSequence::Result result, const QString &step) {
+            m_routingSetup = nullptr;
+            if (m_stopping) return;
+            if (result != AsyncIpcSequence::Result::Success) {
+                qCritical() << "XrayProtocol: routing setup failed at" << step << "result" << int(result);
+                stop();
+                setLastError(ErrorCode::InternalError);
+                return;
             }
-            QByteArray authReq;
-            authReq.append(char(0x01));
-            authReq.append(char(userBytes.size()));
-            authReq.append(userBytes);
-            authReq.append(char(passBytes.size()));
-            authReq.append(passBytes);
-            socket.write(authReq);
-            if (!socket.waitForBytesWritten(qMin(remaining, 500)) || !waitForSocketBytes(socket, 2, qMin(remaining, 700))) {
-                socket.disconnectFromHost();
-                QThread::msleep(150);
-                continue;
-            }
-            const QByteArray authResp = socket.read(2);
-            if (authResp.size() < 2 || quint8(authResp.at(1)) != 0x00) {
-                socket.disconnectFromHost();
-                QThread::msleep(150);
-                continue;
-            }
-        } else if (chosenMethod != 0x00) {
-            socket.disconnectFromHost();
-            QThread::msleep(150);
-            continue;
-        }
-
-        QByteArray request;
-        request.append(char(0x05));
-        request.append(char(0x01));
-        request.append(char(0x00));
-        request.append(char(0x03));
-        request.append(char(hostBytes.size()));
-        request.append(hostBytes);
-        request.append(char((targetPort >> 8) & 0xff));
-        request.append(char(targetPort & 0xff));
-
-        socket.write(request);
-        if (!socket.waitForBytesWritten(qMin(remaining, 500)) || !waitForSocketBytes(socket, 5, qMin(remaining, 1200))) {
-            socket.disconnectFromHost();
-            QThread::msleep(150);
-            continue;
-        }
-
-        const QByteArray connectReply = socket.peek(5);
-        if (connectReply.size() >= 5 && quint8(connectReply.at(0)) == 0x05 && quint8(connectReply.at(1)) == 0x00) {
-            socket.disconnectFromHost();
-            qDebug() << "XRay SOCKS probe succeeded for" << targetHost << targetPort;
-            return true;
-        }
-
-        socket.disconnectFromHost();
-        QThread::msleep(150);
-    }
-
-    qWarning() << "XRay SOCKS probe failed for" << targetHost << targetPort;
-    return false;
-}
-
-ErrorCode XrayProtocol::setupRouting() {
-    return IpcClient::withInterface([this](QSharedPointer<IpcInterfaceReplica> iface) -> ErrorCode {
-        QString tunGateway = m_vpnGateway;
-        if (!NetworkUtilities::checkIPv4Format(tunGateway)) {
-            qWarning() << "XRay setupRouting: invalid TUN gateway" << tunGateway
-                       << "using default" << amnezia::protocols::xray::defaultLocalAddr;
-            tunGateway = amnezia::protocols::xray::defaultLocalAddr;
-        }
-        if (!NetworkUtilities::checkIPv4Format(tunGateway)) {
-            qCritical() << "XRay setupRouting: default TUN gateway is invalid" << tunGateway;
-            return ErrorCode::InternalError;
-        }
-
-#ifdef Q_OS_WIN
-        const int inetAdapterIndex = NetworkUtilities::AdapterIndexTo(QHostAddress(m_remoteAddress));
-#endif
-        auto createTun = iface->createTun(tunName, amnezia::protocols::xray::defaultLocalAddr);
-        if (!createTun.waitForFinished() || !createTun.returnValue()) {
-            qCritical() << "Failed to assign IP address for TUN";
-            return ErrorCode::InternalError;
-        }
-
-        auto updateResolvers = iface->updateResolvers(tunName, m_dnsServers);
-        if (!updateResolvers.waitForFinished() || !updateResolvers.returnValue()) {
-            qCritical() << "Failed to set DNS resolvers for TUN";
-            return ErrorCode::InternalError;
-        }
-
-#ifdef Q_OS_WIN
-        int vpnAdapterIndex = -1;
-        QList<QNetworkInterface> netInterfaces = QNetworkInterface::allInterfaces();
-        for (auto& netInterface : netInterfaces) {
-            for (auto& address : netInterface.addressEntries()) {
-                if (m_vpnLocalAddress == address.ip().toString())
-                    vpnAdapterIndex = netInterface.index();
-            }
-        }
-#else
-        static const int vpnAdapterIndex = 0;
-#endif
-        const bool killSwitchEnabled = QVariant(m_rawConfig.value(config_key::killSwitchOption).toString()).toBool();
-        const bool appSplitTunnelActive = isAppSplitTunnelActive(m_rawConfig);
-        if (killSwitchEnabled && appSplitTunnelActive) {
-            qDebug() << "Skipping strict killswitch firewall rules while app split tunneling is active";
-        } else if (killSwitchEnabled) {
-            if (vpnAdapterIndex != -1) {
-                QJsonObject config = m_rawConfig;
-                config.insert("vpnServer", m_remoteAddress);
-
-                auto enableKillSwitch = IpcClient::Interface()->enableKillSwitch(config, vpnAdapterIndex);
-                if (!enableKillSwitch.waitForFinished() || !enableKillSwitch.returnValue()) {
-                    qCritical() << "Failed to enable killswitch";
-                    return ErrorCode::InternalError;
-                }
-            } else
-                qWarning() << "Failed to get vpnAdapterIndex. Killswitch disabled";
-        }
-
-        // For both VpnAllSites and VpnAllExceptSites, all OS traffic must enter the TUN.
-        // Xray routing rules (geoip:ru → direct, blocked domains → proxy, etc.) handle
-        // the per-destination decision inside the tunnel. Without these OS-level routes
-        // the TUN is created but no traffic reaches it, so the VPN appears connected
-        // but does not work.  VpnOnlySites is intentionally excluded — only specific
-        // destination CIDRs should be routed through the TUN in that mode.
-        if (m_routeMode == Settings::RouteMode::VpnAllSites ||
-            m_routeMode == Settings::RouteMode::VpnAllExceptSites) {
-            // Exclude the XRay server's own IP from the TUN. The catch-all
-            // subnets below (1.0.0.0/8 ... 128.0.0.0/1) otherwise capture the
-            // server endpoint (e.g. 203.0.113.10 falls inside 32.0.0.0/3) into
-            // the tunnel, which then depends on a server it can no longer reach
-            // -> the xray outbound times out and ALL traffic dies
-            // ("Timeout connecting to <server>", sites do not open). A /32 via
-            // the physical gateway is more specific, so server traffic bypasses
-            // the TUN. Mirrors WireGuard's addExclusionRoute(serverEndpoint).
-            // by vovankrot
-            if (NetworkUtilities::checkIPv4Format(m_remoteAddress)
-                && NetworkUtilities::checkIPv4Format(m_routeGateway)) {
-                const QStringList serverExclusion = { m_remoteAddress + "/32" };
-                auto excludeServer = iface->routeAddList(m_routeGateway, serverExclusion);
-                if (!excludeServer.waitForFinished() || excludeServer.returnValue() != serverExclusion.count()) {
-                    qWarning() << "XRay setupRouting: failed to add server exclusion route for"
-                               << m_remoteAddress << "via" << m_routeGateway;
-                } else {
-                    qDebug() << "XRay setupRouting: excluded server" << m_remoteAddress
-                             << "via" << m_routeGateway;
-                }
-            } else {
-                qWarning() << "XRay setupRouting: cannot exclude server, invalid address/gateway"
-                           << m_remoteAddress << m_routeGateway;
-            }
-
-            const QStringList subnets = { "1.0.0.0/8", "2.0.0.0/7", "4.0.0.0/6", "8.0.0.0/5", "16.0.0.0/4", "32.0.0.0/3", "64.0.0.0/2", "128.0.0.0/1" };
-
-            qDebug() << "XRay setupRouting: adding TUN routes via" << tunGateway << "count" << subnets.count();
-            auto routeAddList =  iface->routeAddList(tunGateway, subnets);
-            if (!routeAddList.waitForFinished() || routeAddList.returnValue() != subnets.count()) {
-                qCritical() << "Failed to set routes for TUN";
-                return ErrorCode::InternalError;
-            }
-        }
-
-#ifdef Q_OS_WIN
-        // Per-app IPv6 filtering is installed by enablePeerTraffic. Global
-        // blackhole routes would also cut off excluded Firefox/CDN connections.
-        if (!appSplitTunnelActive) {
-#endif
-        auto StopRoutingIpv6 = iface->StopRoutingIpv6();
-        if (!StopRoutingIpv6.waitForFinished() || !StopRoutingIpv6.returnValue()) {
-            qCritical() << "Failed to disable IPv6 routing";
-            return ErrorCode::InternalError;
-        }
-#ifdef Q_OS_WIN
-        }
-#endif
-
-#ifdef Q_OS_WIN
-        // enablePeerTraffic drives TWO things inside KillSwitch::enablePeerTraffic: the
-        // strict firewall block (gated there on killSwitchOption) AND, unconditionally,
-        // WindowsDaemon::activateSplitTunnel -- the latter is what actually engages the WFP
-        // per-app split-tunnel driver. So this must fire whenever the kill-switch is on OR
-        // per-app split tunnelling is active. It was previously gated on killSwitchEnabled
-        // alone, so with app-split ON + kill-switch OFF the WFP driver never engaged and
-        // per-app split tunnelling silently did nothing on XRay -- the same bug that was
-        // fixed for Hysteria2 (hysteria2protocol.cpp) but never ported here.
-        //
-        // CRITICAL (LAN-safe): when app-split is active we stamp killSwitchOption=false.
-        // The strict killswitch (enableKillSwitch, which adds the "Allow VPN Adapter"
-        // escape) is skipped above for app-split, so letting enablePeerTraffic install
-        // "Block Internet 0.0.0.0/0" here would leave the block with NO tunnel-adapter
-        // escape -> every non-bypassed app loses all internet. Stamping false skips only
-        // the firewall block; activateSplitTunnel (the WFP driver) still runs
-        // unconditionally inside enablePeerTraffic, so app-split works, and the LAN bypass
-        // (enableLanBypass, applied unconditionally service-side) stays intact. by vovankrot
-        if (killSwitchEnabled || appSplitTunnelActive) {
-            if (inetAdapterIndex != -1 && vpnAdapterIndex != -1) {
-                QJsonObject config = m_rawConfig;
-                config.insert("inetAdapterIndex", inetAdapterIndex);
-                config.insert("vpnAdapterIndex", vpnAdapterIndex);
-                config.insert("vpnGateway", tunGateway);
-                config.insert("vpnServer", m_remoteAddress);
-                config.insert(config_key::killSwitchOption,
-                              (killSwitchEnabled && !appSplitTunnelActive) ? "true" : "false");
-
-                auto enablePeerTraffic = iface->enablePeerTraffic(config);
-                if (!enablePeerTraffic.waitForFinished() || !enablePeerTraffic.returnValue()) {
-                    qCritical() << "XRay: failed to enable peer traffic / app split tunnel";
-                    return ErrorCode::InternalError;
-                }
-            } else {
-                if (appSplitTunnelActive) return ErrorCode::InternalError;
-                qWarning() << "XRay: split-tunnel adapter indices unknown, app-split/killswitch skipped"
-                           << "inet=" << inetAdapterIndex << "vpn=" << vpnAdapterIndex;
-            }
-        }
-        if (appSplitTunnelActive) {
-            auto restoreIpv6 = iface->StartRoutingIpv6();
-            if (!restoreIpv6.waitForFinished() || !restoreIpv6.returnValue()) {
-                qCritical() << "Failed to restore physical IPv6 routes for excluded apps";
-                return ErrorCode::InternalError;
-            }
-        }
-#endif
-        return ErrorCode::NoError;
-    },
-    [] () {
-        return ErrorCode::AmneziaServiceConnectionFailed;
-    });
+            stopTimeoutTimer();
+            setConnectionState(Vpn::ConnectionState::Connected);
+            scheduleHealthCheck();
+        });
 }
 
 // Post-Connect healthcheck: the tunnel can reach Connected (xray up, tun2socks
@@ -730,9 +333,8 @@ ErrorCode XrayProtocol::setupRouting() {
 // user on 2026-07-26.
 //
 // Fix: after we transition to Connected, kick off a background probe through
-// the SOCKS inbound at intervals. Only after several failures in a row do we
-// tear the protocol down with an error, so that the ordinary reconnect/failover
-// path can bring it back up cleanly. by vovankrot
+// the SOCKS inbound at intervals. Require certificate validation and an HTTP
+// response; several consecutive failures produce a warning, not a reconnect.
 namespace {
 // First check runs LONG after Connected. 5 seconds was too eager: the tun2socks
 // stack and the mKCP window are still warming up, so a probe that arrives during
@@ -750,6 +352,7 @@ void XrayProtocol::scheduleHealthCheck()
     qDebug() << "XrayProtocol::scheduleHealthCheck() this=" << static_cast<void *>(this)
               << "m_healthTimer=" << static_cast<void *>(m_healthTimer);
     m_healthCheckFailures = 0;
+    const auto generation = ++m_healthGeneration;
     if (!m_healthTimer) {
         m_healthTimer = new QTimer(this);
         m_healthTimer->setSingleShot(false);
@@ -760,8 +363,8 @@ void XrayProtocol::scheduleHealthCheck()
     m_healthTimer->stop();
     // Fire the FIRST check after the short delay, then let interval mode take over.
     m_healthTimer->setInterval(kHealthCheckIntervalMs);
-    QTimer::singleShot(kHealthCheckFirstDelayMs, this, [this]() {
-        if (m_stopping || connectionState() != Vpn::ConnectionState::Connected) {
+    QTimer::singleShot(kHealthCheckFirstDelayMs, this, [this, generation]() {
+        if (generation != m_healthGeneration || m_stopping || connectionState() != Vpn::ConnectionState::Connected) {
             return;
         }
         runHealthCheck();
@@ -779,6 +382,13 @@ void XrayProtocol::cancelHealthCheck()
     if (m_healthTimer) {
         m_healthTimer->stop();
     }
+    ++m_healthGeneration;
+    if (m_healthProbe) {
+        disconnect(m_healthProbe, nullptr, this, nullptr);
+        m_healthProbe->cancel();
+        m_healthProbe->deleteLater();
+        m_healthProbe = nullptr;
+    }
     m_healthCheckFailures = 0;
 }
 
@@ -792,13 +402,31 @@ void XrayProtocol::runHealthCheck()
         return;
     }
 
-    // NOTE: deliberately NOT performSocks5Probe() here, and deliberately port 443 rather
-    // than probePort(). probePort() returns the XRAY SERVER's port (e.g. 49379) while
-    // probeHost() is a real website -- probing "www.cloudflare.com:49379" is meaningless
-    // and only ever "passed" because xray ACKs a SOCKS CONNECT before dialing anything.
-    // A real TLS handshake to the site on 443 is the only thing that proves the tunnel
-    // actually carries traffic. by vovankrot
-    const bool ok = performTunnelDataProbe(probeHost(), 443, kHealthCheckTimeoutMs);
+    if (m_healthProbe) return;
+    const QString host = probeHost();
+    const QNetworkProxy proxy(QNetworkProxy::Socks5Proxy, QStringLiteral("127.0.0.1"),
+                              quint16(localSocksPort()), m_socksUser, m_socksPassword);
+    const auto generation = m_healthGeneration;
+    auto *watcher = new QFutureWatcher<TunnelDataProbe::Result>(this);
+    m_healthProbe = watcher;
+    const QPointer<QFutureWatcher<TunnelDataProbe::Result>> probe(watcher);
+    connect(watcher, &QFutureWatcher<TunnelDataProbe::Result>::finished, this, [this, probe, generation] {
+        if (!probe || generation != m_healthGeneration || m_stopping
+            || connectionState() != Vpn::ConnectionState::Connected || probe->isCanceled()) return;
+        const auto result = probe->result();
+        probe->deleteLater();
+        if (m_healthProbe == probe) m_healthProbe = nullptr;
+        if (!result.success)
+            qWarning() << "XRay application probe failed at stage" << int(result.failure) << "after" << result.elapsedMs << "ms";
+        handleHealthCheckResult(result.success);
+    });
+    watcher->setFuture(QtConcurrent::run([host, proxy] {
+        return TunnelDataProbe::run(host, 443, proxy, kHealthCheckTimeoutMs);
+    }));
+}
+
+void XrayProtocol::handleHealthCheckResult(bool ok)
+{
     if (ok) {
         if (m_healthCheckFailures > 0) {
             qDebug() << "XRay healthcheck recovered after" << m_healthCheckFailures << "failure(s)";
@@ -818,13 +446,6 @@ void XrayProtocol::runHealthCheck()
         return;
     }
 
-    // Threshold hit. The tunnel is "Connected" but no traffic is actually
-    // going through it. Emit reconnectRequested() -- VpnConnection wires this
-    // to reconnectToVpn(), which cleanly stops the current protocol, rebuilds
-    // the config from scratch, and starts fresh. We deliberately do NOT drop
-    // into Error state: that would leave the user staring at an error banner
-    // and require a manual retry, whereas the whole point here is to recover
-    // silently from the post-boot "ghost connected" case. by vovankrot
     // Failure of an external probe does not prove that local helpers or the
     // whole tunnel are dead. Rebuilding WFP/routes here also interrupts bypass
     // video sessions. Keep the session; helper exits still use the error path.

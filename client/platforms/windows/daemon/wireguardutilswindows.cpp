@@ -129,9 +129,8 @@ bool WireguardUtilsWindows::addInterface(const InterfaceConfig& config) {
   if (config.m_killSwitchEnabled) {
     // Enable the windows firewall
     NET_IFINDEX ifindex;
-    ConvertInterfaceLuidToIndex(&luid, &ifindex);
-    m_firewall->allowAllTraffic();
-    m_firewall->enableInterface(ifindex);
+    if (ConvertInterfaceLuidToIndex(&luid, &ifindex) != NO_ERROR ||
+        !m_firewall->enableInterface(ifindex, true)) return false;
   }
 
   logger.debug() << "Registration completed";
@@ -139,12 +138,14 @@ bool WireguardUtilsWindows::addInterface(const InterfaceConfig& config) {
 }
 
 bool WireguardUtilsWindows::deleteInterface() {
+  if (m_routeMonitor && !m_routeMonitor->setDetaultRouteCapture(false)) return false;
+  if (m_routeMonitor && !m_routeMonitor->flushOwnedRoutes()) return false;
+  if (!m_firewall->disableKillSwitch()) return false;
+  if (!m_tunnel.stop()) return false;
   if (m_routeMonitor) {
     m_routeMonitor->deleteLater();
+    m_routeMonitor = nullptr;
   }
-
-  m_firewall->disableKillSwitch();
-  m_tunnel.stop();
   return true;
 }
 
@@ -161,7 +162,7 @@ bool WireguardUtilsWindows::updatePeer(const InterfaceConfig& config) {
 
   if (config.m_killSwitchEnabled) {
     // Enable the windows firewall for this peer.
-    m_firewall->enablePeerTraffic(config);
+    if (!m_firewall->enablePeerTraffic(config)) return false;
   }
   logger.debug() << "Configuring peer" << publicKey.toHex()
                  << "via" << activeEndpoint;
@@ -196,16 +197,16 @@ bool WireguardUtilsWindows::updatePeer(const InterfaceConfig& config) {
     const IPAddress serverIpv6Endpoint(serverIpv6AddrIn);
 
     if (serverIpv4Endpoint.isValid()) {
-      m_routeMonitor->addExclusionRoute(serverIpv4Endpoint);
+      if (!m_routeMonitor->addExclusionRoute(serverIpv4Endpoint)) return false;
     }
     if (serverIpv6Endpoint.isValid()) {
-      m_routeMonitor->addExclusionRoute(serverIpv6Endpoint);
+      if (!m_routeMonitor->addExclusionRoute(serverIpv6Endpoint)) return false;
     }
   }
 
   QString reply = m_tunnel.uapiCommand(message);
   logger.debug() << "DATA:" << reply;
-  return true;
+  return reply == QStringLiteral("errno=0");
 }
 
 bool WireguardUtilsWindows::deletePeer(const InterfaceConfig& config) {
@@ -221,15 +222,19 @@ bool WireguardUtilsWindows::deletePeer(const InterfaceConfig& config) {
     const IPAddress serverIpv6Endpoint(serverIpv6AddrIn);
 
     if (serverIpv4Endpoint.isValid()) {
-      m_routeMonitor->deleteExclusionRoute(serverIpv4Endpoint);
+      if (!m_routeMonitor->deleteExclusionRoute(serverIpv4Endpoint)) return false;
     }
     if (serverIpv6Endpoint.isValid()) {
-      m_routeMonitor->deleteExclusionRoute(serverIpv6Endpoint);
+      if (!m_routeMonitor->deleteExclusionRoute(serverIpv6Endpoint)) return false;
     }
   }
 
   // Disable the windows firewall for this peer.
-  m_firewall->disablePeerTraffic(config.m_serverPublicKey);
+  if (!m_firewall->disablePeerTraffic(config.m_serverPublicKey)) return false;
+
+  // A crashed/stopped tunnel has no peer to remove. Failed status queries
+  // must still go through UAPI and report failure rather than assume absence.
+  if (m_tunnel.isStopped()) return true;
 
   QString message;
   QTextStream out(&message);
@@ -239,7 +244,7 @@ bool WireguardUtilsWindows::deletePeer(const InterfaceConfig& config) {
 
   QString reply = m_tunnel.uapiCommand(message);
   logger.debug() << "DATA:" << reply;
-  return true;
+  return reply == QStringLiteral("errno=0");
 }
 
 void WireguardUtilsWindows::buildMibForwardRow(const IPAddress& prefix,
@@ -275,10 +280,26 @@ void WireguardUtilsWindows::buildMibForwardRow(const IPAddress& prefix,
 }
 
 bool WireguardUtilsWindows::updateRoutePrefix(const IPAddress& prefix) {
-  if (m_routeMonitor && (prefix.prefixLength() == 0)) {
-    // If we are setting up a default route, instruct the route monitor to
-    // capture traffic to all non-excluded destinations
-    m_routeMonitor->setDetaultRouteCapture(true);
+  if (prefix.prefixLength() == 0) {
+    MIB_IPINTERFACE_ROW iface;
+    InitializeIpInterfaceEntry(&iface);
+    iface.Family = prefix.type() == QAbstractSocket::IPv6Protocol ? AF_INET6 : AF_INET;
+    iface.InterfaceLuid.Value = m_luid;
+    auto status = GetIpInterfaceEntry(&iface);
+    if (status != NO_ERROR) {
+      if (iface.Family == AF_INET6 && status == ERROR_NOT_FOUND) return true;
+      logger.error() << "Cannot read VPN default-route interface:" << status;
+      return false;
+    }
+    iface.DisableDefaultRoutes = FALSE;
+    iface.UseAutomaticMetric = FALSE;
+    iface.Metric = 0;
+    if (iface.Family == AF_INET) iface.SitePrefixLength = 0;
+    status = SetIpInterfaceEntry(&iface);
+    if (status != NO_ERROR) {
+      logger.error() << "Cannot enable VPN default-route interface:" << status;
+      return false;
+    }
   }
   // Build the route
   
@@ -287,7 +308,9 @@ bool WireguardUtilsWindows::updateRoutePrefix(const IPAddress& prefix) {
 
   // Install the route
   DWORD result = CreateIpForwardEntry2(&entry);
-  if (result == ERROR_OBJECT_ALREADY_EXISTS) {
+  if (result == NO_ERROR || result == ERROR_OBJECT_ALREADY_EXISTS) {
+    if (m_routeMonitor && prefix.prefixLength() == 0)
+      m_routeMonitor->setDetaultRouteCapture(true);
     return true;
   }
 
@@ -308,7 +331,7 @@ bool WireguardUtilsWindows::updateRoutePrefix(const IPAddress& prefix) {
 bool WireguardUtilsWindows::deleteRoutePrefix(const IPAddress& prefix) {
   if (m_routeMonitor && (prefix.prefixLength() == 0)) {
     // Deactivate the route capture feature.
-    m_routeMonitor->setDetaultRouteCapture(false);
+    if (!m_routeMonitor->setDetaultRouteCapture(false)) return false;
   }
   // Build the route
   
@@ -317,7 +340,7 @@ bool WireguardUtilsWindows::deleteRoutePrefix(const IPAddress& prefix) {
 
   // Install the route
   DWORD result = DeleteIpForwardEntry2(&entry);
-  if (result == ERROR_NOT_FOUND) {
+  if (result == ERROR_NOT_FOUND || result == ERROR_FILE_NOT_FOUND) {
     return true;
   }
   if (result != NO_ERROR) {

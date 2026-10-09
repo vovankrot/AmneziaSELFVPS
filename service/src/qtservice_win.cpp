@@ -40,6 +40,8 @@
 
 #include "qtservice.h"
 #include "qtservice_p.h"
+#include "serviceStopGuard.h"
+#include <atomic>
 #include "logger.h"
 #include <QCoreApplication>
 #include <QDateTime>
@@ -485,6 +487,7 @@ public:
         QTSERVICE_STARTUP = 256
     };
     QtServiceSysPrivate();
+    ~QtServiceSysPrivate() { if (stopCompleted) CloseHandle(stopCompleted); }
 
     void setStatus( DWORD dwState );
     void setServiceFlags(QtServiceBase::ServiceFlags flags);
@@ -502,6 +505,8 @@ public:
     static QCoreApplication::EventFilter nextFilter;
 #endif
 
+    HANDLE stopCompleted = nullptr;
+    std::atomic_bool stopRequested{false};
     QWaitCondition condition;
     QMutex mutex;
     QSemaphore startSemaphore;
@@ -532,6 +537,7 @@ QCoreApplication::EventFilter QtServiceSysPrivate::nextFilter = 0;
 QtServiceSysPrivate::QtServiceSysPrivate()
 {
     instance = this;
+    stopCompleted = CreateEventW(nullptr,TRUE,FALSE,nullptr);
 }
 
 inline bool QtServiceSysPrivate::available() const
@@ -606,6 +612,24 @@ void WINAPI QtServiceSysPrivate::handler( DWORD code )
     if (!instance)
         return;
 
+    // Return to SCM immediately. A stalled Qt event loop must not block
+    // ControlService (and every other service transaction) for a minute.
+    if (code == SERVICE_CONTROL_STOP || code == SERVICE_CONTROL_SHUTDOWN) {
+        if (!instance->stopRequested.exchange(true)) {
+            instance->status.dwControlsAccepted = 0;
+            instance->status.dwCheckPoint = 1;
+            instance->status.dwWaitHint = 15000;
+            instance->setStatus(SERVICE_STOP_PENDING);
+            if (!ServiceStopGuard::arm(instance->stopCompleted)) {
+                ::TerminateProcess(::GetCurrentProcess(),0);
+                return;
+            }
+            QCoreApplication::postEvent(instance->controllerHandler,
+                new QEvent(QEvent::Type(QEvent::User + SERVICE_CONTROL_STOP)));
+        }
+        return;
+    }
+
     instance->mutex.lock();
     switch (code) {
     case QTSERVICE_STARTUP: // QtService startup (called from WinMain when started)
@@ -614,37 +638,6 @@ void WINAPI QtServiceSysPrivate::handler( DWORD code )
         instance->condition.wait(&instance->mutex);
         instance->setStatus(SERVICE_RUNNING);
         break;
-    case SERVICE_CONTROL_STOP: // 1
-        instance->setStatus(SERVICE_STOP_PENDING);
-        QCoreApplication::postEvent(instance->controllerHandler, new QEvent(QEvent::Type(QEvent::User + code)));
-        if (!instance->condition.wait(&instance->mutex, 30000)) {
-            // Qt event loop did not process SERVICE_CONTROL_STOP within 30 seconds.
-            // This prevents the SCM 90-second freeze (Event 7011) during shutdown.
-            // Report SERVICE_STOPPED so the SCM doesn't trigger recovery restarts,
-            // then exit the process immediately.
-            qWarning() << "QtService: SERVICE_CONTROL_STOP handler timeout (30 s) — "
-                          "Qt event loop is stuck; forcing clean exit";
-            instance->status.dwCurrentState  = SERVICE_STOPPED;
-            instance->status.dwWin32ExitCode = NO_ERROR;
-            instance->status.dwCheckPoint    = 0;
-            instance->status.dwWaitHint      = 0;
-            if (instance->available())
-                pSetServiceStatus(instance->serviceStatus, &instance->status);
-            instance->mutex.unlock();
-            // ExitProcess() waits for every thread to actually terminate and runs
-            // DLL_PROCESS_DETACH on every loaded module -- if the thread that's stuck
-            // is blocked inside a kernel driver call (e.g. a wedged DeviceIoControl to
-            // the split-tunnel driver), ExitProcess() can itself hang right here,
-            // which is exactly what let a stuck event loop escalate into SCM's own
-            // 90s timeout (event 7011) and, once, a full OS freeze requiring a hard
-            // reset. TerminateProcess on our own process skips all of that: it tears
-            // the process down at the OS level without waiting on any of our threads.
-            // by vovankrot
-            ::TerminateProcess(::GetCurrentProcess(), 0);
-        }
-        // status will be reported as stopped by start() when qapp::exec returns
-        break;
-
     case SERVICE_CONTROL_PAUSE: // 2
         instance->setStatus(SERVICE_PAUSE_PENDING);
         QCoreApplication::postEvent(instance->controllerHandler, new QEvent(QEvent::Type(QEvent::User + code)));
@@ -660,30 +653,6 @@ void WINAPI QtServiceSysPrivate::handler( DWORD code )
         break;
 
     case SERVICE_CONTROL_INTERROGATE: // 4
-        break;
-
-    case SERVICE_CONTROL_SHUTDOWN: // 5
-        // Don't waste time with reporting stop pending, just do it.
-        // During system shutdown the OS will unload kernel drivers and child
-        // processes regardless — use a short timeout so we don't block the
-        // shutdown sequence for longer than necessary.
-        QCoreApplication::postEvent(instance->controllerHandler, new QEvent(QEvent::Type(QEvent::User + SERVICE_CONTROL_STOP)));
-        if (!instance->condition.wait(&instance->mutex, 8000)) {
-            qWarning() << "QtService: SERVICE_CONTROL_SHUTDOWN handler timeout (8 s) — "
-                          "Qt event loop is stuck; forcing clean exit";
-            instance->status.dwCurrentState  = SERVICE_STOPPED;
-            instance->status.dwWin32ExitCode = NO_ERROR;
-            instance->status.dwCheckPoint    = 0;
-            instance->status.dwWaitHint      = 0;
-            if (instance->available())
-                pSetServiceStatus(instance->serviceStatus, &instance->status);
-            instance->mutex.unlock();
-            // See the SERVICE_CONTROL_STOP branch above: TerminateProcess, not
-            // ExitProcess, so a thread stuck in a kernel driver call can't block
-            // our own emergency exit. by vovankrot
-            ::TerminateProcess(::GetCurrentProcess(), 0);
-        }
-        // status will be reported as stopped by start() when qapp::exec returns
         break;
 
     default:
@@ -881,7 +850,6 @@ bool QtServiceBasePrivate::start()
     sys->startSemaphore2.release(); // let serviceMain continue (and end)
 
     sys->status.dwWin32ExitCode = q_ptr->executeApplication();
-    sys->setStatus(SERVICE_STOPPED);
 
     if (ht->isRunning())
         ht->wait(1000);         // let the handler thread finish
@@ -890,6 +858,13 @@ bool QtServiceBasePrivate::start()
     if (ht->isFinished())
         delete ht;
     delete app;
+    // Only acknowledge STOPPED after application destruction has completed.
+    if (sys->stopCompleted) {
+        SetEvent(sys->stopCompleted);
+        CloseHandle(sys->stopCompleted);
+        sys->stopCompleted = nullptr;
+    }
+    sys->setStatus(SERVICE_STOPPED);
     sysCleanup();
     return true;
 }

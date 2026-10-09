@@ -248,49 +248,50 @@ bool AppSplitTunnelingModel::setData(const QModelIndex &index, const QVariant &v
 
 bool AppSplitTunnelingModel::addApp(const amnezia::InstalledAppInfo &appInfo)
 {
-    if (!isValidStoredSplitTunnelApp(appInfo)) {
-        return false;
-    }
+    return addAppsBatch({appInfo}) > 0;
+}
 
-    // If the app is already present and the caller provides a (different) source folder
-    // — e.g. a folder-add that re-encounters an exe previously added individually or from
-    // another folder — adopt it into the new group. Otherwise "Remove folder" would leave
-    // an app that physically lives in that folder behind, breaking the "…and all its apps"
-    // promise. An individual add (empty groupFolder) never strips an existing group.
-    for (int row = 0; row < m_apps.size(); ++row) {
-        if (!(m_apps.at(row).info == appInfo)) {
+int AppSplitTunnelingModel::addAppsBatch(const QVector<amnezia::InstalledAppInfo> &apps)
+{
+    auto updated = m_apps;
+    QHash<QString, int> rows;
+    const auto key = [](const amnezia::InstalledAppInfo &info) {
+        if (!info.packageName.isEmpty()) return "pkg:" + info.packageName;
+#ifdef Q_OS_WIN
+        return "path:" + normalizeStoredAppPath(info.appPath).toLower();
+#else
+        return "path:" + normalizeStoredAppPath(info.appPath);
+#endif
+    };
+    for (int row = 0; row < updated.size(); ++row) rows.insert(key(updated[row].info), row);
+    int added = 0;
+    bool changed = false;
+    for (const auto &info : apps) {
+        if (!isValidStoredSplitTunnelApp(info)) continue;
+        const auto found = rows.constFind(key(info));
+        if (found != rows.constEnd()) {
+            auto &existing = updated[*found].info;
+            if (!info.groupFolder.isEmpty() && existing.groupFolder != info.groupFolder) {
+                existing.groupFolder = info.groupFolder;
+                changed = true;
+            }
             continue;
         }
-
-        if (!appInfo.groupFolder.isEmpty() && m_apps.at(row).info.groupFolder != appInfo.groupFolder) {
-            m_apps[row].info.groupFolder = appInfo.groupFolder;
-            invalidateGroupCache();
-            persistApps();
-            if (!m_apps.isEmpty()) {
-                emit dataChanged(index(0, 0), index(m_apps.size() - 1, 0), { GroupFolderRole });
-            }
-        }
-
-        return false;
+        rows.insert(key(info), updated.size());
+        updated.append({info, false});
+        ++added;
+        changed = true;
     }
-
-    AppEntry entry;
-    entry.info = appInfo;
-    entry.useVpn = false; // new apps default to "bypass VPN"
-
-    beginInsertRows(QModelIndex(), rowCount(), rowCount());
-    m_apps.append(entry);
-    invalidateGroupCache();
-    persistApps();
-    endInsertRows();
-
-    // A new entry can change the effective group of existing rows (a parent folder
-    // appearing collapses former subfolder groups into it) — refresh them all.
-    if (m_apps.size() > 1) {
-        emit dataChanged(index(0, 0), index(m_apps.size() - 2, 0), { GroupFolderRole });
+    if (changed) {
+        beginResetModel();
+        m_apps = std::move(updated);
+        invalidateGroupCache();
+        // Persist the complete selection once, rather than serializing the
+        // growing list for every executable discovered in a folder.
+        persistApps();
+        endResetModel();
     }
-
-    return true;
+    return added;
 }
 
 void AppSplitTunnelingModel::removeApp(QModelIndex index)

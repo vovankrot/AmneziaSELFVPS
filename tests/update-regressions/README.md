@@ -12,3 +12,9 @@ download, altered installer refusal before UAC, single-flight checks and disabli
 automatic polling. Settings/files stay in disposable directories. No real
 installer or service is launched. Address-selection tests exercise the production
 split-tunnel helper; actual WFP/driver routing still needs a VM test.
+# Installation validation
+
+The updater rehashes a real local file in a worker thread. Tests check event-loop
+progress, single-flight validation, cancellation, corruption and controller
+destruction. The final installer launch is replaced by a private test fixture;
+these tests never request UAC, install software or close the application.

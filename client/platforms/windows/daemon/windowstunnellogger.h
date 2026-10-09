@@ -14,7 +14,7 @@ class WindowsTunnelLogger final : public QObject {
   Q_DISABLE_COPY_MOVE(WindowsTunnelLogger)
 
  public:
-  WindowsTunnelLogger(const QString& filename, QObject* parent = nullptr);
+  WindowsTunnelLogger(const QString& filename, QObject* parent = nullptr, const QString& attemptId = {});
   ~WindowsTunnelLogger();
 
  private slots:
@@ -31,6 +31,7 @@ class WindowsTunnelLogger final : public QObject {
   uchar* m_logdata = nullptr;
   int m_logindex = -1;
   quint64 m_startTime = 0;
+  QString m_attemptId;
 };
 
 #endif  // WINDOWSTUNNELLOGGER_H
